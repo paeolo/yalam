@@ -1,0 +1,17 @@
+{
+  "editor.tabCompletion": "on",
+  "editor.tabSize": 2,
+  "editor.trimAutoWhitespace": true,
+  "editor.formatOnSave": true,
+  "files.exclude": {
+    "**/.DS_Store": true,
+    "**/.git": true,
+    "**/node_modules": true,
+    "*.js": true,
+    "dist": true,
+    "logs": true,
+    "yarn.lock": true,
+  },
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true
+}
