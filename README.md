@@ -18,8 +18,6 @@ Here is a table comparing some javascript build systems:
 
 Yalam is a Gulp-inspired incremental build system with some differences to make it incremental. Thus the pipelines you are going to create with Yalam should be a bit different than the ones with Gulp, to make your build purely incremental.
 
-Since Yalam is inspired on Glup, you should first read [this documentation](https://gulpjs.com/docs/en/getting-started/quick-start).
-
 ## Author
 
 👤 **Paul Le Couteur**
