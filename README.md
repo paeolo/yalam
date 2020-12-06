@@ -4,9 +4,7 @@
 
 > A Gulp-inspired incremental build system
 
----
-WARNING: This software is in development and not yet published to NPM.
----
+**WARNING: This software is in development and not yet published to NPM.**
 
 ### Feature Comparison
 
