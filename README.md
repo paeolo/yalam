@@ -4,6 +4,10 @@
 
 > A Gulp-inspired incremental build system
 
+---
+WARNING: This software is in development and not yet published to NPM.
+---
+
 ### Feature Comparison
 
 Here is a table comparing some javascript build systems:
