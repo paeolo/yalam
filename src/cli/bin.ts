@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 
+import chalk from 'chalk';
 import meow from 'meow';
-import { runCLI } from '.';
+import { run } from '.';
 
 const cli = meow(`
   Usage
-    $ glupi --option <entries> ...
+    $ yalam --option <entries> ...
 
   List of options
     - watch |> Build your changes while your are coding
@@ -29,7 +30,8 @@ if (cli.input.length === 0)
 
 export type FlagsType = typeof cli.flags;
 
-runCLI(
-  cli.input,
-  cli.flags
-);
+run(cli.input, cli.flags)
+  .catch((err: Error) => {
+    console.error(chalk.yellow(err.message));
+    process.exit(1);
+  });
