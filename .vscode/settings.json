@@ -7,7 +7,7 @@
     "**/.DS_Store": true,
     "**/.git": true,
     "**/node_modules": true,
-    "*.js": true,
+    "src/**/*.js": true,
     "dist": true,
     "logs": true,
     "yarn.lock": true,

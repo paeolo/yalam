@@ -56,7 +56,11 @@ export class Yalam {
         if (err) {
           input.error(err);
         }
-        input.next(...events);
+        events.forEach((event) => {
+          input.next({
+            filePath: event.path
+          });
+        })
       })
     }));
 
