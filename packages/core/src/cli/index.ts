@@ -12,6 +12,8 @@ export const run = async (entries: string[], flags: FlagsType) => {
   const runner = new Runner({
     mode,
     entries,
+    task: flags.task,
+    configPath: flags.config,
     yalamOptions: {
       disableCache: flags.cache === false,
     }

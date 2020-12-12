@@ -4,6 +4,9 @@
     {
       "label": "Build",
       "type": "shell",
+      "options": {
+        "cwd": "packages/core"
+      },
       "command": "yarn build",
       "group": {
         "kind": "build",

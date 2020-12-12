@@ -45,7 +45,7 @@ export class Yalam {
     const task = this.tasks.get(options.task);
 
     if (!task) {
-      throw new Error(`Task "${options.task}" not found`);
+      throw new Error(`Task not found: "${options.task}"`);
     }
 
     const subscriptions = await Promise.all(entries.map((entry) => {

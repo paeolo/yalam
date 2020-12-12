@@ -11,6 +11,7 @@ const cli = meow(`
   List of options
     - watch |> Build your changes while your are coding
     - no-cache |> Disable any caching features
+    - config |> Specify a custom path to config file
 `, {
   flags: {
     watch: {
@@ -21,6 +22,13 @@ const cli = meow(`
       type: 'boolean',
       alias: 'c',
       default: true
+    },
+    config: {
+      type: 'string',
+    },
+    task: {
+      type: 'string',
+      alias: 't',
     }
   },
 });
