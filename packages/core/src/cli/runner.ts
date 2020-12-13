@@ -10,7 +10,8 @@ import { TaskLoader } from './task-loader';
 
 export const enum RunnerMode {
   BUILD,
-  WATCH
+  WATCH,
+  SHOW,
 };
 
 export interface RunnerOptions {
@@ -38,22 +39,25 @@ export class Runner {
   }
 
   public async run() {
-    await this.taskLoader.load();
-
     switch (this.options.mode) {
       case RunnerMode.BUILD:
+        await this.taskLoader.load();
         await this.yalam.build({
           entries: this.options.entries,
           task: this.options.task || DEFAULT_TASK
         });
         break;
       case RunnerMode.WATCH:
+        await this.taskLoader.load();
         attach();
         const subscription = await this.yalam.watch({
           entries: this.options.entries,
           task: this.options.task || DEFAULT_TASK
         });
         add(subscription.unsubscribe);
+        break;
+      case RunnerMode.SHOW:
+        await this.taskLoader.show();
         break;
     }
   }

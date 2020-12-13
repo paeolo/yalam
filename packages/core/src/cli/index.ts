@@ -5,9 +5,12 @@ import {
 } from './runner';
 
 export const run = async (entries: string[], flags: FlagsType) => {
-  const mode = flags.watch
-    ? RunnerMode.WATCH
-    : RunnerMode.BUILD;
+  let mode = RunnerMode.BUILD;
+
+  if (flags.show)
+    mode = RunnerMode.SHOW;
+  else if (flags.watch)
+    mode = RunnerMode.WATCH;
 
   const runner = new Runner({
     mode,

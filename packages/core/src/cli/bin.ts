@@ -9,9 +9,10 @@ const cli = meow(`
     $ yalam --option <entries> ...
 
   List of options
-    - watch |> Build your changes while your are coding
-    - no-cache |> Disable any caching features
     - config |> Specify a custom path to config file
+    - no-cache |> Disable any caching features
+    - show |> List the tasks present in the config file
+    - watch |> Build your changes while your are coding
 `, {
   flags: {
     cache: {
@@ -30,10 +31,15 @@ const cli = meow(`
       type: 'boolean',
       alias: 'w',
     },
+    show: {
+      type: 'boolean',
+      alias: 's',
+      default: false
+    }
   },
 });
 
-if (cli.input.length === 0)
+if (cli.input.length === 0 && !cli.flags.show)
   cli.showHelp(0);
 
 export type FlagsType = typeof cli.flags;

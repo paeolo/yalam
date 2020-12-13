@@ -1,5 +1,8 @@
 import path from 'path';
+import chalk from 'chalk';
+import replaceHomedir from 'replace-homedir';
 import fs from 'fs/promises';
+import archy from 'archy';
 import { constants } from 'fs';
 
 import { Yalam } from '../core';
@@ -22,14 +25,15 @@ export class TaskLoader {
 
   public async load() {
     const configPath = path.resolve(this.configPath);
+    const prettyConfigPath = replaceHomedir(this.configPath, '~');
 
     try {
       await fs.access(configPath, constants.F_OK);
     } catch {
-      throw new Error(`File not found: "${this.configPath}"`);
+      throw new Error(`File not found: ${prettyConfigPath}`);
     }
 
-    const tasks = Object.entries(require(configPath))
+    const tasks = Object.entries(require(configPath));
 
     tasks.map(([key, task]) => {
       if (typeof task !== 'function')
@@ -37,5 +41,23 @@ export class TaskLoader {
 
       this.yalam.add(key, task as Task);
     })
+  }
+
+  public async show() {
+    const configPath = path.resolve(this.configPath);
+    const prettyConfigPath = replaceHomedir(this.configPath, '~');
+
+    try {
+      await fs.access(configPath, constants.F_OK);
+    } catch {
+      throw new Error(`File not found: ${prettyConfigPath}`);
+    }
+
+    const tasks = Object.keys(require(configPath));
+
+    console.log(archy({
+      label: `Tasks for ${chalk.magenta(prettyConfigPath)}`,
+      nodes: tasks
+    }));
   }
 }
