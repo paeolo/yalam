@@ -6,7 +6,8 @@ import {
 
 export const enum AssetType {
   SOURCE,
-  ARCTIFACT
+  ARCTIFACT,
+  DELETED
 };
 
 interface AssetOptions {

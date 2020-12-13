@@ -1,8 +1,10 @@
+const { source } = require('yalam/operators');
 const { tap } = require('yalam/rxjs')
 
 const task = (input) => {
   return input.pipe(
-    tap(event => console.log(event.type, event.path))
+    source({ glob: 'src/**/*.ts' }),
+    tap(asset => console.log(asset.filePath))
   )
 }
 

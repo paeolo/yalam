@@ -20,6 +20,7 @@
     "mkdirp": "^1.0.4",
     "replace-homedir": "^1.0.0",
     "rxjs": "^7.0.0-beta.9",
+    "tiny-glob": "^0.2.8",
     "v8-compile-cache": "^2.2.0"
   },
   "devDependencies": {
