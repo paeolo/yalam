@@ -38,7 +38,7 @@ export class Runner {
   }
 
   public async run() {
-    this.taskLoader.load();
+    await this.taskLoader.load();
 
     switch (this.options.mode) {
       case RunnerMode.BUILD:

@@ -14,22 +14,22 @@ const cli = meow(`
     - config |> Specify a custom path to config file
 `, {
   flags: {
-    watch: {
-      type: 'boolean',
-      alias: 'w',
-    },
     cache: {
       type: 'boolean',
-      alias: 'c',
       default: true
     },
     config: {
       type: 'string',
+      alias: 'c'
     },
     task: {
       type: 'string',
       alias: 't',
-    }
+    },
+    watch: {
+      type: 'boolean',
+      alias: 'w',
+    },
   },
 });
 

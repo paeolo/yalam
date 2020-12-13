@@ -1,5 +1,7 @@
 import path from 'path';
-import fs from 'fs';
+import fs from 'fs/promises';
+import { constants } from 'fs';
+
 import { Yalam } from '../core';
 import { Task } from '../types';
 
@@ -18,11 +20,14 @@ export class TaskLoader {
     this.configPath = options.configPath || path.join(process.cwd(), 'Yalamfile.js');
   }
 
-  public load() {
+  public async load() {
     const configPath = path.resolve(this.configPath);
 
-    if (!fs.existsSync(configPath))
+    try {
+      await fs.access(configPath, constants.F_OK);
+    } catch {
       throw new Error(`File not found: "${this.configPath}"`);
+    }
 
     const tasks = Object.entries(require(configPath))
 
