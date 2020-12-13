@@ -1,9 +1,13 @@
 import path from 'path';
 import fs from 'fs/promises';
 import { constants } from 'fs';
-import { YalamOptions } from "./yalam";
 
-const CACHE_DIR = '.yalam-cache';
+import { YalamOptions } from "./yalam";
+import { CACHE_DIR } from '../constants';
+import {
+  DIRECTORY_NOT_FOUND,
+  PATH_NOT_DIRECTORY
+} from '../errors';
 
 export const normalizeOptions = (options: YalamOptions): Required<YalamOptions> => ({
   disableCache: options.disableCache || false,
@@ -18,13 +22,13 @@ export const normalizeEntries = (entries: string[]) => {
       try {
         await fs.access(directory, constants.F_OK);
       } catch {
-        throw new Error(`Directory not found: ${entry}`);
+        throw DIRECTORY_NOT_FOUND(entry);
       }
 
       const stats = await fs.lstat(directory);
 
       if (!stats.isDirectory())
-        throw new Error(`Not a directory: ${entry}`);
+        throw PATH_NOT_DIRECTORY(entry);
 
       return directory;
     });

@@ -46,6 +46,6 @@ export type FlagsType = typeof cli.flags;
 
 run(cli.input, cli.flags)
   .catch((err: Error) => {
-    console.error(chalk.yellow(err.message));
+    console.error(chalk.gray(err.message));
     process.exit(1);
   });

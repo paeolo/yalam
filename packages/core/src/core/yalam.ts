@@ -11,6 +11,9 @@ import {
   normalizeEntries,
   normalizeOptions
 } from './utils';
+import {
+  TASK_NOT_FOUND
+} from '../errors';
 
 export interface YalamOptions {
   disableCache?: boolean;
@@ -45,7 +48,7 @@ export class Yalam {
     const task = this.tasks.get(options.task);
 
     if (!task) {
-      throw new Error(`Task not found: "${options.task}"`);
+      throw TASK_NOT_FOUND(options.task);
     }
 
     const subscriptions = await Promise.all(entries.map((entry) => {

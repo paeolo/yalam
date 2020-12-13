@@ -7,6 +7,13 @@ import { constants } from 'fs';
 
 import { Yalam } from '../core';
 import { Task } from '../types';
+import {
+  FILE_NOT_FOUND,
+  TASK_NOT_FUNCTION
+} from '../errors';
+import {
+  YALAM_FILE
+} from '../constants';
 
 interface TaskLoaderOptions {
   yalam: Yalam;
@@ -20,7 +27,7 @@ export class TaskLoader {
 
   constructor(options: TaskLoaderOptions) {
     this.yalam = options.yalam;
-    this.configPath = options.configPath || path.join(process.cwd(), 'Yalamfile.js');
+    this.configPath = options.configPath || path.join(process.cwd(), YALAM_FILE);
   }
 
   public async load() {
@@ -30,14 +37,14 @@ export class TaskLoader {
     try {
       await fs.access(configPath, constants.F_OK);
     } catch {
-      throw new Error(`File not found: ${prettyConfigPath}`);
+      throw FILE_NOT_FOUND(prettyConfigPath);
     }
 
     const tasks = Object.entries(require(configPath));
 
     tasks.map(([key, task]) => {
       if (typeof task !== 'function')
-        throw new Error(`Task is not a function: "${key}"`);
+        throw TASK_NOT_FUNCTION(key);
 
       this.yalam.add(key, task as Task);
     })
@@ -50,7 +57,7 @@ export class TaskLoader {
     try {
       await fs.access(configPath, constants.F_OK);
     } catch {
-      throw new Error(`File not found: ${prettyConfigPath}`);
+      throw FILE_NOT_FOUND(prettyConfigPath);
     }
 
     const tasks = Object.keys(require(configPath));
