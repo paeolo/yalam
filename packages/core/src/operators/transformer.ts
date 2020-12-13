@@ -2,7 +2,7 @@ import { OperatorFunction } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
   Asset,
-} from '../types';
+} from '../core';
 
 interface Transformer {
   transform(asset: Asset): Asset;

@@ -3,10 +3,11 @@ import { Subject } from 'rxjs';
 
 import Cache from './cache';
 import {
-  Asset,
   AsyncSubscription,
+  Event,
+  EventType,
   Task
-} from '../types';
+} from './types';
 import {
   normalizeEntries,
   normalizeOptions
@@ -14,6 +15,7 @@ import {
 import {
   TASK_NOT_FOUND
 } from '../errors';
+import { AssetType } from './asset';
 
 export interface YalamOptions {
   disableCache?: boolean;
@@ -52,8 +54,17 @@ export class Yalam {
     }
 
     const subscriptions = await Promise.all(entries.map((entry) => {
-      const input = new Subject<Asset>();
-      task(input).subscribe();
+      const input = new Subject<Event>();
+      task(input).subscribe((asset) => {
+        if (asset.write && asset.type === AssetType.ARCTIFACT) {
+          asset.write();
+        }
+      });
+
+      input.next({
+        type: EventType.ENTRY,
+        path: entry
+      });
 
       return watcher.subscribe(entry, (err, events) => {
         if (err) {
@@ -61,7 +72,10 @@ export class Yalam {
         }
         events.forEach((event) => {
           input.next({
-            filePath: event.path
+            type: event.type === 'delete'
+              ? EventType.DELETE
+              : EventType.UPDATE,
+            path: event.path
           });
         })
       })

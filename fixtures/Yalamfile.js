@@ -2,7 +2,7 @@ const { tap } = require('yalam/rxjs')
 
 const task = (input) => {
   return input.pipe(
-    tap(event => console.log('BLOUP', event))
+    tap(event => console.log(event.type, event.path))
   )
 }
 

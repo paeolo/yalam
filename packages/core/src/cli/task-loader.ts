@@ -5,8 +5,10 @@ import fs from 'fs/promises';
 import archy from 'archy';
 import { constants } from 'fs';
 
-import { Yalam } from '../core';
-import { Task } from '../types';
+import {
+  Yalam,
+  Task
+} from '../core';
 import {
   FILE_NOT_FOUND,
   TASK_NOT_FUNCTION
