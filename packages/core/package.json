@@ -13,9 +13,11 @@
   },
   "dependencies": {
     "@parcel/watcher": "^2.0.0-alpha.9",
+    "@types/globrex": "^0.1.0",
     "archy": "^1.0.0",
     "chalk": "^4.1.0",
     "exits": "^2.0.1",
+    "globrex": "^0.1.2",
     "meow": "^7.1.1",
     "mkdirp": "^1.0.4",
     "replace-homedir": "^1.0.0",

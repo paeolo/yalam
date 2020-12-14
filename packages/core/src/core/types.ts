@@ -15,7 +15,14 @@ export const enum EventType {
   DELETE
 };
 
-export interface Event {
-  type: EventType;
-  path: FilePath;
+export interface EntryEvent {
+  type: EventType.ENTRY,
+  path: FilePath
 }
+
+export interface FileEvent {
+  type: EventType.UPDATE | EventType.DELETE,
+  path: FilePath
+}
+
+export type Event = EntryEvent | FileEvent;

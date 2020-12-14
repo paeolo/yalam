@@ -1,0 +1,25 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Program",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "program": "${workspaceFolder}/packages/core/dist/cli/bin.js",
+      "args": [
+        "--watch",
+        "--config",
+        "fixtures/Yalamfile.js",
+        "packages/example"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/packages/core/dist/**/*.js"
+      ],
+      "sourceMaps": true,
+      "console": "integratedTerminal"
+    }
+  ]
+}
