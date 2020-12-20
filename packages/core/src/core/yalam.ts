@@ -10,7 +10,8 @@ import {
 } from './types';
 import {
   normalizeEntries,
-  normalizeOptions
+  normalizeOptions,
+  unsubscribeAll
 } from './utils';
 import {
   Asset,
@@ -56,6 +57,32 @@ export class Yalam {
     }
   }
 
+  private async getSubscription(entry: string, task: Task) {
+    const input = new Subject<Event>();
+    task(input).subscribe(this.handle.bind(this));
+
+    input.next({
+      type: EventType.ENTRY,
+      path: entry
+    });
+
+    const subscription = await watcher.subscribe(entry, (err, events) => {
+      if (err) {
+        input.error(err);
+      }
+      events.forEach((event) => {
+        input.next({
+          type: event.type === 'delete'
+            ? EventType.DELETE
+            : EventType.UPDATE,
+          path: event.path
+        });
+      })
+    });
+
+    return subscription;
+  }
+
   public async build(options: BuildOptions) {
   }
 
@@ -67,36 +94,12 @@ export class Yalam {
       throw TASK_NOT_FOUND(options.task);
     }
 
-    const subscriptions = await Promise.all(entries.map((entry) => {
-      const input = new Subject<Event>();
-      task(input).subscribe(this.handle.bind(this));
-
-      input.next({
-        type: EventType.ENTRY,
-        path: entry
-      });
-
-      return watcher.subscribe(entry, (err, events) => {
-        if (err) {
-          input.error(err);
-        }
-        events.forEach((event) => {
-          input.next({
-            type: event.type === 'delete'
-              ? EventType.DELETE
-              : EventType.UPDATE,
-            path: event.path
-          });
-        })
-      })
-    }));
+    const subscriptions = await Promise.all(
+      entries.map(entry => this.getSubscription(entry, task))
+    );
 
     return {
-      unsubscribe: async () => {
-        await Promise.all(
-          subscriptions.map(value => value.unsubscribe())
-        );
-      }
+      unsubscribe: () => unsubscribeAll(subscriptions)
     }
   }
 }

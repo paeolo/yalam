@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import { constants } from 'fs';
 
 import { YalamOptions } from "./yalam";
+import { AsyncSubscription } from './types';
 import { CACHE_DIR } from '../constants';
 import {
   DIRECTORY_NOT_FOUND,
@@ -34,4 +35,10 @@ export const normalizeEntries = (entries: string[]) => {
     });
 
   return Promise.all(promises);
+}
+
+export const unsubscribeAll = async (subscriptions: AsyncSubscription[]) => {
+  await Promise.all(
+    subscriptions.map(value => value.unsubscribe())
+  );
 }
