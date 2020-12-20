@@ -10,22 +10,23 @@ export interface AsyncSubscription {
 type FilePath = string;
 
 export const enum EventType {
-  ENTRY,
+  INITIAL,
   UPDATE,
   DELETE
 };
 
-export interface EntryEvent {
-  type: EventType.ENTRY,
-  path: FilePath
+export interface InitialEvent {
+  type: EventType.INITIAL;
+  path: FilePath;
 }
 
 export interface FileEvent {
-  type: EventType.UPDATE | EventType.DELETE,
-  path: FilePath
+  type: EventType.UPDATE | EventType.DELETE;
+  entry: string;
+  path: FilePath;
 }
 
-export type Event = EntryEvent | FileEvent;
+export type Event = InitialEvent | FileEvent;
 
 export type JSONValue =
   | null

@@ -9,7 +9,6 @@ import {
   filter,
   map,
   mergeAll,
-  skipWhile
 } from 'rxjs/operators';
 import tinyGlob from 'tiny-glob/sync';
 import globrex from 'globrex';
@@ -38,11 +37,12 @@ const getInitialEvents = (glob: string, entry: string): FileEvent[] => {
   );
   return files.map(path => ({
     type: EventType.UPDATE,
+    entry,
     path,
   }))
 };
 
-const getSourceAsset = async (entry: string, path: string, fullPath: string,) => {
+const getSourceAsset = async (path: string, entry: string, fullPath: string,) => {
   const content = await fs.readFile(fullPath);
   const asset = new Asset({
     type: AssetType.SOURCE,
@@ -53,30 +53,23 @@ const getSourceAsset = async (entry: string, path: string, fullPath: string,) =>
   return asset;
 };
 
-const getDeletedAsset = async (entry: string, path: string) => new Asset({
+const getDeletedAsset = async (path: string, entry: string) => new Asset({
   type: AssetType.DELETED,
   path,
   entry,
 });
 
 export const source = (options: SourceOptions): OperatorFunction<Event, Asset> => {
-  let entry: string;
   const { regex } = globrex(options.glob, { globstar: true });
   const sourceBase = globParent(options.glob);
 
   return pipe(
-    skipWhile(event => {
-      if (event.type === EventType.ENTRY) {
-        entry = event.path;
-      }
-      return event.type !== EventType.ENTRY
-    }),
-    filter(event => event.type === EventType.ENTRY
-      || regex.test(path.relative(entry, event.path))
+    filter(event => event.type === EventType.INITIAL
+      || regex.test(path.relative(event.entry, event.path))
     ),
     map(event => {
       switch (event.type) {
-        case EventType.ENTRY:
+        case EventType.INITIAL:
           return from(getInitialEvents(options.glob, event.path));
         default:
           return from([event]);
@@ -85,20 +78,20 @@ export const source = (options: SourceOptions): OperatorFunction<Event, Asset> =
     mergeAll(),
     map(event => {
       const relativePath = path.relative(
-        path.join(entry, sourceBase),
+        path.join(event.entry, sourceBase),
         event.path
       );
       switch (event.type) {
         case EventType.UPDATE:
           return from(getSourceAsset(
-            entry,
             relativePath,
+            event.entry,
             event.path,
           ));
         case EventType.DELETE:
           return from(getDeletedAsset(
-            entry,
             relativePath,
+            event.entry,
           ));
       }
     }),

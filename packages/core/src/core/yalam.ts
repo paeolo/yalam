@@ -1,11 +1,15 @@
 import watcher from '@parcel/watcher';
-import { Subject } from 'rxjs';
+import {
+  from,
+  Subject
+} from 'rxjs';
 
 import Cache from './cache';
 import {
   AsyncSubscription,
   Event,
   EventType,
+  InitialEvent,
   Task
 } from './types';
 import {
@@ -46,6 +50,14 @@ export class Yalam {
     this.tasks.set(key, task);
   }
 
+  private get(key: string) {
+    const task = this.tasks.get(key);
+    if (!task) {
+      throw TASK_NOT_FOUND(key);
+    }
+    return task;
+  }
+
   private async handle(asset: Asset) {
     switch (asset.type) {
       case AssetType.ARCTIFACT:
@@ -57,45 +69,60 @@ export class Yalam {
     }
   }
 
-  private async getSubscription(entry: string, task: Task) {
-    const input = new Subject<Event>();
-    task(input).subscribe(this.handle.bind(this));
-
-    input.next({
-      type: EventType.ENTRY,
-      path: entry
-    });
-
-    const subscription = await watcher.subscribe(entry, (err, events) => {
+  private getSubscription(subject: Subject<Event>, entry: string) {
+    return watcher.subscribe(entry, (err, events) => {
       if (err) {
-        input.error(err);
+        subject.error(err);
       }
       events.forEach((event) => {
-        input.next({
+        subject.next({
           type: event.type === 'delete'
             ? EventType.DELETE
             : EventType.UPDATE,
+          entry,
           path: event.path
         });
       })
     });
-
-    return subscription;
   }
 
+  /**
+   * @description
+   * Returns a promise resolved when the build succeed.
+   */
   public async build(options: BuildOptions) {
+    const entries = await normalizeEntries(options.entries);
+    const task = this.get(options.task);
+
+    const events: InitialEvent[] = entries.map(entry => ({
+      type: EventType.INITIAL,
+      path: entry
+    }));
+
+    await task(from(events)).forEach(this.handle.bind(this));
   }
 
+  /**
+   * @description
+   * Returns a promise resolved when the first build succeed
+   * and watching started.
+   */
   public async watch(options: BuildOptions): Promise<AsyncSubscription> {
     const entries = await normalizeEntries(options.entries);
-    const task = this.tasks.get(options.task);
+    const task = this.get(options.task);
 
-    if (!task) {
-      throw TASK_NOT_FOUND(options.task);
-    }
+    const events: InitialEvent[] = entries.map(entry => ({
+      type: EventType.INITIAL,
+      path: entry
+    }));
+
+    await task(from(events)).forEach(this.handle.bind(this));
+
+    const input = new Subject<Event>();
+    task(input).subscribe(this.handle.bind(this));
 
     const subscriptions = await Promise.all(
-      entries.map(entry => this.getSubscription(entry, task))
+      entries.map(entry => this.getSubscription(input, entry))
     );
 
     return {

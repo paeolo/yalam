@@ -4,6 +4,7 @@
     "packages/*"
   ],
   "scripts": {
-    "test": "yarn workspace example watch"
+    "watch": "yarn workspace example watch",
+    "build": "yarn workspace example build"
   }
 }
