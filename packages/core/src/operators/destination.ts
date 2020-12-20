@@ -17,7 +17,9 @@ interface DestinationOptions {
 export const destination = (options: DestinationOptions): OperatorFunction<Asset, Asset> => pipe(
   map(asset => {
     const artifact = asset;
-    artifact.type = AssetType.ARCTIFACT;
+    artifact.type = asset.type !== AssetType.DELETED
+      ? AssetType.ARCTIFACT
+      : AssetType.DELETED;
     artifact.path = path.join(options.path, artifact.path);
     return artifact;
   })

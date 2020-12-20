@@ -40,7 +40,7 @@ export class Asset {
     this.contents = contents;
   }
 
-  public async write() {
+  public async writeFile() {
     if (!this.contents) {
       throw NO_CONTENTS();
     }
@@ -49,5 +49,12 @@ export class Asset {
 
     await mkdirp(path.dirname(fullPath));
     await fs.writeFile(fullPath, this.contents);
+  }
+
+  public async deleteFile() {
+    const fullPath = path.join(this.entry, this.path);
+    try {
+      await fs.unlink(fullPath);
+    } catch { }
   }
 }

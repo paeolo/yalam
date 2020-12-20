@@ -13,9 +13,12 @@ import {
   normalizeOptions
 } from './utils';
 import {
+  Asset,
+  AssetType
+} from './asset';
+import {
   TASK_NOT_FOUND
 } from '../errors';
-import { AssetType } from './asset';
 
 export interface YalamOptions {
   disableCache?: boolean;
@@ -42,6 +45,17 @@ export class Yalam {
     this.tasks.set(key, task);
   }
 
+  private async handle(asset: Asset) {
+    switch (asset.type) {
+      case AssetType.ARCTIFACT:
+        await asset.writeFile();
+        break;
+      case AssetType.DELETED:
+        await asset.deleteFile();
+        break;
+    }
+  }
+
   public async build(options: BuildOptions) {
   }
 
@@ -55,11 +69,7 @@ export class Yalam {
 
     const subscriptions = await Promise.all(entries.map((entry) => {
       const input = new Subject<Event>();
-      task(input).subscribe((asset) => {
-        if (asset.write && asset.type === AssetType.ARCTIFACT) {
-          asset.write();
-        }
-      });
+      task(input).subscribe(this.handle.bind(this));
 
       input.next({
         type: EventType.ENTRY,

@@ -9,11 +9,10 @@
         "<node_internals>/**"
       ],
       "program": "${workspaceFolder}/packages/core/dist/cli/bin.js",
+      "cwd": "${workspaceFolder}/packages/example",
       "args": [
         "--watch",
-        "--config",
-        "fixtures/Yalamfile.js",
-        "packages/example"
+        "."
       ],
       "outFiles": [
         "${workspaceFolder}/packages/core/dist/**/*.js"

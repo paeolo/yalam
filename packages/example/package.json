@@ -9,7 +9,5 @@
     "build": "yalam .",
     "watch": "yalam --watch ."
   },
-  "devDependencies": {
-    "yalam": "file:../core"
-  }
+  "devDependencies": {}
 }
