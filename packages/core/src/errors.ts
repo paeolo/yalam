@@ -1,4 +1,4 @@
-export const CANNOT_WRITE_SOURCE = (path: string) => new Error(`CANNOT WRITE SOURCE: ${path}`);
+export const NO_CONTENTS = () => new Error(`NO CONTENTS`);
 export const FILE_NOT_FOUND = (path: string) => new Error(`FILE NOT FOUND: ${path}`);
 export const DIRECTORY_NOT_FOUND = (path: string) => new Error(`DIRECTORY NOT FOUND: ${path}`);
 export const PATH_NOT_DIRECTORY = (path: string) => new Error(`NOT A DIRECTORY: ${path}`);

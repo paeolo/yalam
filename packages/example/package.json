@@ -4,5 +4,12 @@
   "private": true,
   "author": "Paul Le Couteur",
   "license": "MIT",
-  "main": "index.js"
+  "main": "index.js",
+  "scripts": {
+    "build": "yalam .",
+    "watch": "yalam --watch ."
+  },
+  "devDependencies": {
+    "yalam": "file:../core"
+  }
 }

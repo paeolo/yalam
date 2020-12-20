@@ -12,13 +12,15 @@ import {
   skipWhile
 } from 'rxjs/operators';
 import tinyGlob from 'tiny-glob/sync';
-import globrex from 'globrex'
+import globrex from 'globrex';
+import globParent from 'glob-parent';
 
 import {
   Asset,
   Event,
   FileEvent,
-  EventType
+  EventType,
+  AssetType
 } from '../core';
 
 interface SourceOptions {
@@ -40,22 +42,27 @@ const getInitialEvents = (glob: string, entry: string): FileEvent[] => {
   }))
 };
 
-const getAsset = async (filePath: string) => {
-  const buffer = await fs.readFile(filePath);
-  return new Asset({
-    filePath,
-    contents: buffer
-  })
-}
+const getSourceAsset = async (entry: string, path: string, fullPath: string,) => {
+  const content = await fs.readFile(fullPath);
+  const asset = new Asset({
+    type: AssetType.SOURCE,
+    path: path,
+    entry,
+  });
+  asset.setContent(content);
+  return asset;
+};
 
-const getDeletedAsset = async (filePath: string) => new Asset({
-  filePath,
-  contents: Buffer.alloc(0)
-})
+const getDeletedAsset = async (entry: string, path: string) => new Asset({
+  type: AssetType.DELETED,
+  path,
+  entry,
+});
 
 export const source = (options: SourceOptions): OperatorFunction<Event, Asset> => {
   let entry: string;
   const { regex } = globrex(options.glob, { globstar: true });
+  const sourceBase = globParent(options.glob);
 
   return pipe(
     skipWhile(event => {
@@ -77,13 +84,24 @@ export const source = (options: SourceOptions): OperatorFunction<Event, Asset> =
     }),
     mergeAll(),
     map(event => {
+      const relativePath = path.relative(
+        path.join(entry, sourceBase),
+        event.path
+      );
       switch (event.type) {
         case EventType.UPDATE:
-          return from(getAsset(event.path));
+          return from(getSourceAsset(
+            entry,
+            relativePath,
+            event.path,
+          ));
         case EventType.DELETE:
-          return from(getDeletedAsset(event.path))
+          return from(getDeletedAsset(
+            entry,
+            relativePath,
+          ));
       }
     }),
     mergeAll()
   )
-}
+};

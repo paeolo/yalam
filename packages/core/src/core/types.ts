@@ -26,3 +26,10 @@ export interface FileEvent {
 }
 
 export type Event = EntryEvent | FileEvent;
+
+export type JSONValue =
+  | null
+  | boolean
+  | number
+  | string
+  | Array<JSONValue>;

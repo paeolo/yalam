@@ -1,8 +1,8 @@
-import path from 'path';
 import fs from 'fs/promises';
-import {
-  CANNOT_WRITE_SOURCE
-} from '../errors';
+import mkdirp from 'mkdirp';
+import path from 'path';
+
+import { NO_CONTENTS } from '../errors';
 
 export const enum AssetType {
   SOURCE,
@@ -11,25 +11,43 @@ export const enum AssetType {
 };
 
 interface AssetOptions {
-  filePath: string;
-  contents: Buffer;
+  type: AssetType;
+  entry: string;
+  path: string;
 }
 
 export class Asset {
-  public filePath: string;
-  public contents: Buffer;
   public type: AssetType;
+  private entry: string;
+  public path: string;
+  private contents?: Buffer;
 
   constructor(options: AssetOptions) {
-    this.filePath = options.filePath;
-    this.contents = options.contents;
-    this.type = AssetType.SOURCE;
+    this.type = options.type;
+    this.entry = options.entry;
+    this.path = options.path;
+  }
+
+  public getEntry() {
+    return this.entry;
+  }
+
+  public getContents() {
+    return this.contents || Buffer.alloc(0);
+  }
+
+  public setContent(contents: Buffer) {
+    this.contents = contents;
   }
 
   public async write() {
-    if (this.type === AssetType.SOURCE)
-      throw CANNOT_WRITE_SOURCE(path.basename(this.filePath));
+    if (!this.contents) {
+      throw NO_CONTENTS();
+    }
 
-    return fs.writeFile(this.filePath, this.contents);
+    const fullPath = path.join(this.entry, this.path);
+
+    await mkdirp(path.dirname(fullPath));
+    await fs.writeFile(fullPath, this.contents);
   }
 }

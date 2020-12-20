@@ -4,6 +4,6 @@
     "packages/*"
   ],
   "scripts": {
-    "test": "yalam -w -c fixtures/Yalamfile.js packages/example"
+    "test": "yarn workspace example watch"
   }
 }
