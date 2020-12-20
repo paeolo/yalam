@@ -46,10 +46,6 @@ export class Yalam {
     this.tasks = new Map();
   }
 
-  public add(key: string, task: Task) {
-    this.tasks.set(key, task);
-  }
-
   private get(key: string) {
     const task = this.tasks.get(key);
     if (!task) {
@@ -84,6 +80,14 @@ export class Yalam {
         });
       })
     });
+  }
+
+  /**
+  * @description
+  * Set a build task for the provided key.
+  */
+  public add(key: string, task: Task) {
+    this.tasks.set(key, task);
   }
 
   /**
