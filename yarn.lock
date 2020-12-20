@@ -733,6 +733,22 @@ validate-npm-package-license@^3.0.1:
     spdx-correct "^3.0.0"
     spdx-expression-parse "^3.0.0"
 
+"yalam@file:packages/core":
+  version "1.0.0"
+  dependencies:
+    "@parcel/watcher" "^2.0.0-alpha.9"
+    archy "^1.0.0"
+    chalk "^4.1.0"
+    exits "^2.0.1"
+    glob-parent "^5.1.1"
+    globrex "^0.1.2"
+    meow "^7.1.1"
+    mkdirp "^1.0.4"
+    replace-homedir "^1.0.0"
+    rxjs "^7.0.0-beta.9"
+    tiny-glob "^0.2.8"
+    v8-compile-cache "^2.2.0"
+
 yargs-parser@^18.1.3:
   version "18.1.3"
   resolved "https://registry.yarnpkg.com/yargs-parser/-/yargs-parser-18.1.3.tgz#be68c4975c6b2abf469236b0c870362fab09a7b0"
