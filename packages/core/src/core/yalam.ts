@@ -65,6 +65,11 @@ export class Yalam {
     }
   }
 
+  private async buildFromEvents(events: Event[], task: Task) {
+    await task(from(events))
+      .forEach(this.handle.bind(this));
+  }
+
   private getSubscription(subject: Subject<Event>, entry: string) {
     return watcher.subscribe(entry, (err, events) => {
       if (err) {
@@ -103,7 +108,7 @@ export class Yalam {
       path: entry
     }));
 
-    await task(from(events)).forEach(this.handle.bind(this));
+    await this.buildFromEvents(events, task);
   }
 
   /**
@@ -120,7 +125,7 @@ export class Yalam {
       path: entry
     }));
 
-    await task(from(events)).forEach(this.handle.bind(this));
+    await this.buildFromEvents(events, task);
 
     const input = new Subject<Event>();
     task(input).subscribe(this.handle.bind(this));

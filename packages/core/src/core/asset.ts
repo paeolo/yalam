@@ -3,6 +3,7 @@ import mkdirp from 'mkdirp';
 import path from 'path';
 
 import { NO_CONTENTS } from '../errors';
+import { FileEvent } from './types';
 
 export const enum AssetType {
   SOURCE,
@@ -12,24 +13,28 @@ export const enum AssetType {
 
 interface AssetOptions {
   type: AssetType;
-  entry: string;
   path: string;
+  event: FileEvent;
 }
 
 export class Asset {
   public type: AssetType;
-  private entry: string;
   public path: string;
-  private contents?: Buffer;
+  private event: FileEvent;
+  private contents: Buffer | undefined;
 
   constructor(options: AssetOptions) {
     this.type = options.type;
-    this.entry = options.entry;
     this.path = options.path;
+    this.event = options.event;
   }
 
   public getEntry() {
-    return this.entry;
+    return this.event.entry;
+  }
+
+  public getEvent() {
+    return this.event;
   }
 
   public getContents() {
@@ -45,14 +50,13 @@ export class Asset {
       throw NO_CONTENTS();
     }
 
-    const fullPath = path.join(this.entry, this.path);
-
+    const fullPath = path.join(this.event.entry, this.path);
     await mkdirp(path.dirname(fullPath));
     await fs.writeFile(fullPath, this.contents);
   }
 
   public async deleteFile() {
-    const fullPath = path.join(this.entry, this.path);
+    const fullPath = path.join(this.event.entry, this.path);
     try {
       await fs.unlink(fullPath);
     } catch { }
