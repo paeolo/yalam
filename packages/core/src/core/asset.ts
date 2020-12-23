@@ -7,7 +7,7 @@ import { FileEvent } from './types';
 
 export const enum AssetType {
   SOURCE,
-  ARCTIFACT,
+  ARTIFACT,
   DELETED
 };
 
@@ -35,6 +35,10 @@ export class Asset {
 
   public getEvent() {
     return this.event;
+  }
+
+  public getFullPath() {
+    return path.join(this.event.entry, this.path);
   }
 
   public getContents() {

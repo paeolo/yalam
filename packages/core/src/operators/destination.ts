@@ -18,7 +18,7 @@ export const destination = (options: DestinationOptions): OperatorFunction<Asset
   map(asset => {
     const artifact = asset;
     artifact.type = asset.type !== AssetType.DELETED
-      ? AssetType.ARCTIFACT
+      ? AssetType.ARTIFACT
       : AssetType.DELETED;
     artifact.path = path.join(options.path, artifact.path);
     return artifact;

@@ -1,14 +1,16 @@
 import watcher from '@parcel/watcher';
 import {
   from,
-  Subject
 } from 'rxjs';
+import PQueue from 'p-queue';
+import setImmediatePromise from 'set-immediate-promise';
 
 import Cache from './cache';
 import {
   AsyncSubscription,
   Event,
   EventType,
+  FileEvent,
   InitialEvent,
   Task
 } from './types';
@@ -21,6 +23,7 @@ import {
   Asset,
   AssetType
 } from './asset';
+import { Reporter } from './reporter';
 import {
   TASK_NOT_FOUND
 } from '../errors';
@@ -39,11 +42,17 @@ export class Yalam {
   private options: Required<YalamOptions>;
   private cache: Cache;
   private tasks: Map<string, Task>;
+  private ignoredFiles: Set<string>;
+  private reporter: Reporter;
+  private queue: PQueue;
 
   constructor(options: YalamOptions = {}) {
     this.options = normalizeOptions(options);
     this.cache = new Cache(this.options.cacheDir);
     this.tasks = new Map();
+    this.ignoredFiles = new Set();
+    this.queue = new PQueue();
+    this.reporter = new Reporter(this.queue);
   }
 
   private get(key: string) {
@@ -55,8 +64,11 @@ export class Yalam {
   }
 
   private async handle(asset: Asset) {
+    this.ignoredFiles.add(asset.getFullPath());
+    this.reporter.onBuilt(asset);
+
     switch (asset.type) {
-      case AssetType.ARCTIFACT:
+      case AssetType.ARTIFACT:
         await asset.writeFile();
         break;
       case AssetType.DELETED:
@@ -65,25 +77,40 @@ export class Yalam {
     }
   }
 
-  private async buildFromEvents(events: Event[], task: Task) {
-    await task(from(events))
-      .forEach(this.handle.bind(this));
+  private getSubscription(task: Task, entry: string) {
+    return watcher.subscribe(entry, async (err, events) => {
+      if (err) {
+        throw err;
+      }
+      const fileEvents = this.getFileEvents(entry, events);
+      await setImmediatePromise();
+      await this.buildFromEvents(task, fileEvents);
+    });
   }
 
-  private getSubscription(subject: Subject<Event>, entry: string) {
-    return watcher.subscribe(entry, (err, events) => {
-      if (err) {
-        subject.error(err);
-      }
-      events.forEach((event) => {
-        subject.next({
-          type: event.type === 'delete'
-            ? EventType.DELETE
-            : EventType.UPDATE,
-          entry,
-          path: event.path
-        });
-      })
+  private getFileEvents(entry: string, events: watcher.Event[]): FileEvent[] {
+    return events
+      .filter((event) => !this.ignoredFiles.has(event.path))
+      .map((event) => ({
+        type: event.type === 'delete'
+          ? EventType.DELETE
+          : EventType.UPDATE,
+        entry,
+        path: event.path
+      }))
+  }
+
+  private async getInitialEvents(entries: string[]): Promise<InitialEvent[]> {
+    return entries.map(entry => ({
+      type: EventType.INITIAL,
+      path: entry
+    }));
+  }
+
+  private async buildFromEvents(task: Task, events: Event[]) {
+    return this.queue.add(async () => {
+      this.reporter.onAdded(events);
+      await task(from(events)).forEach(this.handle.bind(this));
     });
   }
 
@@ -102,13 +129,9 @@ export class Yalam {
   public async build(options: BuildOptions) {
     const entries = await normalizeEntries(options.entries);
     const task = this.get(options.task);
+    const events = await this.getInitialEvents(entries);
 
-    const events: InitialEvent[] = entries.map(entry => ({
-      type: EventType.INITIAL,
-      path: entry
-    }));
-
-    await this.buildFromEvents(events, task);
+    await this.buildFromEvents(task, events);
   }
 
   /**
@@ -119,23 +142,19 @@ export class Yalam {
   public async watch(options: BuildOptions): Promise<AsyncSubscription> {
     const entries = await normalizeEntries(options.entries);
     const task = this.get(options.task);
+    const events = await this.getInitialEvents(entries);
 
-    const events: InitialEvent[] = entries.map(entry => ({
-      type: EventType.INITIAL,
-      path: entry
-    }));
-
-    await this.buildFromEvents(events, task);
-
-    const input = new Subject<Event>();
-    task(input).subscribe(this.handle.bind(this));
+    await this.buildFromEvents(task, events);
 
     const subscriptions = await Promise.all(
-      entries.map(entry => this.getSubscription(input, entry))
+      entries.map(entry => this.getSubscription(task, entry))
     );
 
     return {
-      unsubscribe: () => unsubscribeAll(subscriptions)
+      unsubscribe: async () => {
+        await unsubscribeAll(subscriptions);
+        await this.queue.onIdle();
+      }
     }
   }
 }
