@@ -1,9 +1,8 @@
 import watcher from '@parcel/watcher';
-import {
-  from,
-} from 'rxjs';
+import EventEmitter from 'eventemitter3';
 import PQueue from 'p-queue';
 import setImmediatePromise from 'set-immediate-promise';
+import { from } from 'rxjs';
 
 import Cache from './cache';
 import {
@@ -23,10 +22,6 @@ import {
   Asset,
   AssetType
 } from './asset';
-import { Reporter } from './reporter';
-import {
-  TASK_NOT_FOUND
-} from '../errors';
 
 export interface YalamOptions {
   disableCache?: boolean;
@@ -38,35 +33,40 @@ interface BuildOptions {
   entries: string[];
 }
 
-export class Yalam {
+interface EventTypes {
+  idle: () => void;
+  added: (events: Event[]) => void;
+  built: (asset: Asset) => void;
+}
+
+export class Yalam extends EventEmitter<EventTypes> {
   private options: Required<YalamOptions>;
   private cache: Cache;
   private tasks: Map<string, Task>;
   private ignoredFiles: Set<string>;
-  private reporter: Reporter;
   private queue: PQueue;
 
   constructor(options: YalamOptions = {}) {
+    super();
     this.options = normalizeOptions(options);
     this.cache = new Cache(this.options.cacheDir);
     this.tasks = new Map();
     this.ignoredFiles = new Set();
-    this.queue = new PQueue();
-    this.reporter = new Reporter(this.queue);
+    this.queue = new PQueue()
+      .on('idle', () => this.emit('idle'));
   }
 
   private get(key: string) {
     const task = this.tasks.get(key);
     if (!task) {
-      throw TASK_NOT_FOUND(key);
+      throw new Error(`Task not found: ${key}`)
     }
     return task;
   }
 
   private async handle(asset: Asset) {
     this.ignoredFiles.add(asset.getFullPath());
-    this.reporter.onBuilt(asset);
-
+    this.emit('built', asset);
     switch (asset.type) {
       case AssetType.ARTIFACT:
         await asset.writeFile();
@@ -84,7 +84,10 @@ export class Yalam {
       }
       const fileEvents = this.getFileEvents(entry, events);
       await setImmediatePromise();
-      await this.buildFromEvents(task, fileEvents);
+
+      if (fileEvents.length !== 0) {
+        await this.buildFromEvents(task, fileEvents);
+      }
     });
   }
 
@@ -107,9 +110,9 @@ export class Yalam {
     }));
   }
 
-  private async buildFromEvents(task: Task, events: Event[]) {
+  private buildFromEvents(task: Task, events: Event[]) {
     return this.queue.add(async () => {
-      this.reporter.onAdded(events);
+      this.emit('added', events);
       await task(from(events)).forEach(this.handle.bind(this));
     });
   }
@@ -130,7 +133,6 @@ export class Yalam {
     const entries = await normalizeEntries(options.entries);
     const task = this.get(options.task);
     const events = await this.getInitialEvents(entries);
-
     await this.buildFromEvents(task, events);
   }
 

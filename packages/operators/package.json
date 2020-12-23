@@ -1,7 +1,7 @@
 {
-  "name": "@yalam/core",
+  "name": "@yalam/operators",
   "version": "1.0.0",
-  "description": "A Gulp-inspired incremental build system",
+  "description": "A basic set of operators for Yalam",
   "author": "Paul Le Couteur",
   "license": "MIT",
   "main": "dist/index.js",
@@ -9,15 +9,15 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@parcel/watcher": "^2.0.0-alpha.9",
-    "eventemitter3": "^4.0.7",
-    "mkdirp": "^1.0.4",
-    "p-queue": "^6.6.2",
+    "@yalam/core": "^1.0.0",
+    "glob-parent": "^5.1.1",
+    "globrex": "^0.1.2",
     "rxjs": "^7.0.0-beta.9",
-    "set-immediate-promise": "^1.0.7"
+    "tiny-glob": "^0.2.8"
   },
   "devDependencies": {
-    "@types/mkdirp": "^1.0.1",
+    "@types/glob-parent": "^5.1.0",
+    "@types/globrex": "^0.1.0",
     "@types/node": "^14.11.8",
     "typescript": "^4.0.3"
   }

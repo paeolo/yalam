@@ -5,7 +5,9 @@ import {
 import {
   Yalam,
   YalamOptions
-} from '../core';
+} from '@yalam/core';
+import Reporter from '@yalam/reporter';
+
 import { TaskLoader } from './task-loader';
 
 export const enum RunnerMode {
@@ -36,6 +38,7 @@ export class Runner {
       yalam: this.yalam,
       configPath: options.configPath
     });
+    new Reporter(this.yalam);
   }
 
   public async run() {

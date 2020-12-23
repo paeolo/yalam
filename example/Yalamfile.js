@@ -1,7 +1,7 @@
 const {
   source,
   destination
-} = require('yalam/operators');
+} = require('@yalam/operators');
 
 const task = (input) => {
   return input.pipe(

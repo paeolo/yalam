@@ -4,11 +4,10 @@ import {
   OperatorFunction
 } from 'rxjs';
 import { map } from 'rxjs/operators';
-
 import {
   Asset,
   AssetType
-} from '../core';
+} from '@yalam/core';
 
 interface DestinationOptions {
   path: string;

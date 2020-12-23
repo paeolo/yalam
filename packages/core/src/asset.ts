@@ -2,7 +2,6 @@ import fs from 'fs/promises';
 import mkdirp from 'mkdirp';
 import path from 'path';
 
-import { NO_CONTENTS } from '../errors';
 import { FileEvent } from './types';
 
 export const enum AssetType {
@@ -51,7 +50,9 @@ export class Asset {
 
   public async writeFile() {
     if (!this.contents) {
-      throw NO_CONTENTS();
+      throw new Error(
+        `No contents for asset with path ${this.path}`
+      );
     }
 
     const fullPath = path.join(this.event.entry, this.path);

@@ -13,14 +13,13 @@ import {
 import tinyGlob from 'tiny-glob/sync';
 import globrex from 'globrex';
 import globParent from 'glob-parent';
-
 import {
   Asset,
   Event,
   FileEvent,
   EventType,
   AssetType
-} from '../core';
+} from '@yalam/core';
 
 interface SourceOptions {
   glob: string;

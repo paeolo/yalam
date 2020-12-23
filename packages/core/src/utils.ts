@@ -4,11 +4,7 @@ import { constants } from 'fs';
 
 import { YalamOptions } from "./yalam";
 import { AsyncSubscription } from './types';
-import { CACHE_DIR } from '../constants';
-import {
-  DIRECTORY_NOT_FOUND,
-  PATH_NOT_DIRECTORY
-} from '../errors';
+import { CACHE_DIR } from './constants';
 
 export const unsubscribeAll = async (subscriptions: AsyncSubscription[]) => {
   await Promise.all(
@@ -26,7 +22,7 @@ export const existsOrFail = async (entry: string) => {
   try {
     await fs.access(directory, constants.F_OK);
   } catch {
-    throw DIRECTORY_NOT_FOUND(entry);
+    throw new Error(`Directory not found: ${entry}`)
   }
 }
 
@@ -36,7 +32,7 @@ const normalizeEntry = async (entry: string) => {
   const stats = await fs.lstat(directory);
 
   if (!stats.isDirectory()) {
-    throw PATH_NOT_DIRECTORY(entry);
+    throw new Error(`Path is not a directory: ${entry}`)
   }
 
   return directory;

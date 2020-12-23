@@ -4,18 +4,10 @@
     {
       "label": "Build",
       "type": "shell",
-      "options": {
-        "cwd": "packages/core"
-      },
       "command": "yarn build",
       "group": {
         "kind": "build",
         "isDefault": true
-      },
-      "presentation": {
-        "echo": false,
-        "reveal": "silent",
-        "clear": true
       },
       "problemMatcher": "$tsc"
     },
