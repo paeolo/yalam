@@ -1,5 +1,5 @@
 {
-  "name": "example",
+  "name": "@yalam/example",
   "version": "1.0.0",
   "private": true,
   "author": "Paul Le Couteur",
@@ -9,5 +9,8 @@
     "build": "yalam .",
     "watch": "yalam --watch ."
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@yalam/cli": "^1.0.0",
+    "@yalam/operators": "^1.0.0"
+  }
 }

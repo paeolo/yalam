@@ -48,7 +48,7 @@ bower_components
 # misc
 .sass-cache
 connect.lock
-.yalam-cache
+.yalam
 
 # Logs
 logs

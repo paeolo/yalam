@@ -4,18 +4,12 @@ import replaceHomedir from 'replace-homedir';
 import fs from 'fs/promises';
 import archy from 'archy';
 import { constants } from 'fs';
-
 import {
   Yalam,
   Task
-} from '../core';
-import {
-  FILE_NOT_FOUND,
-  TASK_NOT_FUNCTION
-} from '../errors';
-import {
-  YALAM_FILE
-} from '../constants';
+} from '@yalam/core';
+
+import { YALAM_FILE } from './constants';
 
 interface TaskLoaderOptions {
   yalam: Yalam;
@@ -39,14 +33,15 @@ export class TaskLoader {
     try {
       await fs.access(configPath, constants.F_OK);
     } catch {
-      throw FILE_NOT_FOUND(prettyConfigPath);
+      throw new Error(`File not found: ${prettyConfigPath}`);
     }
 
     const tasks = Object.entries(require(configPath));
 
     tasks.map(([key, task]) => {
-      if (typeof task !== 'function')
-        throw TASK_NOT_FUNCTION(key);
+      if (typeof task !== 'function') {
+        throw new Error(`Task is not a function: ${key}`);
+      }
 
       this.yalam.add(key, task as Task);
     })
@@ -59,7 +54,7 @@ export class TaskLoader {
     try {
       await fs.access(configPath, constants.F_OK);
     } catch {
-      throw FILE_NOT_FOUND(prettyConfigPath);
+      throw new Error(`File not found: ${prettyConfigPath}`);
     }
 
     const tasks = Object.keys(require(configPath));

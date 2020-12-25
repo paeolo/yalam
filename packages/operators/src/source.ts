@@ -13,18 +13,28 @@ import {
 import tinyGlob from 'tiny-glob/sync';
 import globrex from 'globrex';
 import globParent from 'glob-parent';
-
 import {
   Asset,
   Event,
   FileEvent,
   EventType,
   AssetType
-} from '../core';
+} from '@yalam/core';
 
 interface SourceOptions {
   glob: string;
-}
+};
+
+interface SourceAssetOptions {
+  event: FileEvent,
+  path: string,
+  fullPath: string;
+};
+
+interface DeletedAssetOptions {
+  event: FileEvent,
+  path: string,
+};
 
 const getInitialEvents = (glob: string, entry: string): FileEvent[] => {
   const files = tinyGlob(
@@ -42,21 +52,21 @@ const getInitialEvents = (glob: string, entry: string): FileEvent[] => {
   }))
 };
 
-const getSourceAsset = async (path: string, entry: string, fullPath: string,) => {
-  const content = await fs.readFile(fullPath);
+const getSourceAsset = async (options: SourceAssetOptions) => {
+  const content = await fs.readFile(options.fullPath);
   const asset = new Asset({
     type: AssetType.SOURCE,
-    path: path,
-    entry,
+    path: options.path,
+    event: options.event,
   });
   asset.setContent(content);
   return asset;
 };
 
-const getDeletedAsset = async (path: string, entry: string) => new Asset({
+const getDeletedAsset = async (options: DeletedAssetOptions) => new Asset({
   type: AssetType.DELETED,
-  path,
-  entry,
+  path: options.path,
+  event: options.event
 });
 
 export const source = (options: SourceOptions): OperatorFunction<Event, Asset> => {
@@ -83,16 +93,16 @@ export const source = (options: SourceOptions): OperatorFunction<Event, Asset> =
       );
       switch (event.type) {
         case EventType.UPDATE:
-          return from(getSourceAsset(
-            relativePath,
-            event.entry,
-            event.path,
-          ));
+          return from(getSourceAsset({
+            event: event,
+            path: relativePath,
+            fullPath: event.path,
+          }));
         case EventType.DELETE:
-          return from(getDeletedAsset(
-            relativePath,
-            event.entry,
-          ));
+          return from(getDeletedAsset({
+            event: event,
+            path: relativePath,
+          }));
       }
     }),
     mergeAll()

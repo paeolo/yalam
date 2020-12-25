@@ -1,9 +1,15 @@
-import { Yalam } from './core';
+export {
+  Yalam,
+  YalamOptions
+} from './yalam';
 export {
   Asset,
-  AssetType,
+  AssetType
+} from './asset';
+export {
   Event,
   EventType,
-  Task,
-} from './core';
-export default Yalam;
+  FileEvent,
+  InitialEvent,
+  Task
+} from './types';

@@ -4,7 +4,7 @@
     "packages/*"
   ],
   "scripts": {
-    "watch": "yarn workspace example watch",
-    "build": "yarn workspace example build"
+    "test": "cd example && yalam --watch .",
+    "build": "yarn workspaces run build"
   }
 }
