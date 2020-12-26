@@ -13,19 +13,26 @@ const SUCCESS: string = supportsEmoji ? '✨' : '√';
 const ERROR: string = supportsEmoji ? '🚨' : '×';
 
 export class ConsoleReporter implements Reporter {
-  private spinner = ora();
+  private spinner = ora({
+    stream: process.stdout,
+    discardStdin: false,
+  });
   private startTime = 0;
-  private shouldClear = false;
+  private clearTTY = false;
+
+  private clear() {
+    readline.moveCursor(process.stdout, 0, -1);
+    readline.clearScreenDown(process.stdout);
+  }
 
   public onAdded(events: Event[]) {
     if (!this.spinner.isSpinning) {
-      this.startTime = new Date().getTime();
-      if (this.shouldClear) {
-        readline.moveCursor(process.stdout, 0, -1);
-        readline.clearScreenDown(process.stdout);
+      if (this.clearTTY) {
+        this.clear();
       }
+      this.startTime = new Date().getTime();
+      this.clearTTY = true;
       this.spinner.start();
-      this.shouldClear = true;
     }
   }
 
