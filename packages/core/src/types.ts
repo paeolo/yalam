@@ -34,3 +34,9 @@ export type JSONValue =
   | number
   | string
   | Array<JSONValue>;
+
+export interface Reporter {
+  onIdle: () => void;
+  onAdded: (events: Event[]) => void;
+  onBuilt: (asset: Asset) => void;
+}

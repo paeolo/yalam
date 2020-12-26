@@ -6,10 +6,10 @@
   "files.exclude": {
     "**/.DS_Store": true,
     "**/.git": true,
+    "**/.yalam": true,
     "**/node_modules": true,
-    "src/**/*.js": true,
     "**/dist": true,
-    "**/.yalam-cache": true,
+    "src/**/*.js": true,
     "logs": true,
     "yarn.lock": true,
   },

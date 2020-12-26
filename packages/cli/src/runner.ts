@@ -1,13 +1,14 @@
 import {
   attach,
-  add
+  add,
 } from 'exits';
 import {
   Yalam,
   YalamOptions
 } from '@yalam/core';
-import Reporter from '@yalam/reporter';
+import { ConsoleReporter } from '@yalam/reporter';
 
+import { initTTY } from './utils';
 import { TaskLoader } from './task-loader';
 
 export const enum RunnerMode {
@@ -34,34 +35,45 @@ export class Runner {
   constructor(options: RunnerOptions) {
     this.options = options;
     this.yalam = new Yalam(options.yalamOptions);
+    this.yalam.addReporter(new ConsoleReporter());
     this.taskLoader = new TaskLoader({
       yalam: this.yalam,
       configPath: options.configPath
     });
-    new Reporter(this.yalam);
   }
 
   public async run() {
     switch (this.options.mode) {
       case RunnerMode.BUILD:
-        await this.taskLoader.load();
-        await this.yalam.build({
-          entries: this.options.entries,
-          task: this.options.task || DEFAULT_TASK
-        });
+        await this.build();
         break;
       case RunnerMode.WATCH:
-        await this.taskLoader.load();
-        attach();
-        const subscription = await this.yalam.watch({
-          entries: this.options.entries,
-          task: this.options.task || DEFAULT_TASK
-        });
-        add(subscription.unsubscribe);
+        await this.watch();
         break;
       case RunnerMode.SHOW:
         await this.taskLoader.show();
         break;
     }
+  }
+
+  private async build() {
+    await this.taskLoader.load();
+    await this.yalam.build({
+      entries: this.options.entries,
+      task: this.options.task || DEFAULT_TASK
+    });
+  }
+
+  private async watch() {
+    await this.taskLoader.load();
+    attach();
+    if (process.stdin.isTTY) {
+      initTTY();
+    }
+    const subscription = await this.yalam.watch({
+      entries: this.options.entries,
+      task: this.options.task || DEFAULT_TASK
+    });
+    add(subscription.unsubscribe);
   }
 }

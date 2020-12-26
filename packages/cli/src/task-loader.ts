@@ -43,7 +43,7 @@ export class TaskLoader {
         throw new Error(`Task is not a function: ${key}`);
       }
 
-      this.yalam.add(key, task as Task);
+      this.yalam.addTask(key, task as Task);
     })
   }
 

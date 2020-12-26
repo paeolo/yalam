@@ -11,6 +11,7 @@ import {
   EventType,
   FileEvent,
   InitialEvent,
+  Reporter,
   Task
 } from './types';
 import {
@@ -111,18 +112,30 @@ export class Yalam extends EventEmitter<EventTypes> {
   }
 
   private buildFromEvents(task: Task, events: Event[]) {
-    return this.queue.add(async () => {
+    return this.queue.add(() => {
       this.emit('added', events);
-      await task(from(events)).forEach(this.handle.bind(this));
+      return task(from(events)).forEach(this.handle.bind(this));
     });
   }
 
   /**
   * @description
-  * Set a build task for the provided key.
+  * Add a build task with the provided key.
   */
-  public add(key: string, task: Task) {
+  public addTask(key: string, task: Task) {
     this.tasks.set(key, task);
+    return this;
+  }
+
+  /**
+  * @description
+  * Register a reporter to report progress.
+  */
+  public addReporter(reporter: Reporter) {
+    this.addListener('added', reporter.onAdded.bind(reporter));
+    this.addListener('built', reporter.onBuilt.bind(reporter));
+    this.addListener('idle', reporter.onIdle.bind(reporter));
+    return this;
   }
 
   /**

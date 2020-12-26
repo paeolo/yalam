@@ -1,2 +1,1 @@
-import { Reporter } from './reporter';
-export default Reporter;
+export * from './console';
