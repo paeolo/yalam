@@ -1,59 +1,49 @@
 import {
   Asset,
+  AssetType,
   Event,
   Reporter
 } from '@yalam/core';
-import ora from 'ora';
-import readline from 'readline';
-
-const supportsEmoji =
-  process.platform !== 'win32' || process.env.TERM === 'xterm-256color';
-
-const SUCCESS: string = supportsEmoji ? '✨' : '√';
-const ERROR: string = supportsEmoji ? '🚨' : '×';
+import chalk from 'chalk';
+import dateFormat from 'dateformat';
 
 export class ConsoleReporter implements Reporter {
-  private spinner = ora({
-    stream: process.stdout,
-    discardStdin: false,
-  });
   private startTime = 0;
-  private started = false;
+  private processing = false;
 
-  private clearTTY() {
-    readline.moveCursor(process.stdout, 0, -1);
-    readline.clearScreenDown(process.stdout);
+  private logInfo(message: string) {
+    const date = dateFormat(new Date(), 'hh:MM:ss');
+    console.log(`${chalk.blue('Info:')} ${chalk.gray(date)} ${message}`);
   }
 
-  public onAdded(events: Event[]) {
-    if (!this.spinner.isSpinning) {
-      if (this.started) {
-        this.clearTTY();
-      }
-      this.startTime = new Date().getTime();
-      this.started = true;
-      this.spinner.start();
-    }
+  private logError(message: string) {
+    const date = dateFormat(new Date(), 'hh:MM:ss');
+    console.log(`${chalk.red('Error:')} ${chalk.gray(date)} ${message}`);
+  }
+
+  private logSuccess(message: string) {
+    const date = dateFormat(new Date(), 'hh:MM:ss');
+    console.log(`${chalk.green('Success:')} ${chalk.gray(date)} ${message}`);
   }
 
   public onBuilt(asset: Asset) {
+    if (asset.type === AssetType.ARTIFACT) {
+      this.logInfo(`Built ${asset.path}`)
+    }
   }
 
   public onError() {
-    this.spinner.stopAndPersist(
-      {
-        symbol: ERROR,
-        text: `Build failed`
-      }
-    );
+  }
+
+  public onAdded(events: Event[]) {
+    if (!this.processing) {
+      this.startTime = new Date().getTime();
+      this.processing = true;
+    }
   }
 
   public onIdle() {
-    this.spinner.stopAndPersist(
-      {
-        symbol: SUCCESS,
-        text: `Built in ${new Date().getTime() - this.startTime}ms`
-      }
-    );
+    this.logSuccess(`Built in ${new Date().getTime() - this.startTime}ms`);
+    this.processing = false;
   }
 }

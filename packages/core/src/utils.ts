@@ -4,7 +4,10 @@ import { constants } from 'fs';
 
 import { YalamOptions } from "./yalam";
 import { AsyncSubscription } from './types';
-import { CACHE_DIR } from './constants';
+import {
+  CACHE_DIR,
+  CACHE_KEY
+} from './constants';
 
 export const unsubscribeAll = async (subscriptions: AsyncSubscription[]) => {
   await Promise.all(
@@ -15,6 +18,8 @@ export const unsubscribeAll = async (subscriptions: AsyncSubscription[]) => {
 export const normalizeOptions = (options: YalamOptions): Required<YalamOptions> => ({
   disableCache: options.disableCache || false,
   cacheDir: options.cacheDir || CACHE_DIR,
+  cacheKey: options.cacheKey || CACHE_KEY,
+  reporters: options.reporters || [],
 });
 
 export const existsOrFail = async (entry: string) => {

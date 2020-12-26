@@ -14,3 +14,8 @@ export {
   Task,
   Reporter
 } from './types';
+export {
+  series,
+  parallel
+} from './compose';
+export { pipe } from 'rxjs';

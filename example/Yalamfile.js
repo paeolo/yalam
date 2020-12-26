@@ -1,16 +1,18 @@
 const {
+  pipe,
+} = require('@yalam/core');
+const {
   source,
   destination,
-  delay,
+  tap
 } = require('@yalam/operators');
+const { babel } = require('@yalam/babel');
 
-const task = (input) => {
-  return input.pipe(
-    source({ glob: 'src/**/*.ts' }),
-    delay(500),
-    destination({ path: 'dist' })
-  )
-}
+const task = pipe(
+  source({ glob: 'src/**/*.ts' }),
+  babel(),
+  destination({ path: 'dist' })
+);
 
 module.exports = {
   default: task,
