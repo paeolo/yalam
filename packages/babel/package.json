@@ -1,7 +1,7 @@
 {
-  "name": "@yalam/reporter",
+  "name": "@yalam/babel",
   "version": "1.0.0",
-  "description": "A console reporter for Yalam",
+  "description": "Use Babel with Yalam",
   "author": "Paul Le Couteur",
   "license": "MIT",
   "main": "dist/index.js",
@@ -9,10 +9,8 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@types/dateformat": "^3.0.1",
-    "@yalam/core": "^1.0.0",
-    "chalk": "^4.1.0",
-    "dateformat": "^4.4.1"
+    "@babel/core": "^7.12.10",
+    "@yalam/core": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^14.11.8",

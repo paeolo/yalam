@@ -6,7 +6,6 @@ import {
   Yalam,
   YalamOptions
 } from '@yalam/core';
-import { ConsoleReporter } from '@yalam/reporter';
 
 import { initTTY } from './utils';
 import { TaskLoader } from './task-loader';
@@ -35,7 +34,6 @@ export class Runner {
   constructor(options: RunnerOptions) {
     this.options = options;
     this.yalam = new Yalam(options.yalamOptions);
-    this.yalam.addReporter(new ConsoleReporter());
     this.taskLoader = new TaskLoader({
       yalam: this.yalam,
       configPath: options.configPath

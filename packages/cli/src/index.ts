@@ -1,3 +1,5 @@
+import { ConsoleReporter } from '@yalam/reporter';
+
 import { FlagsType } from './bin';
 import {
   Runner,
@@ -7,10 +9,12 @@ import {
 export const run = async (entries: string[], flags: FlagsType) => {
   let mode = RunnerMode.BUILD;
 
-  if (flags.show)
+  if (flags.show) {
     mode = RunnerMode.SHOW;
-  else if (flags.watch)
+  }
+  else if (flags.watch) {
     mode = RunnerMode.WATCH;
+  }
 
   const runner = new Runner({
     mode,
@@ -19,8 +23,10 @@ export const run = async (entries: string[], flags: FlagsType) => {
     configPath: flags.config,
     yalamOptions: {
       disableCache: flags.cache === false,
+      reporters: [
+        new ConsoleReporter()
+      ]
     }
   });
-
   await runner.run();
 }

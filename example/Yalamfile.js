@@ -4,6 +4,7 @@ const {
 const {
   source,
   destination,
+  tap
 } = require('@yalam/operators');
 
 const task = pipe(

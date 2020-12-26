@@ -27,6 +27,8 @@ import {
 export interface YalamOptions {
   disableCache?: boolean;
   cacheDir?: string;
+  cacheKey?: string;
+  reporters?: Reporter[];
 }
 
 interface BuildOptions {
@@ -50,6 +52,10 @@ export class Yalam extends EventEmitter<EventTypes> {
   constructor(options: YalamOptions = {}) {
     super();
     this.options = normalizeOptions(options);
+
+    this.options.reporters.forEach(
+      (reporter) => this.addReporter(reporter)
+    );
     this.cache = new Cache(this.options.cacheDir);
     this.tasks = new Map();
     this.ignoredFiles = new Set();
@@ -63,6 +69,13 @@ export class Yalam extends EventEmitter<EventTypes> {
       throw new Error(`Task not found: ${key}`)
     }
     return task;
+  }
+
+  private addReporter(reporter: Reporter) {
+    this.addListener('added', reporter.onAdded.bind(reporter));
+    this.addListener('built', reporter.onBuilt.bind(reporter));
+    this.addListener('idle', reporter.onIdle.bind(reporter));
+    return this;
   }
 
   private async handle(asset: Asset) {
@@ -124,17 +137,6 @@ export class Yalam extends EventEmitter<EventTypes> {
   */
   public addTask(key: string, task: Task) {
     this.tasks.set(key, task);
-    return this;
-  }
-
-  /**
-  * @description
-  * Register a reporter to report progress.
-  */
-  public addReporter(reporter: Reporter) {
-    this.addListener('added', reporter.onAdded.bind(reporter));
-    this.addListener('built', reporter.onBuilt.bind(reporter));
-    this.addListener('idle', reporter.onIdle.bind(reporter));
     return this;
   }
 
