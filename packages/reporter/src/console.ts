@@ -18,20 +18,20 @@ export class ConsoleReporter implements Reporter {
     discardStdin: false,
   });
   private startTime = 0;
-  private clearTTY = false;
+  private started = false;
 
-  private clear() {
+  private clearTTY() {
     readline.moveCursor(process.stdout, 0, -1);
     readline.clearScreenDown(process.stdout);
   }
 
   public onAdded(events: Event[]) {
     if (!this.spinner.isSpinning) {
-      if (this.clearTTY) {
-        this.clear();
+      if (this.started) {
+        this.clearTTY();
       }
       this.startTime = new Date().getTime();
-      this.clearTTY = true;
+      this.started = true;
       this.spinner.start();
     }
   }
