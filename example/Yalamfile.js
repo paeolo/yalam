@@ -6,9 +6,11 @@ const {
   destination,
   tap
 } = require('@yalam/operators');
+const { babel } = require('@yalam/babel');
 
 const task = pipe(
   source({ glob: 'src/**/*.ts' }),
+  babel(),
   destination({ path: 'dist' })
 );
 

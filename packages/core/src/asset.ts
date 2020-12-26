@@ -44,7 +44,7 @@ export class Asset {
     return this.contents || Buffer.alloc(0);
   }
 
-  public setContent(contents: Buffer) {
+  public setContents(contents: Buffer) {
     this.contents = contents;
   }
 

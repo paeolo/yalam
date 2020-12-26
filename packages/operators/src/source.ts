@@ -59,7 +59,7 @@ const getSourceAsset = async (options: SourceAssetOptions) => {
     path: options.path,
     event: options.event,
   });
-  asset.setContent(content);
+  asset.setContents(content);
   return asset;
 };
 
