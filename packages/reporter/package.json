@@ -9,7 +9,8 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@yalam/core": "^1.0.0"
+    "@yalam/core": "^1.0.0",
+    "ora": "^5.1.0"
   },
   "devDependencies": {
     "@types/node": "^14.11.8",

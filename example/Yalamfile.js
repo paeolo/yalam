@@ -1,6 +1,6 @@
 const {
   source,
-  destination
+  destination,
 } = require('@yalam/operators');
 
 const task = (input) => {

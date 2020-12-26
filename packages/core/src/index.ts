@@ -11,5 +11,6 @@ export {
   EventType,
   FileEvent,
   InitialEvent,
-  Task
+  Task,
+  Reporter
 } from './types';
