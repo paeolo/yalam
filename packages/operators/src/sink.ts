@@ -2,7 +2,7 @@ import { OperatorFunction } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import {
   Asset,
-  Event
+  InputEvent
 } from '@yalam/core';
 
-export const sink = (): OperatorFunction<Asset | Event, Asset> => filter((value) => false)
+export const sink = (): OperatorFunction<Asset | InputEvent, Asset> => filter((value) => false)

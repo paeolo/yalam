@@ -1,7 +1,7 @@
 import {
   Asset,
   AssetType,
-  Event,
+  InputEvent,
   Reporter
 } from '@yalam/core';
 import chalk from 'chalk';
@@ -35,7 +35,7 @@ export class ConsoleReporter implements Reporter {
   public onError() {
   }
 
-  public onAdded(events: Event[]) {
+  public onAdded(events: InputEvent[]) {
     if (!this.processing) {
       this.startTime = new Date().getTime();
       this.processing = true;

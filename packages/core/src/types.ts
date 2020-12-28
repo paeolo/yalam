@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 import { Asset } from './asset';
 
-export type Task = (input: Observable<Event>) => Observable<Asset>;
+export type Task = (input: Observable<InputEvent>) => Observable<Asset>;
 
 export interface AsyncSubscription {
   unsubscribe(): Promise<void>;
@@ -26,7 +26,7 @@ export interface FileEvent {
   path: FilePath;
 }
 
-export type Event = InitialEvent | FileEvent;
+export type InputEvent = InitialEvent | FileEvent;
 
 export type JSONValue =
   | null
@@ -37,6 +37,6 @@ export type JSONValue =
 
 export interface Reporter {
   onIdle: () => void;
-  onAdded: (events: Event[]) => void;
+  onAdded: (events: InputEvent[]) => void;
   onBuilt: (asset: Asset) => void;
 }

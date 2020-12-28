@@ -7,7 +7,7 @@ export {
   AssetType
 } from './asset';
 export {
-  Event,
+  InputEvent,
   EventType,
   FileEvent,
   InitialEvent,

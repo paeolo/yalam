@@ -7,7 +7,7 @@ import { from } from 'rxjs';
 import Cache from './cache';
 import {
   AsyncSubscription,
-  Event,
+  InputEvent,
   EventType,
   FileEvent,
   InitialEvent,
@@ -38,7 +38,7 @@ interface BuildOptions {
 
 interface EventTypes {
   idle: () => void;
-  added: (events: Event[]) => void;
+  added: (events: InputEvent[]) => void;
   built: (asset: Asset) => void;
 }
 
@@ -124,7 +124,7 @@ export class Yalam extends EventEmitter<EventTypes> {
     }));
   }
 
-  private buildFromEvents(task: Task, events: Event[]) {
+  private buildFromEvents(task: Task, events: InputEvent[]) {
     return this.queue.add(() => {
       this.emit('added', events);
       return task(from(events)).forEach(this.handle.bind(this));
