@@ -4,18 +4,19 @@ export {
 } from './yalam';
 export {
   Asset,
-  AssetType
+  AssetStatus
 } from './asset';
 export {
-  InputEvent,
+  series,
+  parallel
+} from './compose';
+export {
+  Event,
+  ErrorEvent,
   EventType,
   FileEvent,
   InitialEvent,
   Task,
   Reporter
 } from './types';
-export {
-  series,
-  parallel
-} from './compose';
 export { pipe } from 'rxjs';

@@ -15,10 +15,10 @@ import globrex from 'globrex';
 import globParent from 'glob-parent';
 import {
   Asset,
-  InputEvent,
+  Event,
   FileEvent,
   EventType,
-  AssetType
+  AssetStatus
 } from '@yalam/core';
 
 interface SourceOptions {
@@ -36,7 +36,7 @@ interface DeletedAssetOptions {
   path: string,
 };
 
-const getInitialEvents = (glob: string, entry: string): FileEvent[] => {
+const getEvents = (glob: string, entry: string): FileEvent[] => {
   const files = tinyGlob(
     glob,
     {
@@ -46,7 +46,7 @@ const getInitialEvents = (glob: string, entry: string): FileEvent[] => {
     }
   );
   return files.map(path => ({
-    type: EventType.UPDATE,
+    type: EventType.UPDATED,
     entry,
     path,
   }))
@@ -55,7 +55,7 @@ const getInitialEvents = (glob: string, entry: string): FileEvent[] => {
 const getSourceAsset = async (options: SourceAssetOptions) => {
   const content = await fs.readFile(options.fullPath);
   const asset = new Asset({
-    type: AssetType.SOURCE,
+    status: AssetStatus.SOURCE,
     path: options.path,
     event: options.event,
   });
@@ -64,12 +64,12 @@ const getSourceAsset = async (options: SourceAssetOptions) => {
 };
 
 const getDeletedAsset = async (options: DeletedAssetOptions) => new Asset({
-  type: AssetType.DELETED,
+  status: AssetStatus.DELETED,
   path: options.path,
   event: options.event
 });
 
-export const source = (options: SourceOptions): OperatorFunction<InputEvent, Asset> => {
+export const source = (options: SourceOptions): OperatorFunction<Event, Asset> => {
   const { regex } = globrex(options.glob, { globstar: true });
   const sourceBase = globParent(options.glob);
 
@@ -80,7 +80,7 @@ export const source = (options: SourceOptions): OperatorFunction<InputEvent, Ass
     map(event => {
       switch (event.type) {
         case EventType.INITIAL:
-          return from(getInitialEvents(options.glob, event.path));
+          return from(getEvents(options.glob, event.path));
         default:
           return from([event]);
       }
@@ -92,13 +92,13 @@ export const source = (options: SourceOptions): OperatorFunction<InputEvent, Ass
         event.path
       );
       switch (event.type) {
-        case EventType.UPDATE:
+        case EventType.UPDATED:
           return from(getSourceAsset({
             event: event,
             path: relativePath,
             fullPath: event.path,
           }));
-        case EventType.DELETE:
+        case EventType.DELETED:
           return from(getDeletedAsset({
             event: event,
             path: relativePath,

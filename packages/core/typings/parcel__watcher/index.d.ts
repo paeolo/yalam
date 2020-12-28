@@ -52,4 +52,3 @@ declare module '@parcel/watcher' {
     opts?: Options
   ): Promise<FilePath>;
 }
-

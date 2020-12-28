@@ -1,8 +1,9 @@
 import {
   Asset,
-  AssetType,
-  InputEvent,
-  Reporter
+  AssetStatus,
+  Event,
+  Reporter,
+  ErrorEvent
 } from '@yalam/core';
 import chalk from 'chalk';
 import dateFormat from 'dateformat';
@@ -26,20 +27,21 @@ export class ConsoleReporter implements Reporter {
     console.log(`${chalk.green('Success:')} ${chalk.gray(date)} ${message}`);
   }
 
-  public onBuilt(asset: Asset) {
-    if (asset.type === AssetType.ARTIFACT) {
-      this.logInfo(`Built ${asset.path}`)
-    }
-  }
-
-  public onError() {
-  }
-
-  public onAdded(events: InputEvent[]) {
+  public onInput(events: Event[]) {
     if (!this.processing) {
       this.startTime = new Date().getTime();
       this.processing = true;
     }
+  }
+
+  public onBuilt(asset: Asset) {
+    if (asset.status === AssetStatus.ARTIFACT) {
+      this.logInfo(`Built ${asset.path}`)
+    }
+  }
+
+  public onError(event: ErrorEvent) {
+    this.logError(event.error.toString());
   }
 
   public onIdle() {
