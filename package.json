@@ -5,6 +5,9 @@
   ],
   "scripts": {
     "test": "cd example && yalam --watch .",
-    "build": "yarn workspaces run build"
+    "build": "wsrun build"
+  },
+  "devDependencies": {
+    "wsrun": "^5.2.4"
   }
 }
