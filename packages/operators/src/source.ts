@@ -15,7 +15,7 @@ import globrex from 'globrex';
 import globParent from 'glob-parent';
 import {
   Asset,
-  Event,
+  InputEvent,
   FileEvent,
   EventType,
   AssetType
@@ -69,7 +69,7 @@ const getDeletedAsset = async (options: DeletedAssetOptions) => new Asset({
   event: options.event
 });
 
-export const source = (options: SourceOptions): OperatorFunction<Event, Asset> => {
+export const source = (options: SourceOptions): OperatorFunction<InputEvent, Asset> => {
   const { regex } = globrex(options.glob, { globstar: true });
   const sourceBase = globParent(options.glob);
 

@@ -5,9 +5,9 @@
   ],
   "scripts": {
     "test": "cd example && yalam --watch .",
-    "build": "wsrun build"
+    "build": "lerna run build"
   },
   "devDependencies": {
-    "wsrun": "^5.2.4"
+    "lerna": "^3.22.1"
   }
 }
