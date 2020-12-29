@@ -63,25 +63,49 @@ export class Asset {
     this.contents = contents;
   }
 
+  private async write() {
+    let contents = this.getContentsOrFail();
+    await mkdirp(this.getDirectory());
+
+    if (this.sourceMap) {
+      const sourceMapPath = this.getFullPath().concat('.map');
+      const sourceMapFilename = path.basename(sourceMapPath);
+
+      contents = Buffer.concat([
+        contents,
+        Buffer.from(
+          '\n\n'.concat(this.sourceMap.referencer(sourceMapFilename))
+        )
+      ]);
+
+      await fs.writeFile(
+        sourceMapPath,
+        JSON.stringify(this.sourceMap)
+      );
+    }
+
+    await fs.writeFile(
+      this.getFullPath(),
+      contents
+    );
+  }
+
+  private async unlink() {
+    try {
+      await fs.unlink(this.getFullPath());
+      await fs.unlink(this.getFullPath().concat('.map'));
+    } catch { }
+  }
+
   public async commit() {
     switch (this.status) {
       case AssetStatus.SOURCE:
         break;
       case AssetStatus.DELETED:
-        await fs.unlink(this.getFullPath());
+        await this.unlink();
         break;
       case AssetStatus.ARTIFACT:
-        await mkdirp(this.getDirectory());
-        await fs.writeFile(
-          this.getFullPath(),
-          this.getContentsOrFail()
-        );
-        if (this.sourceMap) {
-          await fs.writeFile(
-            this.getFullPath().concat('.map'),
-            JSON.stringify(this.sourceMap)
-          );
-        }
+        await this.write();
         break;
     }
     return this;

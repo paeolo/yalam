@@ -14,7 +14,7 @@ import {
   SourceMap
 } from '@yalam/core';
 
-interface TransformResult {
+export interface TransformResult {
   contents: Buffer;
   sourceMap?: SourceMap
 }

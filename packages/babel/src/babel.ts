@@ -3,7 +3,10 @@ import replaceExt from 'replace-ext';
 import * as Babel from '@babel/core';
 
 import { Asset } from '@yalam/core';
-import { transform } from '@yalam/operators';
+import {
+  transform,
+  TransformResult
+} from '@yalam/operators';
 
 type BabelOptions = Pick<Babel.TransformOptions,
   "configFile"
@@ -38,7 +41,8 @@ const getOptions = (asset: Asset, options: BabelOptions): Babel.TransformOptions
   };
 }
 
-const transpile = async (asset: Asset, options: BabelOptions) => {
+const transpile = async (asset: Asset, options: BabelOptions): Promise<TransformResult> => {
+  let sourceMap;
   const code = asset.getContentsOrFail().toString();
   const babelResult = await Babel.transformAsync(
     code,
@@ -49,9 +53,16 @@ const transpile = async (asset: Asset, options: BabelOptions) => {
     throw new Error();
   }
 
+  if (babelResult.map) {
+    sourceMap = {
+      map: babelResult.map,
+      referencer: (path: string) => `//# sourceMappingURL=${path}`
+    };
+  }
+
   return {
     contents: Buffer.from(babelResult.code),
-    sourceMap: babelResult.map || undefined
+    sourceMap
   };
 }
 

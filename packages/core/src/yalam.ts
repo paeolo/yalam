@@ -93,12 +93,28 @@ export class Yalam extends EventEmitter<EventTypes> {
   }
 
   private onBuilt(asset: Asset, event: InputEvent) {
+    if (asset.status === AssetStatus.SOURCE) {
+      return;
+    }
+
+    this.errors = this.errors.filter(
+      (value) => !(value.event.path === event.path)
+    );
+    this.ignoredFiles.add(asset.getFullPath());
+    this.ignoredFiles.add(asset.getFullPath().concat('.map'));
+
     if (asset.status === AssetStatus.ARTIFACT) {
-      this.errors = this.errors.filter(
-        (value) => !deepEqual(value.event, event)
-      );
-      this.ignoredFiles.add(asset.getFullPath());
       this.emit('built', asset);
+    }
+  }
+
+  private onError(error: Error, event: InputEvent) {
+    if (event.type === EventType.UPDATED
+      && !this.errors.some(value => deepEqual(value.event, event))) {
+      this.errors.push({
+        event,
+        error
+      });
     }
   }
 
@@ -156,15 +172,7 @@ export class Yalam extends EventEmitter<EventTypes> {
     events.map(
       (event) => this.queue.add(() => this
         .buildEvent(task, event)
-        .catch(error => {
-          if (event.type === EventType.UPDATED
-            && !this.errors.some(value => deepEqual(value.event, event))) {
-            this.errors.push({
-              event,
-              error
-            });
-          }
-        })
+        .catch(error => this.onError(error, event))
       )
     );
   }

@@ -40,11 +40,14 @@ export interface BuildError {
 }
 
 export type SourceMap = {
-  version: number;
-  sources: string[];
-  names: string[];
-  sourceRoot?: string;
-  sourcesContent?: string[];
-  mappings: string;
-  file: string;
-};
+  map: {
+    version: number;
+    sources: string[];
+    names: string[];
+    sourceRoot?: string;
+    sourcesContent?: string[];
+    mappings: string;
+    file: string;
+  };
+  referencer: (path: string) => string
+}
