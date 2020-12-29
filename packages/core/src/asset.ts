@@ -11,7 +11,6 @@ export const enum AssetStatus {
   SOURCE,
   ARTIFACT,
   DELETED,
-  FAILED
 };
 
 interface AssetOptions {
@@ -25,7 +24,6 @@ export class Asset {
   public path: string;
   private event: FileEvent;
   private contents: Buffer | undefined;
-  private error: Error | undefined;
 
   constructor(options: AssetOptions) {
     this.status = options.status;
@@ -47,15 +45,6 @@ export class Asset {
 
   public getFullPath() {
     return path.join(this.event.entry, this.path);
-  }
-
-  public setFailed(error: Error) {
-    this.status = AssetStatus.FAILED;
-    this.error = error;
-  }
-
-  public getError() {
-    return this.error;
   }
 
   public getContents() {

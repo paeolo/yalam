@@ -10,7 +10,7 @@ export interface AsyncSubscription {
 type FilePath = string;
 
 export interface ErrorEvent {
-  event: FileEvent;
+  event: UpdatedEvent;
   error: Error;
 }
 
@@ -44,8 +44,7 @@ export type FileEvent = UpdatedEvent | DeletedEvent;
 export type Event = InitialEvent | FileEvent;
 
 export interface Reporter {
-  onInput: (events: Event[]) => void;
+  onInput: (event: Event) => void;
   onBuilt: (asset: Asset) => void;
-  onError: (event: ErrorEvent) => void;
-  onIdle: () => void;
+  onIdle: (events?: ErrorEvent[]) => void;
 }

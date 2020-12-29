@@ -31,13 +31,9 @@ const handleAsset = async (asset: Asset, options: TransformOptions) => {
     return asset;
   }
 
-  try {
-    const contents = await options.getContents(asset);
-    asset.path = path;
-    asset.setContents(contents);
-  } catch (error) {
-    asset.setFailed(error);
-  }
+  const contents = await options.getContents(asset);
+  asset.path = path;
+  asset.setContents(contents);
   return asset;
 }
 

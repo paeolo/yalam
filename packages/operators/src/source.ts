@@ -54,11 +54,13 @@ const getEvents = (glob: string, entry: string): FileEvent[] => {
 
 const getSourceAsset = async (options: SourceAssetOptions) => {
   const content = await fs.readFile(options.fullPath);
+
   const asset = new Asset({
     status: AssetStatus.SOURCE,
     path: options.path,
     event: options.event,
   });
+
   asset.setContents(content);
   return asset;
 };
