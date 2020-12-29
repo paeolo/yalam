@@ -1,4 +1,5 @@
-import fs from 'fs/promises';
+import fsAsync from 'fs/promises';
+import fs from 'fs';
 import mkdirp from 'mkdirp';
 import path from 'path';
 
@@ -64,36 +65,34 @@ export class Asset {
   }
 
   private async write() {
-    let contents = this.getContentsOrFail();
+    const contents = this.getContentsOrFail();
     await mkdirp(this.getDirectory());
+
+    const stream = fs.createWriteStream(this.getFullPath());
+    stream.write(contents);
 
     if (this.sourceMap) {
       const sourceMapPath = this.getFullPath().concat('.map');
       const sourceMapFilename = path.basename(sourceMapPath);
 
-      contents = Buffer.concat([
-        contents,
-        Buffer.from(
-          '\n\n'.concat(this.sourceMap.referencer(sourceMapFilename))
-        )
-      ]);
-
-      await fs.writeFile(
+      await fsAsync.writeFile(
         sourceMapPath,
         JSON.stringify(this.sourceMap)
       );
+
+      stream.write(Buffer.from(
+        '\n\n'.concat(this.sourceMap.referencer(sourceMapFilename))
+      ));
     }
 
-    await fs.writeFile(
-      this.getFullPath(),
-      contents
-    );
+    stream.end();
+    await new Promise(resolve => stream.once('finish', resolve));
   }
 
   private async unlink() {
     try {
-      await fs.unlink(this.getFullPath());
-      await fs.unlink(this.getFullPath().concat('.map'));
+      await fsAsync.unlink(this.getFullPath());
+      await fsAsync.unlink(this.getFullPath().concat('.map'));
     } catch { }
   }
 
