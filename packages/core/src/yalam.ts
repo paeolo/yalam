@@ -92,19 +92,6 @@ export class Yalam extends EventEmitter<EventTypes> {
     return task;
   }
 
-  private async commit(asset: Asset) {
-    switch (asset.status) {
-      case AssetStatus.ARTIFACT:
-        this.ignoredFiles.add(asset.getFullPath());
-        await asset.writeFile();
-        break;
-      case AssetStatus.DELETED:
-        await asset.deleteFile();
-        break;
-    }
-    return asset;
-  }
-
   private getSubscription(task: Task, entry: string) {
     return watcher.subscribe(entry, async (err, events) => {
       if (err) {
@@ -135,21 +122,23 @@ export class Yalam extends EventEmitter<EventTypes> {
     }));
   }
 
+  private onBuilt(asset: Asset, event: Event) {
+    if (asset.status === AssetStatus.ARTIFACT) {
+      this.errors = this.errors.filter(value => !deepEqual(value.event, event));
+      this.ignoredFiles.add(asset.getFullPath());
+      this.emit('built', asset);
+    }
+  }
+
   private async buildEvent(task: Task, event: Event) {
     this.emit('input', event);
     await task(of(event))
       .pipe(
-        map(asset => from(this.commit(asset))),
+        map(asset => from(asset.commit())),
         mergeAll()
       )
       .forEach(
-        (asset) => {
-          if (asset.status === AssetStatus.ARTIFACT) {
-            this.errors = this.errors
-              .filter(value => !deepEqual(value.event, event));
-            this.emit('built', asset);
-          }
-        }
+        (asset) => this.onBuilt(asset, event)
       );
   }
 

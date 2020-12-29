@@ -47,29 +47,36 @@ export class Asset {
     return path.join(this.event.entry, this.path);
   }
 
-  public getContents() {
-    return this.contents || Buffer.alloc(0);
+  public getDirectory() {
+    return path.dirname(this.getFullPath());
+  }
+
+  public getContentsOrFail() {
+    if (!this.contents) {
+      throw new Error();
+    }
+    return this.contents;
   }
 
   public setContents(contents: Buffer) {
     this.contents = contents;
   }
 
-  public async writeFile() {
-    if (!this.contents) {
-      throw new Error(`No contents to write`);
+  public async commit() {
+    switch (this.status) {
+      case AssetStatus.SOURCE:
+        break;
+      case AssetStatus.DELETED:
+        await fs.unlink(this.getFullPath());
+        break;
+      case AssetStatus.ARTIFACT:
+        await mkdirp(this.getDirectory());
+        await fs.writeFile(
+          this.getFullPath(),
+          this.getContentsOrFail()
+        );
+        break;
     }
-    const fullPath = path.join(this.event.entry, this.path);
-    const directory = path.dirname(fullPath);
-
-    await mkdirp(directory);
-    await fs.writeFile(fullPath, this.contents);
-  }
-
-  public async deleteFile() {
-    const fullPath = path.join(this.event.entry, this.path);
-    try {
-      await fs.unlink(fullPath);
-    } catch { }
+    return this;
   }
 }

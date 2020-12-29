@@ -36,15 +36,17 @@ const getOptions = (asset: Asset, options: BabelOptions): Babel.TransformOptions
 }
 
 const transpile = async (asset: Asset, options: BabelOptions) => {
-  const code = asset.getContents().toString();
+  const code = asset.getContentsOrFail().toString();
   const babelResult = await Babel.transformAsync(
     code,
     getOptions(asset, options)
   );
 
-  return babelResult && babelResult.code
-    ? Buffer.from(babelResult.code)
-    : Buffer.alloc(0);
+  if (!babelResult || !babelResult.code) {
+    throw new Error();
+  }
+
+  return Buffer.from(babelResult.code);
 }
 
 const filter = (asset: Asset) => ['.js', '.ts']
