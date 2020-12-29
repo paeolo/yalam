@@ -14,9 +14,9 @@ import deepEqual from 'deep-equal';
 import Cache from './cache';
 import {
   AsyncSubscription,
-  Event,
+  InputEvent,
   EventType,
-  ErrorEvent,
+  BuildError,
   FileEvent,
   InitialEvent,
   Reporter,
@@ -45,9 +45,9 @@ interface BuildOptions {
 }
 
 interface EventTypes {
-  input: (event: Event) => void;
   built: (asset: Asset) => void;
-  idle: (events?: ErrorEvent[]) => void;
+  input: (event: InputEvent) => void;
+  idle: (events?: BuildError[]) => void;
 }
 
 export class Yalam extends EventEmitter<EventTypes> {
@@ -56,7 +56,7 @@ export class Yalam extends EventEmitter<EventTypes> {
   private tasks: Map<string, Task>;
   private ignoredFiles: Set<string>;
   private queue: PQueue;
-  private errors: ErrorEvent[];
+  private errors: BuildError[];
 
   constructor(options: YalamOptions = {}) {
     super();
@@ -79,8 +79,8 @@ export class Yalam extends EventEmitter<EventTypes> {
   }
 
   private bindReporter(reporter: Reporter) {
-    this.addListener('input', reporter.onInput.bind(reporter));
     this.addListener('built', reporter.onBuilt.bind(reporter));
+    this.addListener('input', reporter.onInput.bind(reporter));
     this.addListener('idle', reporter.onIdle.bind(reporter));
   }
 
@@ -92,17 +92,30 @@ export class Yalam extends EventEmitter<EventTypes> {
     return task;
   }
 
-  private async commit(asset: Asset) {
-    switch (asset.status) {
-      case AssetStatus.ARTIFACT:
-        this.ignoredFiles.add(asset.getFullPath());
-        await asset.writeFile();
-        break;
-      case AssetStatus.DELETED:
-        await asset.deleteFile();
-        break;
+  private onBuilt(asset: Asset, event: InputEvent) {
+    if (asset.status === AssetStatus.SOURCE) {
+      return;
     }
-    return asset;
+
+    this.errors = this.errors.filter(
+      (value) => !(value.event.path === event.path)
+    );
+    this.ignoredFiles.add(asset.getFullPath());
+    this.ignoredFiles.add(asset.getFullPath().concat('.map'));
+
+    if (asset.status === AssetStatus.ARTIFACT) {
+      this.emit('built', asset);
+    }
+  }
+
+  private onError(error: Error, event: InputEvent) {
+    if (event.type === EventType.UPDATED
+      && !this.errors.some(value => deepEqual(value.event, event))) {
+      this.errors.push({
+        event,
+        error
+      });
+    }
   }
 
   private getSubscription(task: Task, entry: string) {
@@ -135,25 +148,19 @@ export class Yalam extends EventEmitter<EventTypes> {
     }));
   }
 
-  private async buildEvent(task: Task, event: Event) {
+  private async buildEvent(task: Task, event: InputEvent) {
     this.emit('input', event);
     await task(of(event))
       .pipe(
-        map(asset => from(this.commit(asset))),
+        map(asset => from(asset.commit())),
         mergeAll()
       )
       .forEach(
-        (asset) => {
-          if (asset.status === AssetStatus.ARTIFACT) {
-            this.errors = this.errors
-              .filter(value => !deepEqual(value.event, event));
-            this.emit('built', asset);
-          }
-        }
+        (asset) => this.onBuilt(asset, event)
       );
   }
 
-  private buildEvents(task: Task, events: Event[]) {
+  private buildEvents(task: Task, events: InputEvent[]) {
     return Promise.all(
       events.map(
         (event) => this.buildEvent(task, event)
@@ -161,19 +168,11 @@ export class Yalam extends EventEmitter<EventTypes> {
     );
   }
 
-  private queueEvents(task: Task, events: Event[]) {
+  private queueEvents(task: Task, events: InputEvent[]) {
     events.map(
       (event) => this.queue.add(() => this
         .buildEvent(task, event)
-        .catch(error => {
-          if (event.type === EventType.UPDATED
-            && !this.errors.some(value => deepEqual(value.event, event))) {
-            this.errors.push({
-              event,
-              error
-            });
-          }
-        })
+        .catch(error => this.onError(error, event))
       )
     );
   }

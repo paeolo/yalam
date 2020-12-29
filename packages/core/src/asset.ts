@@ -4,7 +4,7 @@ import path from 'path';
 
 import {
   FileEvent,
-  EventType,
+  SourceMap
 } from './types';
 
 export const enum AssetStatus {
@@ -22,17 +22,14 @@ interface AssetOptions {
 export class Asset {
   public status: AssetStatus;
   public path: string;
-  private event: FileEvent;
+  public sourceMap: SourceMap | undefined;
   private contents: Buffer | undefined;
+  private event: FileEvent;
 
   constructor(options: AssetOptions) {
     this.status = options.status;
     this.path = options.path;
     this.event = options.event;
-  }
-
-  public get type(): EventType.ASSET {
-    return EventType.ASSET;
   }
 
   public getEntry() {
@@ -43,33 +40,74 @@ export class Asset {
     return this.event;
   }
 
+  public getSourcePath() {
+    return this.event.path;
+  }
+
   public getFullPath() {
     return path.join(this.event.entry, this.path);
   }
 
-  public getContents() {
-    return this.contents || Buffer.alloc(0);
+  public getDirectory() {
+    return path.dirname(this.getFullPath());
+  }
+
+  public getContentsOrFail() {
+    if (!this.contents) {
+      throw new Error();
+    }
+    return this.contents;
   }
 
   public setContents(contents: Buffer) {
     this.contents = contents;
   }
 
-  public async writeFile() {
-    if (!this.contents) {
-      throw new Error(`No contents to write`);
-    }
-    const fullPath = path.join(this.event.entry, this.path);
-    const directory = path.dirname(fullPath);
+  private async write() {
+    let contents = this.getContentsOrFail();
+    await mkdirp(this.getDirectory());
 
-    await mkdirp(directory);
-    await fs.writeFile(fullPath, this.contents);
+    if (this.sourceMap) {
+      const sourceMapPath = this.getFullPath().concat('.map');
+      const sourceMapFilename = path.basename(sourceMapPath);
+
+      contents = Buffer.concat([
+        contents,
+        Buffer.from(
+          '\n\n'.concat(this.sourceMap.referencer(sourceMapFilename))
+        )
+      ]);
+
+      await fs.writeFile(
+        sourceMapPath,
+        JSON.stringify(this.sourceMap)
+      );
+    }
+
+    await fs.writeFile(
+      this.getFullPath(),
+      contents
+    );
   }
 
-  public async deleteFile() {
-    const fullPath = path.join(this.event.entry, this.path);
+  private async unlink() {
     try {
-      await fs.unlink(fullPath);
+      await fs.unlink(this.getFullPath());
+      await fs.unlink(this.getFullPath().concat('.map'));
     } catch { }
+  }
+
+  public async commit() {
+    switch (this.status) {
+      case AssetStatus.SOURCE:
+        break;
+      case AssetStatus.DELETED:
+        await this.unlink();
+        break;
+      case AssetStatus.ARTIFACT:
+        await this.write();
+        break;
+    }
+    return this;
   }
 }

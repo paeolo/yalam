@@ -4,7 +4,6 @@ const {
 const {
   source,
   destination,
-  tap
 } = require('@yalam/operators');
 const { babel } = require('@yalam/babel');
 

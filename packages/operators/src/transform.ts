@@ -10,12 +10,18 @@ import {
 } from 'rxjs/operators';
 import {
   Asset,
-  AssetStatus
+  AssetStatus,
+  SourceMap
 } from '@yalam/core';
+
+export interface TransformResult {
+  contents: Buffer;
+  sourceMap?: SourceMap
+}
 
 interface TransformOptions {
   getPath: (asset: Asset) => string;
-  getContents: (asset: Asset) => Promise<Buffer>;
+  getResult: (asset: Asset) => Promise<TransformResult>;
   filter?: (asset: Asset) => boolean;
 }
 
@@ -31,9 +37,12 @@ const handleAsset = async (asset: Asset, options: TransformOptions) => {
     return asset;
   }
 
-  const contents = await options.getContents(asset);
+  const result = await options.getResult(asset);
   asset.path = path;
-  asset.setContents(contents);
+  asset.setContents(result.contents);
+  if (result.sourceMap) {
+    asset.sourceMap = result.sourceMap;
+  }
   return asset;
 }
 

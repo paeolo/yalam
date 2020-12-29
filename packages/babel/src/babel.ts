@@ -3,7 +3,10 @@ import replaceExt from 'replace-ext';
 import * as Babel from '@babel/core';
 
 import { Asset } from '@yalam/core';
-import { transform } from '@yalam/operators';
+import {
+  transform,
+  TransformResult
+} from '@yalam/operators';
 
 type BabelOptions = Pick<Babel.TransformOptions,
   "configFile"
@@ -28,30 +31,46 @@ const getOptions = (asset: Asset, options: BabelOptions): Babel.TransformOptions
   }
 
   return {
-    cwd: asset.getEvent().entry,
+    cwd: asset.getEntry(),
+    filename: asset.getSourcePath(),
+    inputSourceMap: asset.sourceMap,
+    sourceMaps: true,
     plugins,
     presets,
     ...options
   };
 }
 
-const transpile = async (asset: Asset, options: BabelOptions) => {
-  const code = asset.getContents().toString();
+const transpile = async (asset: Asset, options: BabelOptions): Promise<TransformResult> => {
+  let sourceMap;
+  const code = asset.getContentsOrFail().toString();
   const babelResult = await Babel.transformAsync(
     code,
     getOptions(asset, options)
   );
 
-  return babelResult && babelResult.code
-    ? Buffer.from(babelResult.code)
-    : Buffer.alloc(0);
+  if (!babelResult || !babelResult.code) {
+    throw new Error();
+  }
+
+  if (babelResult.map) {
+    sourceMap = {
+      map: babelResult.map,
+      referencer: (path: string) => `//# sourceMappingURL=${path}`
+    };
+  }
+
+  return {
+    contents: Buffer.from(babelResult.code),
+    sourceMap
+  };
 }
 
-const filter = (asset: Asset) => ['.js', '.ts']
+const isJavascript = (asset: Asset) => ['.js', '.ts']
   .includes(path.extname(asset.path));
 
-export const babel = (options: BabelOptions) => transform({
-  filter,
+export const babel = (options: BabelOptions = {}) => transform({
+  filter: (asset) => isJavascript(asset),
   getPath: (asset) => replaceExt(asset.path, '.js'),
-  getContents: (asset) => transpile(asset, options),
+  getResult: (asset) => transpile(asset, options),
 });
