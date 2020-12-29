@@ -10,7 +10,7 @@ import {
 } from 'rxjs/operators';
 import {
   Asset,
-  AssetType
+  AssetStatus
 } from '@yalam/core';
 
 interface TransformOptions {
@@ -20,12 +20,13 @@ interface TransformOptions {
 }
 
 const handleAsset = async (asset: Asset, options: TransformOptions) => {
-  if (asset.type === AssetType.ARTIFACT) {
+  if (asset.status === AssetStatus.ARTIFACT) {
     return asset;
   }
+
   const path = options.getPath(asset);
 
-  if (asset.type === AssetType.DELETED) {
+  if (asset.status === AssetStatus.DELETED) {
     asset.path = path;
     return asset;
   }
@@ -37,7 +38,12 @@ const handleAsset = async (asset: Asset, options: TransformOptions) => {
 }
 
 export const transform = (options: TransformOptions): OperatorFunction<Asset, Asset> => pipe(
-  filter(options.filter || ((asset) => true)),
+  filter((asset => {
+    if (!options.filter) {
+      return true;
+    }
+    return options.filter(asset);
+  })),
   map((asset) => from(handleAsset(asset, options))),
   mergeAll()
 );

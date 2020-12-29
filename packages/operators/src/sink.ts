@@ -1,8 +1,8 @@
 import { OperatorFunction } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import {
-  Asset,
-  InputEvent
+  Event,
+  Asset
 } from '@yalam/core';
 
-export const sink = (): OperatorFunction<Asset | InputEvent, Asset> => filter((value) => false)
+export const sink = (): OperatorFunction<Event | Asset, Asset> => filter((value) => false)

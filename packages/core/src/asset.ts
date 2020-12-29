@@ -2,30 +2,37 @@ import fs from 'fs/promises';
 import mkdirp from 'mkdirp';
 import path from 'path';
 
-import { FileEvent } from './types';
+import {
+  FileEvent,
+  EventType,
+} from './types';
 
-export const enum AssetType {
+export const enum AssetStatus {
   SOURCE,
   ARTIFACT,
-  DELETED
+  DELETED,
 };
 
 interface AssetOptions {
-  type: AssetType;
+  status: AssetStatus;
   path: string;
   event: FileEvent;
 }
 
 export class Asset {
-  public type: AssetType;
+  public status: AssetStatus;
   public path: string;
   private event: FileEvent;
   private contents: Buffer | undefined;
 
   constructor(options: AssetOptions) {
-    this.type = options.type;
+    this.status = options.status;
     this.path = options.path;
     this.event = options.event;
+  }
+
+  public get type(): EventType.ASSET {
+    return EventType.ASSET;
   }
 
   public getEntry() {
@@ -50,13 +57,12 @@ export class Asset {
 
   public async writeFile() {
     if (!this.contents) {
-      throw new Error(
-        `No contents for asset with path ${this.path}`
-      );
+      throw new Error(`No contents to write`);
     }
-
     const fullPath = path.join(this.event.entry, this.path);
-    await mkdirp(path.dirname(fullPath));
+    const directory = path.dirname(fullPath);
+
+    await mkdirp(directory);
     await fs.writeFile(fullPath, this.contents);
   }
 

@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 import { Asset } from './asset';
 
-export type Task = (input: Observable<InputEvent>) => Observable<Asset>;
+export type Task = (input: Observable<Event>) => Observable<Asset>;
 
 export interface AsyncSubscription {
   unsubscribe(): Promise<void>;
@@ -9,34 +9,42 @@ export interface AsyncSubscription {
 
 type FilePath = string;
 
+export interface ErrorEvent {
+  event: UpdatedEvent;
+  error: Error;
+}
+
 export const enum EventType {
+  ASSET,
+  DELETED,
   INITIAL,
-  UPDATE,
-  DELETE
+  UPDATED,
 };
+
+export interface DeletedEvent {
+  type: EventType.DELETED;
+  entry: string;
+  path: FilePath;
+}
 
 export interface InitialEvent {
   type: EventType.INITIAL;
   path: FilePath;
 }
 
-export interface FileEvent {
-  type: EventType.UPDATE | EventType.DELETE;
+
+export interface UpdatedEvent {
+  type: EventType.UPDATED;
   entry: string;
   path: FilePath;
 }
 
-export type InputEvent = InitialEvent | FileEvent;
+export type FileEvent = UpdatedEvent | DeletedEvent;
 
-export type JSONValue =
-  | null
-  | boolean
-  | number
-  | string
-  | Array<JSONValue>;
+export type Event = InitialEvent | FileEvent;
 
 export interface Reporter {
-  onIdle: () => void;
-  onAdded: (events: InputEvent[]) => void;
+  onInput: (event: Event) => void;
   onBuilt: (asset: Asset) => void;
+  onIdle: (events?: ErrorEvent[]) => void;
 }

@@ -6,7 +6,7 @@ import {
 import { map } from 'rxjs/operators';
 import {
   Asset,
-  AssetType
+  AssetStatus
 } from '@yalam/core';
 
 interface DestinationOptions {
@@ -15,11 +15,10 @@ interface DestinationOptions {
 
 export const destination = (options: DestinationOptions): OperatorFunction<Asset, Asset> => pipe(
   map(asset => {
-    const artifact = asset;
-    artifact.type = asset.type !== AssetType.DELETED
-      ? AssetType.ARTIFACT
-      : AssetType.DELETED;
-    artifact.path = path.join(options.path, artifact.path);
-    return artifact;
+    if (asset.status === AssetStatus.SOURCE) {
+      asset.status = AssetStatus.ARTIFACT;
+    }
+    asset.path = path.join(options.path, asset.path);
+    return asset;
   })
 );
