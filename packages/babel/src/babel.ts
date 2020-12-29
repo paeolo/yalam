@@ -28,8 +28,10 @@ const getOptions = (asset: Asset, options: BabelOptions): Babel.TransformOptions
   }
 
   return {
-    cwd: asset.getEvent().entry,
-    filename: asset.getEvent().path,
+    cwd: asset.getEntry(),
+    filename: asset.getSourcePath(),
+    inputSourceMap: asset.sourceMap,
+    sourceMaps: true,
     plugins,
     presets,
     ...options
@@ -47,14 +49,17 @@ const transpile = async (asset: Asset, options: BabelOptions) => {
     throw new Error();
   }
 
-  return Buffer.from(babelResult.code);
+  return {
+    contents: Buffer.from(babelResult.code),
+    sourceMap: babelResult.map || undefined
+  };
 }
 
-const filter = (asset: Asset) => ['.js', '.ts']
+const isJavascript = (asset: Asset) => ['.js', '.ts']
   .includes(path.extname(asset.path));
 
-export const babel = (options: BabelOptions) => transform({
-  filter,
+export const babel = (options: BabelOptions = {}) => transform({
+  filter: (asset) => isJavascript(asset),
   getPath: (asset) => replaceExt(asset.path, '.js'),
-  getContents: (asset) => transpile(asset, options),
+  getResult: (asset) => transpile(asset, options),
 });

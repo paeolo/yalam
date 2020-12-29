@@ -1,9 +1,9 @@
 import {
   Asset,
   AssetStatus,
-  Event,
+  InputEvent,
   Reporter,
-  ErrorEvent
+  BuildError
 } from '@yalam/core';
 import chalk from 'chalk';
 import dateFormat from 'dateformat';
@@ -43,7 +43,7 @@ export class ConsoleReporter implements Reporter {
   private processing = false;
   private logger = new ConsoleLogger();
 
-  public onInput(event: Event) {
+  public onInput(event: InputEvent) {
     if (!this.processing) {
       this.startTime = new Date().getTime();
       this.processing = true;
@@ -56,7 +56,7 @@ export class ConsoleReporter implements Reporter {
     }
   }
 
-  public onIdle(events?: ErrorEvent[]) {
+  public onIdle(events?: BuildError[]) {
     if (events && events.length !== 0) {
       events.forEach(
         (event) => this.logger.error(event.error.toString())

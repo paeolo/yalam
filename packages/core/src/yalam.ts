@@ -14,9 +14,9 @@ import deepEqual from 'deep-equal';
 import Cache from './cache';
 import {
   AsyncSubscription,
-  Event,
+  InputEvent,
   EventType,
-  ErrorEvent,
+  BuildError,
   FileEvent,
   InitialEvent,
   Reporter,
@@ -45,9 +45,9 @@ interface BuildOptions {
 }
 
 interface EventTypes {
-  input: (event: Event) => void;
   built: (asset: Asset) => void;
-  idle: (events?: ErrorEvent[]) => void;
+  input: (event: InputEvent) => void;
+  idle: (events?: BuildError[]) => void;
 }
 
 export class Yalam extends EventEmitter<EventTypes> {
@@ -56,7 +56,7 @@ export class Yalam extends EventEmitter<EventTypes> {
   private tasks: Map<string, Task>;
   private ignoredFiles: Set<string>;
   private queue: PQueue;
-  private errors: ErrorEvent[];
+  private errors: BuildError[];
 
   constructor(options: YalamOptions = {}) {
     super();
@@ -79,8 +79,8 @@ export class Yalam extends EventEmitter<EventTypes> {
   }
 
   private bindReporter(reporter: Reporter) {
-    this.addListener('input', reporter.onInput.bind(reporter));
     this.addListener('built', reporter.onBuilt.bind(reporter));
+    this.addListener('input', reporter.onInput.bind(reporter));
     this.addListener('idle', reporter.onIdle.bind(reporter));
   }
 
@@ -90,6 +90,16 @@ export class Yalam extends EventEmitter<EventTypes> {
       throw new Error(`Task not found: ${key}`)
     }
     return task;
+  }
+
+  private onBuilt(asset: Asset, event: InputEvent) {
+    if (asset.status === AssetStatus.ARTIFACT) {
+      this.errors = this.errors.filter(
+        (value) => !deepEqual(value.event, event)
+      );
+      this.ignoredFiles.add(asset.getFullPath());
+      this.emit('built', asset);
+    }
   }
 
   private getSubscription(task: Task, entry: string) {
@@ -122,15 +132,7 @@ export class Yalam extends EventEmitter<EventTypes> {
     }));
   }
 
-  private onBuilt(asset: Asset, event: Event) {
-    if (asset.status === AssetStatus.ARTIFACT) {
-      this.errors = this.errors.filter(value => !deepEqual(value.event, event));
-      this.ignoredFiles.add(asset.getFullPath());
-      this.emit('built', asset);
-    }
-  }
-
-  private async buildEvent(task: Task, event: Event) {
+  private async buildEvent(task: Task, event: InputEvent) {
     this.emit('input', event);
     await task(of(event))
       .pipe(
@@ -142,7 +144,7 @@ export class Yalam extends EventEmitter<EventTypes> {
       );
   }
 
-  private buildEvents(task: Task, events: Event[]) {
+  private buildEvents(task: Task, events: InputEvent[]) {
     return Promise.all(
       events.map(
         (event) => this.buildEvent(task, event)
@@ -150,7 +152,7 @@ export class Yalam extends EventEmitter<EventTypes> {
     );
   }
 
-  private queueEvents(task: Task, events: Event[]) {
+  private queueEvents(task: Task, events: InputEvent[]) {
     events.map(
       (event) => this.queue.add(() => this
         .buildEvent(task, event)

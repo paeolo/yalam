@@ -1,13 +1,10 @@
-import {
-  concat,
-  merge,
-} from 'rxjs';
+import rxjs from 'rxjs';
 import { Task } from './types';
 
-export const series = (...tasks: Task[]): Task => (input) => concat(
+export const concat = (...tasks: Task[]): Task => (input) => rxjs.concat(
   ...tasks.map(task => task(input))
 );
 
-export const parallel = (...tasks: Task[]): Task => (input) => merge(
+export const merge = (...tasks: Task[]): Task => (input) => rxjs.merge(
   ...tasks.map(task => task(input))
 );

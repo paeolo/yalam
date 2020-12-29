@@ -7,16 +7,17 @@ export {
   AssetStatus
 } from './asset';
 export {
-  series,
-  parallel
+  concat,
+  merge
 } from './compose';
 export {
-  Event,
-  ErrorEvent,
+  BuildError,
   EventType,
   FileEvent,
   InitialEvent,
+  InputEvent,
+  Reporter,
+  SourceMap,
   Task,
-  Reporter
 } from './types';
 export { pipe } from 'rxjs';

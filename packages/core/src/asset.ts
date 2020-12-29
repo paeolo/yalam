@@ -4,7 +4,7 @@ import path from 'path';
 
 import {
   FileEvent,
-  EventType,
+  SourceMap
 } from './types';
 
 export const enum AssetStatus {
@@ -22,17 +22,14 @@ interface AssetOptions {
 export class Asset {
   public status: AssetStatus;
   public path: string;
-  private event: FileEvent;
+  public sourceMap: SourceMap | undefined;
   private contents: Buffer | undefined;
+  private event: FileEvent;
 
   constructor(options: AssetOptions) {
     this.status = options.status;
     this.path = options.path;
     this.event = options.event;
-  }
-
-  public get type(): EventType.ASSET {
-    return EventType.ASSET;
   }
 
   public getEntry() {
@@ -41,6 +38,10 @@ export class Asset {
 
   public getEvent() {
     return this.event;
+  }
+
+  public getSourcePath() {
+    return this.event.path;
   }
 
   public getFullPath() {
@@ -75,6 +76,12 @@ export class Asset {
           this.getFullPath(),
           this.getContentsOrFail()
         );
+        if (this.sourceMap) {
+          await fs.writeFile(
+            this.getFullPath().concat('.map'),
+            JSON.stringify(this.sourceMap)
+          );
+        }
         break;
     }
     return this;
