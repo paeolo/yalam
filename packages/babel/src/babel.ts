@@ -29,6 +29,7 @@ const getOptions = (asset: Asset, options: BabelOptions): Babel.TransformOptions
 
   return {
     cwd: asset.getEvent().entry,
+    filename: asset.getEvent().path,
     plugins,
     presets,
     ...options
