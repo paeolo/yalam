@@ -28,13 +28,21 @@ interface CacheOptions {
   cacheKey: string;
 }
 
-interface FileInfo {
-  status: AssetStatus,
+interface BuiltFileInfo {
+  status: AssetStatus.ARTIFACT,
+  task: string;
   withSourceMap: boolean;
   sourcePath: string;
 }
 
-interface ArtifactInfo {
+interface DeletedFileInfo {
+  status: AssetStatus.DELETED,
+}
+
+type FileInfo = BuiltFileInfo | DeletedFileInfo;
+
+interface CachedInfo {
+  task: string;
   withSourceMap: boolean;
   sourcePath: string;
 }
@@ -110,8 +118,71 @@ export class Cache implements Reporter {
     );
   }
 
-  private async getArtifactory(filePath: string): Promise<Map<string, ArtifactInfo>> {
-    let mapResult: Map<string, ArtifactInfo>;
+  private async getEventsForEntry(entry: string, task: string): Promise<InputEvent[]> {
+    const filePath = this.getCacheFilePath(entry, CacheType.ARTIFACTORY);
+    const artifactory = await this.getArtifactory(filePath);
+
+    if (artifactory.size === 0) {
+      return [{
+        type: EventType.INITIAL,
+        path: entry
+      }];
+    }
+    const events: InputEvent[] = [];
+    const map = Array.from(artifactory.entries());
+
+    const addEvents = async ([filePath, value]: [string, CachedInfo]) => {
+      if (value.task !== task) {
+        events.push({
+          type: EventType.UPDATED,
+          entry: entry,
+          path: value.sourcePath,
+        });
+      }
+
+      const tests = [
+        fsAsync.access(filePath, constants.F_OK)
+      ];
+      if (value.withSourceMap) {
+        tests.push(fsAsync.access(filePath.concat('.map'), constants.F_OK))
+      }
+      try {
+        await Promise.all(tests);
+      } catch {
+        events.push({
+          type: EventType.UPDATED,
+          entry: entry,
+          path: value.sourcePath,
+        });
+      }
+    };
+
+    await PMap(
+      map,
+      addEvents
+    );
+    return events;
+  }
+
+  public async getInputEvents(entries: string[], task: string): Promise<InputEvent[]> {
+    const events: InputEvent[] = [];
+    const lock = this.getLockFilePath(CacheType.ARTIFACTORY);
+
+    const addEvents = async (entry: string) => events.push(
+      ...(await this.getEventsForEntry(entry, task))
+    );
+
+    await lockFileAsync(lock, { wait: 1000 });
+    await PMap(
+      entries,
+      addEvents
+    );
+    await unlockFileAsync(lock);
+    return events;
+  }
+
+  private async getArtifactory(filePath: string): Promise<Map<string, CachedInfo>> {
+    let mapResult: Map<string, CachedInfo>;
 
     try {
       const buffer = await fsAsync.readFile(filePath);
@@ -137,6 +208,7 @@ export class Cache implements Reporter {
           artifactory.set(
             key,
             {
+              task: value.task,
               withSourceMap: value.withSourceMap,
               sourcePath: value.sourcePath
             }
@@ -154,77 +226,21 @@ export class Cache implements Reporter {
     );
   }
 
-  private async getEventsForEntry(entry: string): Promise<InputEvent[]> {
-    const filePath = this.getCacheFilePath(entry, CacheType.ARTIFACTORY);
-    const artifactory = await this.getArtifactory(filePath);
-
-    if (artifactory.size === 0) {
-      return [{
-        type: EventType.INITIAL,
-        path: entry
-      }];
-    }
-    const events: InputEvent[] = [];
-    const map = Array.from(artifactory.entries());
-
-    const addEvents = async ([filePath, value]: [string, ArtifactInfo]) => {
-      const tests = [
-        fsAsync.access(filePath, constants.F_OK)
-      ];
-      if (value.withSourceMap) {
-        tests.push(fsAsync.access(filePath.concat('.map'), constants.F_OK))
-      }
-      try {
-        await Promise.all(tests);
-      } catch {
-        events.push({
-          type: EventType.UPDATED,
-          entry: entry,
-          path: value.sourcePath,
-        });
-      }
-    };
-
-    await PMap(
-      map,
-      addEvents
-    );
-    return events;
-  }
-
-  private addFileInfo(entry: string, key: string, info: FileInfo) {
-    const forEntry: Map<string, FileInfo> = this.filesTracker.get(entry)
+  private trackFileStatus(entry: string, key: string, info: FileInfo) {
+    const value: Map<string, FileInfo> = this.filesTracker.get(entry)
       || new Map();
 
-    forEntry.set(key, info);
-    this.filesTracker.set(entry, forEntry);
+    value.set(key, info);
+    this.filesTracker.set(entry, value);
   }
 
-  public async getInputEvents(entries: string[]): Promise<InputEvent[]> {
-    const events: InputEvent[] = [];
-    const lock = this.getLockFilePath(CacheType.ARTIFACTORY);
-
-    const addEvents = async (entry: string) => events.push(
-      ...(await this.getEventsForEntry(entry))
-    );
-
-    await lockFileAsync(lock, { wait: 1000 });
-    await PMap(
-      entries,
-      addEvents
-    );
-    await unlockFileAsync(lock);
-    return events;
-  }
-
-  public onInput(events: InputEvent[]) { }
-
-  public onBuilt(asset: FileAsset) {
-    this.addFileInfo(
+  public onBuilt(asset: FileAsset, task: string) {
+    this.trackFileStatus(
       asset.getEntry(),
       asset.getFullPath(),
       {
-        status: asset.status,
+        status: AssetStatus.ARTIFACT,
+        task,
         withSourceMap: !!asset.sourceMap,
         sourcePath: asset.getSourcePath()
       }
@@ -232,14 +248,10 @@ export class Cache implements Reporter {
   }
 
   public onDeleted(asset: DeletedAsset) {
-    this.addFileInfo(
+    this.trackFileStatus(
       asset.getEntry(),
       asset.getFullPath(),
-      {
-        status: asset.status,
-        withSourceMap: false,
-        sourcePath: asset.getSourcePath()
-      }
+      { status: AssetStatus.DELETED }
     );
   }
 

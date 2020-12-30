@@ -19,7 +19,7 @@ export interface RunnerOptions {
   mode: RunnerMode;
   entries: string[];
   configPath: string;
-  task?: string;
+  taskName?: string;
   yalamOptions: YalamOptions;
 };
 
@@ -54,7 +54,7 @@ export class Runner {
     await this.taskLoader.load();
     await this.yalam.build({
       entries: this.options.entries,
-      task: this.options.task || DEFAULT_TASK
+      taskName: this.options.taskName || DEFAULT_TASK
     });
   }
 
@@ -66,7 +66,7 @@ export class Runner {
     }
     const subscription = await this.yalam.watch({
       entries: this.options.entries,
-      task: this.options.task || DEFAULT_TASK
+      taskName: this.options.taskName || DEFAULT_TASK
     });
     add(subscription.unsubscribe);
   }

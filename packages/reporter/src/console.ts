@@ -54,7 +54,7 @@ export class ConsoleReporter implements Reporter {
     }
   }
 
-  public onBuilt(asset: FileAsset) {
+  public onBuilt(asset: FileAsset, task: string) {
     this.logger.info(`Built ${asset.path}`);
   }
 

@@ -41,10 +41,10 @@ export interface FileEvent {
 export type InputEvent = InitialEvent | FileEvent;
 
 export interface Reporter {
-  onInput: (events: InputEvent[]) => void;
-  onBuilt: (asset: FileAsset) => void;
-  onDeleted: (asset: DeletedAsset) => void;
-  onIdle: (assets?: FailedAsset[]) => void;
+  onInput?: (events: InputEvent[]) => void;
+  onBuilt?: (asset: FileAsset, task: string) => void;
+  onDeleted?: (asset: DeletedAsset) => void;
+  onIdle?: (assets?: FailedAsset[]) => void;
 }
 
 export type SourceMap = {

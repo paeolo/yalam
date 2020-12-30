@@ -25,7 +25,11 @@ import {
   normalizeOptions,
   unsubscribeAll,
 } from './utils';
-import { DeletedAsset, FailedAsset, FileAsset } from './asset';
+import {
+  DeletedAsset,
+  FailedAsset,
+  FileAsset
+} from './asset';
 
 export interface YalamOptions {
   disableCache?: boolean;
@@ -36,15 +40,20 @@ export interface YalamOptions {
 }
 
 interface BuildOptions {
-  task: string;
+  taskName: string;
   entries: string[];
 }
 
 interface EventTypes {
-  built: (asset: FileAsset) => void;
+  built: (asset: FileAsset, task: string) => void;
   deleted: (asset: DeletedAsset) => void;
   input: (events: InputEvent[]) => void;
   idle: (events?: FailedAsset[]) => void;
+}
+
+interface TaskWithName {
+  name: string;
+  task: Task;
 }
 
 interface BuildEventsOption {
@@ -86,9 +95,18 @@ export class Yalam extends EventEmitter<EventTypes> {
   }
 
   private bindReporter(reporter: Reporter) {
-    this.addListener('input', reporter.onInput.bind(reporter));
-    this.addListener('built', reporter.onBuilt.bind(reporter));
-    this.addListener('idle', reporter.onIdle.bind(reporter));
+    if (reporter.onBuilt) {
+      this.addListener('built', reporter.onBuilt.bind(reporter));
+    }
+    if (reporter.onDeleted) {
+      this.addListener('deleted', reporter.onDeleted.bind(reporter));
+    }
+    if (reporter.onInput) {
+      this.addListener('input', reporter.onInput.bind(reporter));
+    }
+    if (reporter.onIdle) {
+      this.addListener('idle', reporter.onIdle.bind(reporter));
+    }
   }
 
   private get(key: string) {
@@ -107,7 +125,7 @@ export class Yalam extends EventEmitter<EventTypes> {
     }
   }
 
-  private onBuilt(asset: Asset) {
+  private onBuilt(task: string, asset: Asset) {
     if (asset.status === AssetStatus.SOURCE) {
       return;
     } else if (asset.status === AssetStatus.FAILED) {
@@ -121,14 +139,14 @@ export class Yalam extends EventEmitter<EventTypes> {
       .filter((value) => !(value.getEvent().path === asset.getEvent().path));
 
     if (asset.status === AssetStatus.ARTIFACT) {
-      this.emit('built', asset);
+      this.emit('built', asset, task);
     }
     else if (asset.status === AssetStatus.DELETED) {
       this.emit('deleted', asset);
     }
   }
 
-  private getSubscription(task: Task, entry: string) {
+  private getSubscription(task: TaskWithName, entry: string) {
     const onEvents = async (err: Error | null, events: watcher.Event[]) => {
       if (err) {
         throw err;
@@ -160,8 +178,13 @@ export class Yalam extends EventEmitter<EventTypes> {
       }))
   }
 
-  private async buildEvents(task: Task, events: InputEvent[], options?: BuildEventsOption) {
+  private async buildEvents(taskWithName: TaskWithName, events: InputEvent[], options?: BuildEventsOption) {
+    const {
+      task,
+      name
+    } = taskWithName;
     this.emit('input', events);
+
     await task(from(events))
       .pipe(
         map(asset => {
@@ -175,15 +198,15 @@ export class Yalam extends EventEmitter<EventTypes> {
         mergeAll()
       )
       .forEach(
-        (asset) => this.onBuilt(asset)
+        (asset) => this.onBuilt(name, asset)
       );
   }
 
-  private queueEvents(task: Task, events: InputEvent[]) {
+  private queueEvents(task: TaskWithName, events: InputEvent[]) {
     return this.queue.add(() => this.buildEvents(task, events));
   }
 
-  private async getInputEvents(entries: string[]): Promise<InputEvent[]> {
+  private async getInputEvents(entries: string[], task: string): Promise<InputEvent[]> {
     if (this.options.disableCache) {
       return entries.map(entry => ({
         type: EventType.INITIAL,
@@ -191,7 +214,7 @@ export class Yalam extends EventEmitter<EventTypes> {
       }));
     }
     else {
-      return this.cache.getInputEvents(entries);
+      return this.cache.getInputEvents(entries, task);
     }
   }
 
@@ -210,10 +233,14 @@ export class Yalam extends EventEmitter<EventTypes> {
    */
   public async build(options: BuildOptions) {
     const entries = await normalizeEntries(options.entries);
-    const task = this.get(options.task);
-    const events = await this.getInputEvents(entries);
+    const task = this.get(options.taskName);
+    const events = await this.getInputEvents(entries, options.taskName);
 
-    await this.buildEvents(task, events, { throwOnFail: true });
+    await this.buildEvents(
+      { name: options.taskName, task },
+      events,
+      { throwOnFail: true }
+    );
     this.emit('idle');
   }
 
@@ -223,14 +250,20 @@ export class Yalam extends EventEmitter<EventTypes> {
    */
   public async watch(options: BuildOptions): Promise<AsyncSubscription> {
     const entries = await normalizeEntries(options.entries);
-    const task = this.get(options.task);
-    const events = await this.getInputEvents(entries);
+    const task = this.get(options.taskName);
+    const events = await this.getInputEvents(entries, options.taskName);
 
-    this.queueEvents(task, events);
+    this.queueEvents(
+      { name: options.taskName, task },
+      events
+    );
     await this.queue.onIdle();
 
     const subscriptions = await Promise.all(
-      entries.map(entry => this.getSubscription(task, entry))
+      entries.map(entry => this.getSubscription(
+        { name: options.taskName, task },
+        entry)
+      )
     );
 
     return {
