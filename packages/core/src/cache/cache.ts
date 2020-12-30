@@ -21,6 +21,7 @@ import {
   FailedAsset,
   FileAsset
 } from '../asset';
+import { LOCKFILE } from '../misc';
 
 const version = require('../../package.json').version;
 
@@ -123,10 +124,10 @@ export class Cache implements Reporter {
     );
   }
 
-  private getLockFilePath(cacheType: CacheType) {
+  private getLockFilePath() {
     return path.join(
       this.directory,
-      cacheType.concat('.lock')
+      LOCKFILE
     );
   }
 
@@ -179,7 +180,7 @@ export class Cache implements Reporter {
 
   public async getInputEvents(entries: string[], task: string): Promise<InputEvent[]> {
     const events: InputEvent[] = [];
-    const lock = this.getLockFilePath(CacheType.ARTIFACTORY);
+    const lock = this.getLockFilePath();
 
     const addEvents = async (entry: string) => events.push(
       ...(await this.getEventsForEntry(entry, task))
@@ -281,24 +282,25 @@ export class Cache implements Reporter {
 
   public async onIdle(assets?: FailedAsset[]) {
     const entries = Array.from(this.filesTracker.entries());
-    const lock = this.getLockFilePath(CacheType.ARTIFACTORY);
+    const lock = this.getLockFilePath();
 
     const updateArtifactory = async () => {
-      await lockFileAsync(lock, { wait: 1000 });
       await Promise.all(
         entries.map(([key, value]) => this.updateArtifactory(
           key,
           value
         ))
       );
-      await unlockFileAsync(lock);
     };
+
+    await lockFileAsync(lock, { wait: 1000 });
 
     await Promise.all([
       updateArtifactory(),
       this.writeSnapshot(Array.from(this.filesTracker.keys()))
     ]);
 
+    await unlockFileAsync(lock);
     this.filesTracker.clear();
   }
 }
