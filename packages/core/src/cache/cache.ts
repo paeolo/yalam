@@ -21,7 +21,7 @@ import {
   FailedAsset,
   FileAsset
 } from '../asset';
-import { LOCKFILE } from '../misc';
+import { GLOBAL_LOCK } from '../misc';
 
 const version = require('../../package.json').version;
 
@@ -127,13 +127,24 @@ export class Cache implements Reporter {
   private getLockFilePath() {
     return path.join(
       this.directory,
-      LOCKFILE
+      GLOBAL_LOCK
     );
   }
 
   private async getEventsForEntry(entry: string, task: string): Promise<InputEvent[]> {
     const filePath = this.getCacheFilePath(entry, CacheType.ARTIFACTORY);
-    const artifactory = await this.getArtifactory(filePath);
+
+    const [
+      artifactory,
+      fileEvents
+    ] = await Promise.all([
+      this.getArtifactory(filePath),
+      watcher.getEventsSince(
+        entry,
+        this.getCacheFilePath(entry, CacheType.FILE_SYSTEM),
+        { ignore: [this.directory] }
+      )]
+    );
 
     if (artifactory.size === 0) {
       return [{
@@ -141,7 +152,15 @@ export class Cache implements Reporter {
         path: entry
       }];
     }
-    const events: InputEvent[] = [];
+
+    const events: InputEvent[] = fileEvents.map((event) => ({
+      type: event.type === 'delete'
+        ? EventType.DELETED
+        : EventType.UPDATED,
+      entry,
+      path: event.path
+    }));
+
     const map = Array.from(artifactory.entries());
 
     const addEvents = async ([filePath, value]: [string, CachedInfo]) => {
@@ -163,11 +182,13 @@ export class Cache implements Reporter {
       try {
         await Promise.all(tests);
       } catch {
-        events.push({
-          type: EventType.UPDATED,
-          entry: entry,
-          path: value.sourcePath,
-        });
+        if (!events.some(event => event.path === value.sourcePath)) {
+          events.push({
+            type: EventType.UPDATED,
+            entry: entry,
+            path: value.sourcePath,
+          });
+        }
       }
     };
 
@@ -200,7 +221,8 @@ export class Cache implements Reporter {
       entries.map((entry) => {
         watcher.writeSnapshot(
           entry,
-          this.getCacheFilePath(entry, CacheType.FILE_SYSTEM)
+          this.getCacheFilePath(entry, CacheType.FILE_SYSTEM),
+          { ignore: [this.directory] }
         )
       })
     )
