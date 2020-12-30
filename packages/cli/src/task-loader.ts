@@ -9,21 +9,36 @@ import {
   Task
 } from '@yalam/core';
 
-import { YALAM_FILE } from './constants';
-
 interface TaskLoaderOptions {
   yalam: Yalam;
-  configPath?: string;
+  configPath: string;
 }
 
 export class TaskLoader {
+
+  static async show(configPath: string) {
+    const prettyConfigPath = replaceHomedir(path.resolve(configPath), '~');
+
+    try {
+      await fs.access(configPath, constants.F_OK);
+    } catch {
+      throw new Error(`File not found: ${prettyConfigPath}`);
+    }
+
+    const tasks = Object.keys(require(configPath));
+
+    console.log(archy({
+      label: `Tasks for ${chalk.magenta(prettyConfigPath)}`,
+      nodes: tasks
+    }));
+  }
 
   private configPath: string;
   private yalam: Yalam;
 
   constructor(options: TaskLoaderOptions) {
     this.yalam = options.yalam;
-    this.configPath = options.configPath || path.join(process.cwd(), YALAM_FILE);
+    this.configPath = options.configPath;
   }
 
   public async load() {
@@ -45,23 +60,5 @@ export class TaskLoader {
 
       this.yalam.addTask(key, task as Task);
     })
-  }
-
-  public async show() {
-    const configPath = path.resolve(this.configPath);
-    const prettyConfigPath = replaceHomedir(this.configPath, '~');
-
-    try {
-      await fs.access(configPath, constants.F_OK);
-    } catch {
-      throw new Error(`File not found: ${prettyConfigPath}`);
-    }
-
-    const tasks = Object.keys(require(configPath));
-
-    console.log(archy({
-      label: `Tasks for ${chalk.magenta(prettyConfigPath)}`,
-      nodes: tasks
-    }));
   }
 }

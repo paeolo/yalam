@@ -135,7 +135,10 @@ export class Yalam extends EventEmitter<EventTypes> {
       }
       const fileEvents = this.getFileEvents(entry, events);
       await setImmediatePromise();
-      this.queueEvents(task, fileEvents);
+
+      if (fileEvents.length !== 0) {
+        this.queueEvents(task, fileEvents);
+      }
     };
 
     return watcher.subscribe(

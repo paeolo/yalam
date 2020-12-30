@@ -13,13 +13,12 @@ import { TaskLoader } from './task-loader';
 export const enum RunnerMode {
   BUILD,
   WATCH,
-  SHOW,
 };
 
 export interface RunnerOptions {
   mode: RunnerMode;
   entries: string[];
-  configPath?: string;
+  configPath: string;
   task?: string;
   yalamOptions: YalamOptions;
 };
@@ -36,7 +35,7 @@ export class Runner {
     this.yalam = new Yalam(options.yalamOptions);
     this.taskLoader = new TaskLoader({
       yalam: this.yalam,
-      configPath: options.configPath
+      configPath: options.configPath,
     });
   }
 
@@ -47,9 +46,6 @@ export class Runner {
         break;
       case RunnerMode.WATCH:
         await this.watch();
-        break;
-      case RunnerMode.SHOW:
-        await this.taskLoader.show();
         break;
     }
   }
