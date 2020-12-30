@@ -138,6 +138,7 @@ export class Cache implements Reporter {
           entry: entry,
           path: value.sourcePath,
         });
+        return;
       }
 
       const tests = [
