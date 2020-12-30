@@ -1,6 +1,11 @@
 import { Observable } from 'rxjs';
-import { Asset } from './asset';
+import {
+  FileAsset,
+  DeletedAsset,
+  FailedAsset
+} from './asset';
 
+export type Asset = FileAsset | DeletedAsset | FailedAsset;
 export type Task = (input: Observable<InputEvent>) => Observable<Asset>;
 
 export interface AsyncSubscription {
@@ -13,6 +18,13 @@ export const enum EventType {
   DELETED,
   INITIAL,
   UPDATED,
+};
+
+export const enum AssetStatus {
+  SOURCE,
+  ARTIFACT,
+  DELETED,
+  FAILED
 };
 
 export interface InitialEvent {
@@ -29,14 +41,10 @@ export interface FileEvent {
 export type InputEvent = InitialEvent | FileEvent;
 
 export interface Reporter {
-  onInput: (event: InputEvent) => void;
-  onBuilt: (asset: Asset) => void;
-  onIdle: (events?: BuildError[]) => void;
-}
-
-export interface BuildError {
-  event: FileEvent;
-  error: Error;
+  onInput: (events: InputEvent[]) => void;
+  onBuilt: (asset: FileAsset) => void;
+  onDeleted: (asset: DeletedAsset) => void;
+  onIdle: (assets?: FailedAsset[]) => void;
 }
 
 export type SourceMap = {

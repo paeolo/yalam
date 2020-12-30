@@ -10,8 +10,11 @@ import {
 } from 'rxjs/operators';
 import {
   Asset,
+  BaseAsset,
   AssetStatus,
-  SourceMap
+  FileAsset,
+  SourceMap,
+  FailedAsset
 } from '@yalam/core';
 
 export interface TransformResult {
@@ -20,13 +23,14 @@ export interface TransformResult {
 }
 
 interface TransformOptions {
-  getPath: (asset: Asset) => string;
-  getResult: (asset: Asset) => Promise<TransformResult>;
-  filter?: (asset: Asset) => boolean;
+  getResult: (asset: FileAsset) => Promise<TransformResult>;
+  getPath: (asset: BaseAsset) => string;
+  filter?: (asset: BaseAsset) => boolean;
 }
 
 const handleAsset = async (asset: Asset, options: TransformOptions) => {
-  if (asset.status === AssetStatus.ARTIFACT) {
+  if (asset.status === AssetStatus.ARTIFACT
+    || asset.status === AssetStatus.FAILED) {
     return asset;
   }
 
@@ -37,13 +41,17 @@ const handleAsset = async (asset: Asset, options: TransformOptions) => {
     return asset;
   }
 
-  const result = await options.getResult(asset);
-  asset.path = path;
-  asset.setContents(result.contents);
-  if (result.sourceMap) {
-    asset.sourceMap = result.sourceMap;
+  try {
+    const result = await options.getResult(asset);
+    asset.path = path;
+    asset.setContents(result.contents);
+    if (result.sourceMap) {
+      asset.sourceMap = result.sourceMap;
+    }
+    return asset;
+  } catch (error) {
+    return FailedAsset.from(asset, error);
   }
-  return asset;
 }
 
 export const transform = (options: TransformOptions): OperatorFunction<Asset, Asset> => pipe(

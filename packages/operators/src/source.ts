@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import {
   from,
+  of,
   pipe,
   OperatorFunction
 } from 'rxjs';
@@ -15,10 +16,11 @@ import globrex from 'globrex';
 import globParent from 'glob-parent';
 import {
   Asset,
+  DeletedAsset,
+  FileAsset,
   InputEvent,
   FileEvent,
   EventType,
-  AssetStatus
 } from '@yalam/core';
 
 interface SourceOptions {
@@ -29,11 +31,6 @@ interface SourceAssetOptions {
   event: FileEvent,
   path: string,
   fullPath: string;
-};
-
-interface DeletedAssetOptions {
-  event: FileEvent,
-  path: string,
 };
 
 const getEvents = (glob: string, entry: string): FileEvent[] => {
@@ -55,8 +52,7 @@ const getEvents = (glob: string, entry: string): FileEvent[] => {
 const getSourceAsset = async (options: SourceAssetOptions) => {
   const content = await fs.readFile(options.fullPath);
 
-  const asset = new Asset({
-    status: AssetStatus.SOURCE,
+  const asset = new FileAsset({
     path: options.path,
     event: options.event,
   });
@@ -64,12 +60,6 @@ const getSourceAsset = async (options: SourceAssetOptions) => {
   asset.setContents(content);
   return asset;
 };
-
-const getDeletedAsset = async (options: DeletedAssetOptions) => new Asset({
-  status: AssetStatus.DELETED,
-  path: options.path,
-  event: options.event
-});
 
 export const source = (options: SourceOptions): OperatorFunction<InputEvent, Asset> => {
   const { regex } = globrex(options.glob, { globstar: true });
@@ -101,10 +91,12 @@ export const source = (options: SourceOptions): OperatorFunction<InputEvent, Ass
             fullPath: event.path,
           }));
         case EventType.DELETED:
-          return from(getDeletedAsset({
-            event: event,
-            path: relativePath,
-          }));
+          return of(
+            new DeletedAsset({
+              path: relativePath,
+              event: event
+            })
+          );
       }
     }),
     mergeAll()

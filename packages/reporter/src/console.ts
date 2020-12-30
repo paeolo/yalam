@@ -1,9 +1,9 @@
 import {
-  Asset,
-  AssetStatus,
+  FailedAsset,
+  DeletedAsset,
+  FileAsset,
   InputEvent,
   Reporter,
-  BuildError
 } from '@yalam/core';
 import chalk from 'chalk';
 import dateFormat from 'dateformat';
@@ -47,28 +47,25 @@ export class ConsoleReporter implements Reporter {
     return this.logger;
   }
 
-  public onInput(event: InputEvent) {
+  public onInput(events: InputEvent[]) {
     if (!this.processing) {
       this.startTime = new Date().getTime();
       this.processing = true;
     }
   }
 
-  public onBuilt(asset: Asset) {
-    switch (asset.status) {
-      case AssetStatus.ARTIFACT:
-        this.logger.info(`Built ${asset.path}`);
-        break;
-      case AssetStatus.DELETED:
-        this.logger.info(`Deleted ${asset.path}`);
-        break;
-    }
+  public onBuilt(asset: FileAsset) {
+    this.logger.info(`Built ${asset.path}`);
   }
 
-  public onIdle(events?: BuildError[]) {
-    if (events && events.length !== 0) {
-      events.forEach(
-        (event) => this.logger.error(event.error.toString())
+  public onDeleted(asset: DeletedAsset) {
+    this.logger.info(`Deleted ${asset.path}`);
+  }
+
+  public onIdle(assets?: FailedAsset[]) {
+    if (assets && assets.length !== 0) {
+      assets.forEach(
+        (asset) => this.logger.error(asset.getError().toString())
       );
     } else {
       this.logger.success(`Built in ${new Date().getTime() - this.startTime}ms`);

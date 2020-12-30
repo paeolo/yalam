@@ -6,21 +6,22 @@ import { constants } from 'fs';
 import PMap from 'p-map';
 
 import {
-  Asset,
-  AssetStatus
-} from './asset';
-import {
-  BuildError,
+  AssetStatus,
   EventType,
   InputEvent,
   Reporter,
-} from './types';
+} from '../types';
 import {
   lockFileAsync,
   unlockFileAsync
-} from './utils';
+} from '../utils';
+import {
+  DeletedAsset,
+  FailedAsset,
+  FileAsset
+} from '../asset';
 
-const version = require('../package.json').version;
+const version = require('../../package.json').version;
 
 interface CacheOptions {
   directory: string;
@@ -53,7 +54,7 @@ export const md5 = (value: string, encoding: BinaryToTextEncoding = 'hex') => {
     .substring(0, 10);
 }
 
-export default class Cache implements Reporter {
+export class Cache implements Reporter {
   private cacheKey: string;
   private directory: string;
   private hashes: Map<string, string>;
@@ -191,6 +192,14 @@ export default class Cache implements Reporter {
     return events;
   }
 
+  private addFileInfo(entry: string, key: string, info: FileInfo) {
+    const forEntry: Map<string, FileInfo> = this.filesTracker.get(entry)
+      || new Map();
+
+    forEntry.set(key, info);
+    this.filesTracker.set(entry, forEntry);
+  }
+
   public async getInputEvents(entries: string[]): Promise<InputEvent[]> {
     const events: InputEvent[] = [];
     const lock = this.getLockFilePath(CacheType.ARTIFACTORY);
@@ -208,26 +217,33 @@ export default class Cache implements Reporter {
     return events;
   }
 
-  public onInput(event: InputEvent) { }
+  public onInput(events: InputEvent[]) { }
 
-  public onBuilt(asset: Asset) {
-    const entry = asset.getEntry();
-    const fullPath = asset.getFullPath();
-    const forEntry: Map<string, FileInfo> = this.filesTracker.get(entry) || new Map();
-
-    forEntry.set(
-      fullPath,
+  public onBuilt(asset: FileAsset) {
+    this.addFileInfo(
+      asset.getEntry(),
+      asset.getFullPath(),
       {
         status: asset.status,
         withSourceMap: !!asset.sourceMap,
         sourcePath: asset.getSourcePath()
       }
     );
-
-    this.filesTracker.set(entry, forEntry);
   }
 
-  public async onIdle(events?: BuildError[]) {
+  public onDeleted(asset: DeletedAsset) {
+    this.addFileInfo(
+      asset.getEntry(),
+      asset.getFullPath(),
+      {
+        status: asset.status,
+        withSourceMap: false,
+        sourcePath: asset.getSourcePath()
+      }
+    );
+  }
+
+  public async onIdle(assets?: FailedAsset[]) {
     const entries = Array.from(this.filesTracker.entries());
     const lock = this.getLockFilePath(CacheType.ARTIFACTORY);
 

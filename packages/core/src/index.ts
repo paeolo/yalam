@@ -1,23 +1,18 @@
 export {
-  Yalam,
-  YalamOptions
-} from './yalam';
-export {
-  Asset,
-  AssetStatus
+  BaseAsset,
+  FileAsset,
+  DeletedAsset,
+  FailedAsset
 } from './asset';
 export {
   concat,
   merge
-} from './compose';
+} from './misc';
+export * from './types';
 export {
-  BuildError,
-  EventType,
-  FileEvent,
-  InitialEvent,
-  InputEvent,
-  Reporter,
-  SourceMap,
-  Task,
-} from './types';
-export { pipe } from 'rxjs';
+  Yalam,
+  YalamOptions
+} from './yalam';
+export {
+  pipe
+} from 'rxjs';

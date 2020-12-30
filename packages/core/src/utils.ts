@@ -8,7 +8,7 @@ import { AsyncSubscription } from './types';
 import {
   CACHE_DIR,
   CACHE_KEY
-} from './constants';
+} from './misc';
 
 export const unsubscribeAll = async (subscriptions: AsyncSubscription[]) => {
   await Promise.all(
