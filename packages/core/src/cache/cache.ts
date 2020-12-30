@@ -1,5 +1,6 @@
 import path from 'path';
 import mkdirp from 'mkdirp';
+import watcher from '@parcel/watcher';
 import crypto, { BinaryToTextEncoding } from 'crypto';
 import fsAsync from 'fs/promises';
 import { constants } from 'fs';
@@ -66,14 +67,12 @@ export class Cache implements Reporter {
   private cacheKey: string;
   private directory: string;
   private hashes: Map<string, string>;
-  private hash: string;
   private filesTracker: FilesTracker;
 
   constructor(options: CacheOptions) {
     this.cacheKey = options.cacheKey;
     this.directory = path.resolve(options.directory);
     this.hashes = new Map();
-    this.hash = md5(version.concat(this.cacheKey));
     this.filesTracker = new Map();
     this.init();
   }
@@ -82,10 +81,23 @@ export class Cache implements Reporter {
     mkdirp.sync(this.directory);
   }
 
+  private getSpecificHashForEntry(entry: string) {
+    const key = entry
+      .concat(version)
+      .concat(this.cacheKey);
+
+    let hash = this.hashes.get(key)
+    if (!hash) {
+      hash = md5(key)
+      this.hashes.set(key, hash);
+    }
+    return hash;
+  }
+
   private getHashForEntry(entry: string) {
     let hash = this.hashes.get(entry)
     if (!hash) {
-      hash = md5(version.concat(this.cacheKey).concat(entry));
+      hash = md5(entry);
       this.hashes.set(entry, hash);
     }
     return hash;
@@ -95,7 +107,7 @@ export class Cache implements Reporter {
     switch (cacheType) {
       case CacheType.ARTIFACTORY:
         return cacheType.concat('.')
-          .concat(this.getHashForEntry(entry))
+          .concat(this.getSpecificHashForEntry(entry))
           .concat('.json');
       case CacheType.FILE_SYSTEM:
         return cacheType.concat('.')
@@ -114,7 +126,7 @@ export class Cache implements Reporter {
   private getLockFilePath(cacheType: CacheType) {
     return path.join(
       this.directory,
-      cacheType.concat(this.hash).concat('.lock')
+      cacheType.concat('.lock')
     );
   }
 
@@ -180,6 +192,17 @@ export class Cache implements Reporter {
     );
     await unlockFileAsync(lock);
     return events;
+  }
+
+  private async writeSnapshot(entries: string[]) {
+    await Promise.all(
+      entries.map((entry) => {
+        watcher.writeSnapshot(
+          entry,
+          this.getCacheFilePath(entry, CacheType.FILE_SYSTEM)
+        )
+      })
+    )
   }
 
   private async getArtifactory(filePath: string): Promise<Map<string, CachedInfo>> {
@@ -260,14 +283,22 @@ export class Cache implements Reporter {
     const entries = Array.from(this.filesTracker.entries());
     const lock = this.getLockFilePath(CacheType.ARTIFACTORY);
 
-    await lockFileAsync(lock, { wait: 1000 });
-    await Promise.all(
-      entries.map(([key, value]) => this.updateArtifactory(
-        key,
-        value
-      ))
-    );
-    await unlockFileAsync(lock);
+    const updateArtifactory = async () => {
+      await lockFileAsync(lock, { wait: 1000 });
+      await Promise.all(
+        entries.map(([key, value]) => this.updateArtifactory(
+          key,
+          value
+        ))
+      );
+      await unlockFileAsync(lock);
+    };
+
+    await Promise.all([
+      updateArtifactory(),
+      this.writeSnapshot(Array.from(this.filesTracker.keys()))
+    ]);
+
     this.filesTracker.clear();
   }
 }
