@@ -1,0 +1,16 @@
+{
+  "name": "scripts",
+  "version": "1.0.0",
+  "private": true,
+  "author": "Paul Le Couteur",
+  "license": "MIT",
+  "main": "index.js",
+  "scripts": {
+    "update-ts-project-refs": "node src/update-ts-project-refs.js"
+  },
+  "devDependencies": {
+    "comment-json": "^4.1.0",
+    "fast-glob": "^3.2.4",
+    "find-up": "^5.0.0"
+  }
+}

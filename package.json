@@ -1,11 +1,13 @@
 {
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "scripts"
   ],
   "scripts": {
     "test": "cd example && yalam --watch .",
-    "build": "lerna run build"
+    "build": "lerna run build",
+    "update-ts-project-refs": "yarn workspace scripts run update-ts-project-refs"
   },
   "devDependencies": {
     "lerna": "^3.22.1"
