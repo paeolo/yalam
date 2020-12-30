@@ -39,9 +39,13 @@ export class ConsoleLogger {
 }
 
 export class ConsoleReporter implements Reporter {
-  private startTime = 0;
+  private startTime = new Date().getTime();
   private processing = false;
   private logger = new ConsoleLogger();
+
+  public getLogger() {
+    return this.logger;
+  }
 
   public onInput(event: InputEvent) {
     if (!this.processing) {
@@ -51,8 +55,13 @@ export class ConsoleReporter implements Reporter {
   }
 
   public onBuilt(asset: Asset) {
-    if (asset.status === AssetStatus.ARTIFACT) {
-      this.logger.info(`Built ${asset.path}`)
+    switch (asset.status) {
+      case AssetStatus.ARTIFACT:
+        this.logger.info(`Built ${asset.path}`);
+        break;
+      case AssetStatus.DELETED:
+        this.logger.info(`Deleted ${asset.path}`);
+        break;
     }
   }
 

@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs/promises';
 import { constants } from 'fs';
+import lockFile from 'lockfile';
 
 import { YalamOptions } from "./yalam";
 import { AsyncSubscription } from './types';
@@ -20,6 +21,7 @@ export const normalizeOptions = (options: YalamOptions): Required<YalamOptions> 
   cacheDir: options.cacheDir || CACHE_DIR,
   cacheKey: options.cacheKey || CACHE_KEY,
   reporters: options.reporters || [],
+  concurrency: options.concurrency || 50
 });
 
 export const existsOrFail = async (entry: string) => {
@@ -47,3 +49,29 @@ export const normalizeEntries = (entries: string[]) => {
   const promises = entries.map(normalizeEntry);
   return Promise.all(promises);
 }
+
+export const lockFileAsync = (filePath: string, options: { wait: number }) =>
+  new Promise<void>((resolve, reject) => {
+    const lockPath = filePath.concat('.lock');
+    lockFile.lock(lockPath, options, (err) => {
+      if (err) {
+        reject(err);
+      }
+      else {
+        resolve();
+      }
+    })
+  })
+
+export const unlockFileAsync = (filePath: string) =>
+  new Promise<void>((resolve, reject) => {
+    const lockPath = filePath.concat('.lock');
+    lockFile.unlock(lockPath, (err) => {
+      if (err) {
+        reject(err);
+      }
+      else {
+        resolve();
+      }
+    })
+  })

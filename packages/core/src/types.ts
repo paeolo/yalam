@@ -29,8 +29,8 @@ export interface FileEvent {
 export type InputEvent = InitialEvent | FileEvent;
 
 export interface Reporter {
-  onBuilt: (asset: Asset) => void;
   onInput: (event: InputEvent) => void;
+  onBuilt: (asset: Asset) => void;
   onIdle: (events?: BuildError[]) => void;
 }
 
