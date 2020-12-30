@@ -5,7 +5,7 @@
     "scripts"
   ],
   "scripts": {
-    "test": "cd example && yalam --watch .",
+    "test": "cd example && yalam --watch --no-cache .",
     "build": "lerna run build",
     "update-ts-project-refs": "yarn workspace scripts run update-ts-project-refs"
   },

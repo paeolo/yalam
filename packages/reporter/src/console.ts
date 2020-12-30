@@ -16,7 +16,7 @@ export const enum LogLevel {
 
 export class ConsoleLogger {
   private getDate() {
-    return dateFormat(new Date(), 'hh:MM:ss');
+    return dateFormat(new Date(), 'HH:MM:ss');
   }
 
   private print(prefix: string, message: string) {

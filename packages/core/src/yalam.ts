@@ -182,6 +182,18 @@ export class Yalam extends EventEmitter<EventTypes> {
     );
   }
 
+  private async getInputEvents(entries: string[]): Promise<InputEvent[]> {
+    if (this.options.disableCache) {
+      return entries.map(entry => ({
+        type: EventType.INITIAL,
+        path: entry
+      }));
+    }
+    else {
+      return this.cache.getInputEvents(entries);
+    }
+  }
+
   /**
   * @description
   * Add a build task with the provided key to the tasks.
@@ -198,7 +210,7 @@ export class Yalam extends EventEmitter<EventTypes> {
   public async build(options: BuildOptions) {
     const entries = await normalizeEntries(options.entries);
     const task = this.get(options.task);
-    const events = await this.cache.getInputEvents(entries);
+    const events = await this.getInputEvents(entries);
 
     await this.buildEvents(task, events);
     this.emit('idle');
@@ -211,7 +223,7 @@ export class Yalam extends EventEmitter<EventTypes> {
   public async watch(options: BuildOptions): Promise<AsyncSubscription> {
     const entries = await normalizeEntries(options.entries);
     const task = this.get(options.task);
-    const events = await this.cache.getInputEvents(entries);
+    const events = await this.getInputEvents(entries);
 
     await this.buildEvents(task, events);
     this.emit('idle');

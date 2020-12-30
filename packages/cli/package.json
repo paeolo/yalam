@@ -19,7 +19,8 @@
     "chalk": "^4.1.0",
     "exits": "^2.0.1",
     "meow": "^7.1.1",
-    "replace-homedir": "^1.0.0"
+    "replace-homedir": "^1.0.0",
+    "v8-compile-cache": "^2.2.0"
   },
   "devDependencies": {
     "@types/archy": "^0.0.31",

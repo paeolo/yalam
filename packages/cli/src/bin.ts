@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import chalk from 'chalk';
 import meow from 'meow';
 import { run } from '.';
+import { ConsoleReporter } from '@yalam/reporter';
 
 const cli = meow(`
   Usage
@@ -44,8 +44,16 @@ if (cli.input.length === 0 && !cli.flags.show)
 
 export type FlagsType = typeof cli.flags;
 
-run(cli.input, cli.flags)
+const consoleReporter = new ConsoleReporter();
+
+run(
+  cli.input,
+  cli.flags,
+  [
+    consoleReporter
+  ]
+)
   .catch((err: Error) => {
-    console.error(chalk.gray(err.message));
+    consoleReporter.getLogger().error(err.toString())
     process.exit(1);
   });
