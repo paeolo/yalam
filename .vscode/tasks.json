@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "> Builder build",
+      "label": "> Build",
       "type": "shell",
       "command": "yarn build",
       "presentation": {
@@ -14,6 +14,15 @@
       },
       "problemMatcher": []
     },
+    {
+      "label": "> Clean",
+      "type": "shell",
+      "command": "yarn clean",
+      "presentation": {
+        "clear": true
+      },
+      "problemMatcher": []
+    }
     {
       "label": "> Update TS project references",
       "type": "shell",
