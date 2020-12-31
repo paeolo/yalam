@@ -1,4 +1,4 @@
-import rxjs from 'rxjs';
+import * as rxjs from 'rxjs';
 import {
   Task
 } from '../types';
