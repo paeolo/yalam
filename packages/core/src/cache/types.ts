@@ -12,38 +12,21 @@ export interface BuiltFileInfo {
   sourcePath: string;
 }
 
-export interface DeletedFileInfo {
-  status: AssetStatus.DELETED,
-}
-
 export interface FailedFileInfo {
   status: AssetStatus.FAILED,
   sourcePath: string;
 }
 
+export interface DeletedFileInfo {
+  status: AssetStatus.DELETED,
+}
+
 export type FileInfo = BuiltFileInfo
-  | DeletedFileInfo
+  | FailedFileInfo
+  | DeletedFileInfo;
+
+export type CachedInfo = BuiltFileInfo
   | FailedFileInfo;
-
-export const enum CachedInfoType {
-  BUILT,
-  FAILED
-}
-
-export interface BuiltCachedInfo {
-  type: CachedInfoType.BUILT,
-  task: string;
-  withSourceMap: boolean;
-  sourcePath: string;
-}
-
-export interface FailedCachedInfo {
-  type: CachedInfoType.FAILED,
-  sourcePath: string;
-}
-
-export type CachedInfo = BuiltCachedInfo
-  | FailedCachedInfo;
 
 export type FilesTracker = Map<string, Map<string, FileInfo>>;
 

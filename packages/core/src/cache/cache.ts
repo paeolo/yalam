@@ -7,6 +7,7 @@ import { constants } from 'fs';
 import PMap from 'p-map';
 
 import {
+  Asset,
   AssetStatus,
   EventType,
   InputEvent,
@@ -25,7 +26,6 @@ import { GLOBAL_LOCK } from '../misc';
 import {
   CacheOptions,
   CacheType,
-  CachedInfoType,
   CachedInfo,
   FileInfo,
   FilesTracker
@@ -110,7 +110,6 @@ export class Cache implements Reporter {
 
   private async getEventsForEntry(entry: string, task: string): Promise<InputEvent[]> {
     const filePath = this.getCacheFilePath(entry, CacheType.ARTIFACTORY);
-
     const [
       artifactory,
       fileEvents
@@ -141,8 +140,8 @@ export class Cache implements Reporter {
     const map = Array.from(artifactory.entries());
 
     const addEvents = async ([filePath, value]: [string, CachedInfo]) => {
-      if ((value.type === CachedInfoType.BUILT && value.task !== task)
-        || value.type === CachedInfoType.FAILED) {
+      if ((value.status === AssetStatus.ARTIFACT && value.task !== task)
+        || value.status === AssetStatus.FAILED) {
         if (!events.some(event => event.path === value.sourcePath)) {
           events.push({
             type: EventType.UPDATED,
@@ -232,24 +231,8 @@ export class Cache implements Reporter {
     files.forEach((value, key) => {
       switch (value.status) {
         case AssetStatus.ARTIFACT:
-          artifactory.set(
-            key,
-            {
-              type: CachedInfoType.BUILT,
-              task: value.task,
-              withSourceMap: value.withSourceMap,
-              sourcePath: value.sourcePath
-            }
-          );
-          break;
         case AssetStatus.FAILED:
-          artifactory.set(
-            key,
-            {
-              type: CachedInfoType.FAILED,
-              sourcePath: value.sourcePath
-            }
-          );
+          artifactory.set(key, value);
           break;
         case AssetStatus.DELETED:
           artifactory.delete(key);
@@ -263,47 +246,54 @@ export class Cache implements Reporter {
     );
   }
 
-  private trackFileStatus(entry: string, key: string, info: FileInfo) {
+  private trackFileStatus(asset: Asset, task?: string) {
+    const entry = asset.getEntry();
+    const fullPath = asset.getFullPath();
     const value: Map<string, FileInfo> = this.filesTracker.get(entry)
       || new Map();
 
-    value.set(key, info);
-    this.filesTracker.set(entry, value);
-  }
-
-  public onBuilt(asset: FileAsset, task: string) {
-    this.trackFileStatus(
-      asset.getEntry(),
-      asset.getFullPath(),
-      {
-        status: AssetStatus.ARTIFACT,
-        task,
-        withSourceMap: !!asset.sourceMap,
-        sourcePath: asset.getSourcePath()
-      }
-    );
-  }
-
-  public onDeleted(asset: DeletedAsset) {
-    this.trackFileStatus(
-      asset.getEntry(),
-      asset.getFullPath(),
-      { status: AssetStatus.DELETED }
-    );
-  }
-
-  public async onIdle(assets?: FailedAsset[]) {
-    if (assets) {
-      assets.forEach((asset) => {
-        this.trackFileStatus(
-          asset.getEntry(),
-          asset.getFullPath(),
+    switch (asset.status) {
+      case AssetStatus.ARTIFACT:
+        value.set(
+          fullPath,
+          {
+            status: AssetStatus.ARTIFACT,
+            task: task!,
+            withSourceMap: !!asset.sourceMap,
+            sourcePath: asset.getSourcePath()
+          }
+        );
+        break;
+      case AssetStatus.FAILED:
+        value.set(
+          fullPath,
           {
             status: AssetStatus.FAILED,
             sourcePath: asset.getSourcePath()
           }
         );
-      })
+        break;
+      case AssetStatus.DELETED:
+        value.set(
+          fullPath,
+          { status: AssetStatus.DELETED }
+        );
+        break;
+    }
+    this.filesTracker.set(entry, value);
+  }
+
+  public onBuilt(asset: FileAsset, task: string) {
+    this.trackFileStatus(asset, task);
+  }
+
+  public onDeleted(asset: DeletedAsset) {
+    this.trackFileStatus(asset);
+  }
+
+  public async onIdle(assets?: FailedAsset[]) {
+    if (assets) {
+      assets.forEach((asset) => this.trackFileStatus(asset));
     }
 
     const entries = Array.from(this.filesTracker.entries());
