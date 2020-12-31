@@ -72,7 +72,7 @@ const updateReferences = async (entry, map) => {
 
   fs.writeFileSync(
     TSConfigJSONPath,
-    commentJSON.stringify(tsConfigJSON, null, 2),
+    commentJSON.stringify(tsConfigJSON, null, 2).concat('\n'),
     "utf-8"
   );
 }
