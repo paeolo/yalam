@@ -186,7 +186,7 @@ export class Cache implements Reporter {
       ...(await this.getEventsForEntry(entry, task))
     );
 
-    await lockFileAsync(lock, { wait: 1000 });
+    await lockFileAsync(lock);
     await PMap(
       entries,
       addEvents
@@ -308,7 +308,7 @@ export class Cache implements Reporter {
       );
     };
 
-    await lockFileAsync(lock, { wait: 1000 });
+    await lockFileAsync(lock);
 
     await Promise.all([
       updateArtifactory(),

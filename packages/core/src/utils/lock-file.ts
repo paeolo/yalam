@@ -1,16 +1,22 @@
 import lockFile from 'lockfile';
 
-export const lockFileAsync = (filePath: string, options: { wait: number }) =>
+export const lockFileAsync = (filePath: string) =>
   new Promise<void>((resolve, reject) => {
     const lockPath = filePath.concat('.lock');
-    lockFile.lock(lockPath, options, (err) => {
-      if (err) {
-        reject(err);
-      }
-      else {
-        resolve();
-      }
-    })
+    lockFile.lock(
+      lockPath,
+      {
+        wait: 1000,
+        stale: 1500
+      },
+      (err) => {
+        if (err) {
+          reject(err);
+        }
+        else {
+          resolve();
+        }
+      })
   })
 
 export const unlockFileAsync = (filePath: string) =>

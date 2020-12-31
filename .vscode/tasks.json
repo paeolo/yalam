@@ -15,14 +15,23 @@
       "problemMatcher": []
     },
     {
-      "label": "> Clean",
+      "label": "> Clean build",
       "type": "shell",
-      "command": "yarn clean",
+      "command": "yarn build:clean",
       "presentation": {
         "clear": true
       },
       "problemMatcher": []
-    }
+    },
+    {
+      "label": "> Clean fixtures",
+      "type": "shell",
+      "command": "yarn fixtures:clean",
+      "presentation": {
+        "clear": true
+      },
+      "problemMatcher": []
+    },
     {
       "label": "> Update TS project references",
       "type": "shell",

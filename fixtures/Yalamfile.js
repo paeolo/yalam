@@ -1,6 +1,6 @@
 const {
   pipe,
-  concat
+  concat,
 } = require('@yalam/core');
 const {
   source,
