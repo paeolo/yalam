@@ -1,7 +1,7 @@
-import rxjs from 'rxjs';
+import * as rxjs from 'rxjs';
 import {
   Task
-} from '../types';
+} from './types';
 
 export const concat = (...tasks: Task[]): Task => (input) => rxjs.concat(
   ...tasks.map(task => task(input))

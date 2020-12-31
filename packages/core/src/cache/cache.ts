@@ -22,7 +22,7 @@ import {
   FailedAsset,
   FileAsset
 } from '../asset';
-import { GLOBAL_LOCK } from '../misc';
+import { GLOBAL_LOCK } from '../constants';
 import {
   CacheOptions,
   CacheType,
@@ -30,6 +30,7 @@ import {
   FileInfo,
   FilesTracker
 } from './types';
+import { FileEvent, InitialEvent } from '../events';
 
 const version = require('../../package.json').version;
 
@@ -123,13 +124,12 @@ export class Cache implements Reporter {
     );
 
     if (artifactory.size === 0) {
-      return [{
-        type: EventType.INITIAL,
-        path: entry
-      }];
+      return [
+        new InitialEvent({ path: entry })
+      ];
     }
 
-    const events: InputEvent[] = fileEvents.map((event) => ({
+    const events: InputEvent[] = fileEvents.map((event) => new FileEvent({
       type: event.type === 'delete'
         ? EventType.DELETED
         : EventType.UPDATED,
@@ -143,11 +143,11 @@ export class Cache implements Reporter {
       if ((value.status === AssetStatus.ARTIFACT && value.task !== task)
         || value.status === AssetStatus.FAILED) {
         if (!events.some(event => event.path === value.sourcePath)) {
-          events.push({
+          events.push(new FileEvent({
             type: EventType.UPDATED,
             entry: entry,
             path: value.sourcePath,
-          });
+          }));
         }
         return;
       }
@@ -162,11 +162,11 @@ export class Cache implements Reporter {
         await Promise.all(tests);
       } catch {
         if (!events.some(event => event.path === value.sourcePath)) {
-          events.push({
+          events.push(new FileEvent({
             type: EventType.UPDATED,
             entry: entry,
             path: value.sourcePath,
-          });
+          }));
         }
       }
     };
@@ -186,7 +186,7 @@ export class Cache implements Reporter {
       ...(await this.getEventsForEntry(entry, task))
     );
 
-    await lockFileAsync(lock, { wait: 1000 });
+    await lockFileAsync(lock);
     await PMap(
       entries,
       addEvents
@@ -308,7 +308,7 @@ export class Cache implements Reporter {
       );
     };
 
-    await lockFileAsync(lock, { wait: 1000 });
+    await lockFileAsync(lock);
 
     await Promise.all([
       updateArtifactory(),

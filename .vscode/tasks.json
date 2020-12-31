@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "> Builder build",
+      "label": "> Build",
       "type": "shell",
       "command": "yarn build",
       "presentation": {
@@ -11,6 +11,24 @@
       "group": {
         "kind": "build",
         "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "> Clean build",
+      "type": "shell",
+      "command": "yarn build:clean",
+      "presentation": {
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "> Clean fixtures",
+      "type": "shell",
+      "command": "yarn fixtures:clean",
+      "presentation": {
+        "clear": true
       },
       "problemMatcher": []
     },
