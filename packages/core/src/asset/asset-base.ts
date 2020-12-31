@@ -2,7 +2,7 @@ import path from 'path';
 
 import {
   FileEvent,
-} from '../types';
+} from '../events';
 
 export interface BaseAssetOptions {
   path: string;

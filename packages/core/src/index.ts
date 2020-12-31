@@ -5,10 +5,13 @@ export {
   FailedAsset
 } from './asset';
 export {
+  FileEvent,
+  InitialEvent
+} from './events';
+export {
   concat,
   merge
-} from './misc';
-export * from './types';
+} from './compose';
 export {
   Yalam,
   YalamOptions
@@ -16,3 +19,4 @@ export {
 export {
   pipe
 } from 'rxjs';
+export * from './types';

@@ -42,11 +42,11 @@ const getEvents = (glob: string, entry: string): FileEvent[] => {
       absolute: true
     }
   );
-  return files.map(path => ({
+  return files.map(path => new FileEvent({
     type: EventType.UPDATED,
     entry,
     path,
-  }))
+  }));
 };
 
 const getSourceAsset = async (options: SourceAssetOptions) => {

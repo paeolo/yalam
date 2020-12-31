@@ -2,21 +2,21 @@ import watcher from '@parcel/watcher';
 import EventEmitter from 'eventemitter3';
 import PQueue from 'p-queue';
 import setImmediatePromise from 'set-immediate-promise';
+import deepEqual from 'deep-equal';
 import { from } from 'rxjs';
 import {
   map,
   mergeAll
 } from 'rxjs/operators';
-import deepEqual from 'deep-equal';
 
 import { Cache } from './cache';
+import { FileEvent, InitialEvent } from './events';
 import {
   Asset,
   AssetStatus,
   AsyncSubscription,
   InputEvent,
   EventType,
-  FileEvent,
   Reporter,
   Task,
 } from './types';
@@ -169,13 +169,13 @@ export class Yalam extends EventEmitter<EventTypes> {
   private getFileEvents(entry: string, events: watcher.Event[]): FileEvent[] {
     return events
       .filter((event) => !this.ignoredFiles.has(event.path))
-      .map((event) => ({
+      .map((event) => new FileEvent({
         type: event.type === 'delete'
           ? EventType.DELETED
           : EventType.UPDATED,
         entry,
         path: event.path
-      }))
+      }));
   }
 
   private async buildEvents(taskWithName: TaskWithName, events: InputEvent[], options?: BuildEventsOption) {
@@ -208,10 +208,7 @@ export class Yalam extends EventEmitter<EventTypes> {
 
   private async getInputEvents(entries: string[], task: string): Promise<InputEvent[]> {
     if (this.options.disableCache) {
-      return entries.map(entry => ({
-        type: EventType.INITIAL,
-        path: entry
-      }));
+      return entries.map(entry => new InitialEvent({ path: entry }));
     }
     else {
       return this.cache.getInputEvents(entries, task);

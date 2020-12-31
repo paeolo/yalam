@@ -2,7 +2,7 @@ import { YalamOptions } from "../yalam";
 import {
   CACHE_DIR,
   CACHE_KEY
-} from '../misc';
+} from '../constants';
 
 export const normalizeOptions = (options: YalamOptions): Required<YalamOptions> => ({
   disableCache: options.disableCache || false,
