@@ -2,7 +2,10 @@ import path from 'path';
 import replaceExt from 'replace-ext';
 import * as Babel from '@babel/core';
 
-import { Asset } from '@yalam/core';
+import {
+  BaseAsset,
+  FileAsset
+} from '@yalam/core';
 import {
   transform,
   TransformResult
@@ -15,7 +18,7 @@ type BabelOptions = Pick<Babel.TransformOptions,
   | "minified"
 >;
 
-const getOptions = (asset: Asset, options: BabelOptions): Babel.TransformOptions => {
+const getOptions = (asset: FileAsset, options: BabelOptions): Babel.TransformOptions => {
   const plugins = [];
   const presets = [
     [
@@ -41,7 +44,7 @@ const getOptions = (asset: Asset, options: BabelOptions): Babel.TransformOptions
   };
 }
 
-const transpile = async (asset: Asset, options: BabelOptions): Promise<TransformResult> => {
+const transpile = async (asset: FileAsset, options: BabelOptions): Promise<TransformResult> => {
   let sourceMap;
   const code = asset.getContentsOrFail().toString();
   const babelResult = await Babel.transformAsync(
@@ -66,7 +69,7 @@ const transpile = async (asset: Asset, options: BabelOptions): Promise<Transform
   };
 }
 
-const isJavascript = (asset: Asset) => ['.js', '.ts']
+const isJavascript = (asset: BaseAsset) => ['.js', '.ts']
   .includes(path.extname(asset.path));
 
 export const babel = (options: BabelOptions = {}) => transform({

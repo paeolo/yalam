@@ -6,6 +6,7 @@
   "files.exclude": {
     "**/.DS_Store": true,
     "**/.git": true,
+    "**/tsconfig.tsbuildinfo": true,
     "**/.yalam": true,
     "**/node_modules": true,
     "**/dist": true,

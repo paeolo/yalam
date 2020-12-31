@@ -2,23 +2,21 @@ import watcher from '@parcel/watcher';
 import EventEmitter from 'eventemitter3';
 import PQueue from 'p-queue';
 import setImmediatePromise from 'set-immediate-promise';
-import {
-  from, of
-} from 'rxjs';
+import { from } from 'rxjs';
 import {
   map,
   mergeAll
 } from 'rxjs/operators';
 import deepEqual from 'deep-equal';
 
-import Cache from './cache';
+import { Cache } from './cache';
 import {
+  Asset,
+  AssetStatus,
   AsyncSubscription,
   InputEvent,
   EventType,
-  BuildError,
   FileEvent,
-  InitialEvent,
   Reporter,
   Task,
 } from './types';
@@ -28,8 +26,9 @@ import {
   unsubscribeAll,
 } from './utils';
 import {
-  Asset,
-  AssetStatus
+  DeletedAsset,
+  FailedAsset,
+  FileAsset
 } from './asset';
 
 export interface YalamOptions {
@@ -37,17 +36,28 @@ export interface YalamOptions {
   cacheDir?: string;
   cacheKey?: string;
   reporters?: Reporter[];
+  concurrency?: number;
 }
 
 interface BuildOptions {
-  task: string;
+  taskName: string;
   entries: string[];
 }
 
 interface EventTypes {
-  built: (asset: Asset) => void;
-  input: (event: InputEvent) => void;
-  idle: (events?: BuildError[]) => void;
+  built: (asset: FileAsset, task: string) => void;
+  deleted: (asset: DeletedAsset) => void;
+  input: (events: InputEvent[]) => void;
+  idle: (events?: FailedAsset[]) => void;
+}
+
+interface TaskWithName {
+  name: string;
+  task: Task;
+}
+
+interface BuildEventsOption {
+  throwOnFail?: boolean;
 }
 
 export class Yalam extends EventEmitter<EventTypes> {
@@ -56,17 +66,22 @@ export class Yalam extends EventEmitter<EventTypes> {
   private tasks: Map<string, Task>;
   private ignoredFiles: Set<string>;
   private queue: PQueue;
-  private errors: BuildError[];
+  private failed: FailedAsset[];
 
   constructor(options: YalamOptions = {}) {
     super();
 
     this.options = normalizeOptions(options);
-    this.cache = new Cache(this.options.cacheDir);
+    this.cache = new Cache({
+      directory: this.options.cacheDir,
+      cacheKey: this.options.cacheKey
+    });
     this.tasks = new Map();
     this.ignoredFiles = new Set();
-    this.queue = new PQueue();
-    this.errors = [];
+    this.queue = new PQueue({
+      concurrency: this.options.concurrency
+    });
+    this.failed = [];
 
     this.init(this.options.reporters);
   }
@@ -75,13 +90,23 @@ export class Yalam extends EventEmitter<EventTypes> {
     reporters.forEach(
       (reporter) => this.bindReporter(reporter)
     );
-    this.queue.on('idle', () => this.emit('idle', this.errors));
+    this.bindReporter(this.cache);
+    this.queue.on('idle', () => this.emit('idle', this.failed));
   }
 
   private bindReporter(reporter: Reporter) {
-    this.addListener('built', reporter.onBuilt.bind(reporter));
-    this.addListener('input', reporter.onInput.bind(reporter));
-    this.addListener('idle', reporter.onIdle.bind(reporter));
+    if (reporter.onBuilt) {
+      this.addListener('built', reporter.onBuilt.bind(reporter));
+    }
+    if (reporter.onDeleted) {
+      this.addListener('deleted', reporter.onDeleted.bind(reporter));
+    }
+    if (reporter.onInput) {
+      this.addListener('input', reporter.onInput.bind(reporter));
+    }
+    if (reporter.onIdle) {
+      this.addListener('idle', reporter.onIdle.bind(reporter));
+    }
   }
 
   private get(key: string) {
@@ -92,41 +117,53 @@ export class Yalam extends EventEmitter<EventTypes> {
     return task;
   }
 
-  private onBuilt(asset: Asset, event: InputEvent) {
+  private onFailed(asset: FailedAsset) {
+    if (!this.failed.some(
+      value => deepEqual(value.getEvent(), asset.getEvent())
+    )) {
+      this.failed.push(asset);
+    }
+  }
+
+  private onBuilt(task: string, asset: Asset) {
     if (asset.status === AssetStatus.SOURCE) {
+      return;
+    } else if (asset.status === AssetStatus.FAILED) {
+      this.onFailed(asset);
       return;
     }
 
-    this.errors = this.errors.filter(
-      (value) => !(value.event.path === event.path)
-    );
     this.ignoredFiles.add(asset.getFullPath());
     this.ignoredFiles.add(asset.getFullPath().concat('.map'));
+    this.failed = this.failed
+      .filter((value) => !(value.getEvent().path === asset.getEvent().path));
 
     if (asset.status === AssetStatus.ARTIFACT) {
-      this.emit('built', asset);
+      this.emit('built', asset, task);
+    }
+    else if (asset.status === AssetStatus.DELETED) {
+      this.emit('deleted', asset);
     }
   }
 
-  private onError(error: Error, event: InputEvent) {
-    if (event.type === EventType.UPDATED
-      && !this.errors.some(value => deepEqual(value.event, event))) {
-      this.errors.push({
-        event,
-        error
-      });
-    }
-  }
-
-  private getSubscription(task: Task, entry: string) {
-    return watcher.subscribe(entry, async (err, events) => {
+  private getSubscription(task: TaskWithName, entry: string) {
+    const onEvents = async (err: Error | null, events: watcher.Event[]) => {
       if (err) {
         throw err;
       }
       const fileEvents = this.getFileEvents(entry, events);
       await setImmediatePromise();
-      this.queueEvents(task, fileEvents);
-    });
+
+      if (fileEvents.length !== 0) {
+        this.queueEvents(task, fileEvents);
+      }
+    };
+
+    return watcher.subscribe(
+      entry,
+      onEvents,
+      { ignore: [this.options.cacheDir] }
+    );
   }
 
   private getFileEvents(entry: string, events: watcher.Event[]): FileEvent[] {
@@ -141,40 +178,44 @@ export class Yalam extends EventEmitter<EventTypes> {
       }))
   }
 
-  private async getEvents(entries: string[]): Promise<InitialEvent[]> {
-    return entries.map(entry => ({
-      type: EventType.INITIAL,
-      path: entry
-    }));
-  }
+  private async buildEvents(taskWithName: TaskWithName, events: InputEvent[], options?: BuildEventsOption) {
+    const {
+      task,
+      name
+    } = taskWithName;
+    this.emit('input', events);
 
-  private async buildEvent(task: Task, event: InputEvent) {
-    this.emit('input', event);
-    await task(of(event))
+    await task(from(events))
       .pipe(
-        map(asset => from(asset.commit())),
+        map(asset => {
+          if (options
+            && options.throwOnFail
+            && asset.status === AssetStatus.FAILED) {
+            throw asset.getError();
+          }
+          return from(asset.commit())
+        }),
         mergeAll()
       )
       .forEach(
-        (asset) => this.onBuilt(asset, event)
+        (asset) => this.onBuilt(name, asset)
       );
   }
 
-  private buildEvents(task: Task, events: InputEvent[]) {
-    return Promise.all(
-      events.map(
-        (event) => this.buildEvent(task, event)
-      )
-    );
+  private queueEvents(task: TaskWithName, events: InputEvent[]) {
+    return this.queue.add(() => this.buildEvents(task, events));
   }
 
-  private queueEvents(task: Task, events: InputEvent[]) {
-    events.map(
-      (event) => this.queue.add(() => this
-        .buildEvent(task, event)
-        .catch(error => this.onError(error, event))
-      )
-    );
+  private async getInputEvents(entries: string[], task: string): Promise<InputEvent[]> {
+    if (this.options.disableCache) {
+      return entries.map(entry => ({
+        type: EventType.INITIAL,
+        path: entry
+      }));
+    }
+    else {
+      return this.cache.getInputEvents(entries, task);
+    }
   }
 
   /**
@@ -192,10 +233,14 @@ export class Yalam extends EventEmitter<EventTypes> {
    */
   public async build(options: BuildOptions) {
     const entries = await normalizeEntries(options.entries);
-    const task = this.get(options.task);
-    const events = await this.getEvents(entries);
+    const task = this.get(options.taskName);
+    const events = await this.getInputEvents(entries, options.taskName);
 
-    await this.buildEvents(task, events);
+    await this.buildEvents(
+      { name: options.taskName, task },
+      events,
+      { throwOnFail: true }
+    );
     this.emit('idle');
   }
 
@@ -205,14 +250,20 @@ export class Yalam extends EventEmitter<EventTypes> {
    */
   public async watch(options: BuildOptions): Promise<AsyncSubscription> {
     const entries = await normalizeEntries(options.entries);
-    const task = this.get(options.task);
-    const events = await this.getEvents(entries);
+    const task = this.get(options.taskName);
+    const events = await this.getInputEvents(entries, options.taskName);
 
-    await this.buildEvents(task, events);
-    this.emit('idle');
+    this.queueEvents(
+      { name: options.taskName, task },
+      events
+    );
+    await this.queue.onIdle();
 
     const subscriptions = await Promise.all(
-      entries.map(entry => this.getSubscription(task, entry))
+      entries.map(entry => this.getSubscription(
+        { name: options.taskName, task },
+        entry)
+      )
     );
 
     return {

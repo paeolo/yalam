@@ -1,9 +1,10 @@
 {
   "$schema": "http://json.schemastore.org/tsconfig",
   "compilerOptions": {
+    "composite": true,
     "outDir": "dist",
     "rootDir": "src",
-    "target": "es6",
+    "target": "es2019",
     "declaration": true,
     "module": "commonjs",
     "esModuleInterop": true,
@@ -21,5 +22,10 @@
   "exclude": [
     "node_modules",
     "**/*.spec.ts"
+  ],
+  "references": [
+    {
+      "path": "../core"
+    }
   ]
 }

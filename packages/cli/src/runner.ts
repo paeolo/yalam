@@ -13,14 +13,13 @@ import { TaskLoader } from './task-loader';
 export const enum RunnerMode {
   BUILD,
   WATCH,
-  SHOW,
 };
 
 export interface RunnerOptions {
   mode: RunnerMode;
   entries: string[];
-  configPath?: string;
-  task?: string;
+  configPath: string;
+  taskName?: string;
   yalamOptions: YalamOptions;
 };
 
@@ -36,7 +35,7 @@ export class Runner {
     this.yalam = new Yalam(options.yalamOptions);
     this.taskLoader = new TaskLoader({
       yalam: this.yalam,
-      configPath: options.configPath
+      configPath: options.configPath,
     });
   }
 
@@ -48,9 +47,6 @@ export class Runner {
       case RunnerMode.WATCH:
         await this.watch();
         break;
-      case RunnerMode.SHOW:
-        await this.taskLoader.show();
-        break;
     }
   }
 
@@ -58,7 +54,7 @@ export class Runner {
     await this.taskLoader.load();
     await this.yalam.build({
       entries: this.options.entries,
-      task: this.options.task || DEFAULT_TASK
+      taskName: this.options.taskName || DEFAULT_TASK
     });
   }
 
@@ -70,7 +66,7 @@ export class Runner {
     }
     const subscription = await this.yalam.watch({
       entries: this.options.entries,
-      task: this.options.task || DEFAULT_TASK
+      taskName: this.options.taskName || DEFAULT_TASK
     });
     add(subscription.unsubscribe);
   }

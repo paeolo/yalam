@@ -2,14 +2,26 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Build",
+      "label": "> Builder build",
       "type": "shell",
       "command": "yarn build",
+      "presentation": {
+        "clear": true
+      },
       "group": {
         "kind": "build",
         "isDefault": true
       },
-      "problemMatcher": "$tsc"
+      "problemMatcher": []
     },
+    {
+      "label": "> Update TS project references",
+      "type": "shell",
+      "command": "yarn update-ts-project-refs",
+      "presentation": {
+        "clear": true
+      },
+      "problemMatcher": []
+    }
   ]
 }

@@ -1,9 +1,9 @@
 import {
-  Asset,
-  AssetStatus,
+  FailedAsset,
+  DeletedAsset,
+  FileAsset,
   InputEvent,
   Reporter,
-  BuildError
 } from '@yalam/core';
 import chalk from 'chalk';
 import dateFormat from 'dateformat';
@@ -16,7 +16,7 @@ export const enum LogLevel {
 
 export class ConsoleLogger {
   private getDate() {
-    return dateFormat(new Date(), 'hh:MM:ss');
+    return dateFormat(new Date(), 'HH:MM:ss');
   }
 
   private print(prefix: string, message: string) {
@@ -39,27 +39,33 @@ export class ConsoleLogger {
 }
 
 export class ConsoleReporter implements Reporter {
-  private startTime = 0;
+  private startTime = new Date().getTime();
   private processing = false;
   private logger = new ConsoleLogger();
 
-  public onInput(event: InputEvent) {
+  public getLogger() {
+    return this.logger;
+  }
+
+  public onInput(events: InputEvent[]) {
     if (!this.processing) {
       this.startTime = new Date().getTime();
       this.processing = true;
     }
   }
 
-  public onBuilt(asset: Asset) {
-    if (asset.status === AssetStatus.ARTIFACT) {
-      this.logger.info(`Built ${asset.path}`)
-    }
+  public onBuilt(asset: FileAsset, task: string) {
+    this.logger.info(`Built ${asset.path}`);
   }
 
-  public onIdle(events?: BuildError[]) {
-    if (events && events.length !== 0) {
-      events.forEach(
-        (event) => this.logger.error(event.error.toString())
+  public onDeleted(asset: DeletedAsset) {
+    this.logger.info(`Deleted ${asset.path}`);
+  }
+
+  public onIdle(assets?: FailedAsset[]) {
+    if (assets && assets.length !== 0) {
+      assets.forEach(
+        (asset) => this.logger.error(asset.getError().toString())
       );
     } else {
       this.logger.success(`Built in ${new Date().getTime() - this.startTime}ms`);
