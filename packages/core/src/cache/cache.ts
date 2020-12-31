@@ -22,39 +22,16 @@ import {
   FileAsset
 } from '../asset';
 import { GLOBAL_LOCK } from '../misc';
+import {
+  CacheOptions,
+  CacheType,
+  CachedInfoType,
+  CachedInfo,
+  FileInfo,
+  FilesTracker
+} from './types';
 
 const version = require('../../package.json').version;
-
-interface CacheOptions {
-  directory: string;
-  cacheKey: string;
-}
-
-interface BuiltFileInfo {
-  status: AssetStatus.ARTIFACT,
-  task: string;
-  withSourceMap: boolean;
-  sourcePath: string;
-}
-
-interface DeletedFileInfo {
-  status: AssetStatus.DELETED,
-}
-
-type FileInfo = BuiltFileInfo | DeletedFileInfo;
-
-interface CachedInfo {
-  task: string;
-  withSourceMap: boolean;
-  sourcePath: string;
-}
-
-type FilesTracker = Map<string, Map<string, FileInfo>>;
-
-const enum CacheType {
-  ARTIFACTORY = 'artifactory',
-  FILE_SYSTEM = 'file_system',
-};
 
 export const md5 = (value: string, encoding: BinaryToTextEncoding = 'hex') => {
   return crypto
@@ -164,12 +141,15 @@ export class Cache implements Reporter {
     const map = Array.from(artifactory.entries());
 
     const addEvents = async ([filePath, value]: [string, CachedInfo]) => {
-      if (value.task !== task) {
-        events.push({
-          type: EventType.UPDATED,
-          entry: entry,
-          path: value.sourcePath,
-        });
+      if ((value.type === CachedInfoType.BUILT && value.task !== task)
+        || value.type === CachedInfoType.FAILED) {
+        if (!events.some(event => event.path === value.sourcePath)) {
+          events.push({
+            type: EventType.UPDATED,
+            entry: entry,
+            path: value.sourcePath,
+          });
+        }
         return;
       }
 
@@ -255,8 +235,18 @@ export class Cache implements Reporter {
           artifactory.set(
             key,
             {
+              type: CachedInfoType.BUILT,
               task: value.task,
               withSourceMap: value.withSourceMap,
+              sourcePath: value.sourcePath
+            }
+          );
+          break;
+        case AssetStatus.FAILED:
+          artifactory.set(
+            key,
+            {
+              type: CachedInfoType.FAILED,
               sourcePath: value.sourcePath
             }
           );
@@ -269,7 +259,7 @@ export class Cache implements Reporter {
 
     await fsAsync.writeFile(
       filePath,
-      JSON.stringify(Array.from(artifactory.entries()))
+      JSON.stringify(Array.from(artifactory.entries()), undefined, 2)
     );
   }
 
@@ -303,6 +293,19 @@ export class Cache implements Reporter {
   }
 
   public async onIdle(assets?: FailedAsset[]) {
+    if (assets) {
+      assets.forEach((asset) => {
+        this.trackFileStatus(
+          asset.getEntry(),
+          asset.getFullPath(),
+          {
+            status: AssetStatus.FAILED,
+            sourcePath: asset.getSourcePath()
+          }
+        );
+      })
+    }
+
     const entries = Array.from(this.filesTracker.entries());
     const lock = this.getLockFilePath();
 

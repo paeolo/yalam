@@ -50,6 +50,7 @@ const handleAsset = async (asset: Asset, options: TransformOptions) => {
     }
     return asset;
   } catch (error) {
+    asset.path = path;
     return FailedAsset.from(asset, error);
   }
 }
