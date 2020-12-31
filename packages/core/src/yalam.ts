@@ -136,7 +136,7 @@ export class Yalam extends EventEmitter<EventTypes> {
     this.ignoredFiles.add(asset.getFullPath());
     this.ignoredFiles.add(asset.getFullPath().concat('.map'));
     this.failed = this.failed
-      .filter((value) => !(value.getEvent().path === asset.getEvent().path));
+      .filter((value) => !(value.getFullPath() === asset.getFullPath()));
 
     if (asset.status === AssetStatus.ARTIFACT) {
       this.emit('built', asset, task);
