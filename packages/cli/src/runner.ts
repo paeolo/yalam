@@ -53,8 +53,8 @@ export class Runner {
   private async build() {
     await this.taskLoader.load();
     await this.yalam.build({
+      task: this.options.taskName || DEFAULT_TASK,
       entries: this.options.entries,
-      taskName: this.options.taskName || DEFAULT_TASK
     });
   }
 
@@ -65,8 +65,8 @@ export class Runner {
       initTTY();
     }
     const subscription = await this.yalam.watch({
+      task: this.options.taskName || DEFAULT_TASK,
       entries: this.options.entries,
-      taskName: this.options.taskName || DEFAULT_TASK
     });
     add(subscription.unsubscribe);
   }

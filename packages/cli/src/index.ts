@@ -10,13 +10,13 @@ import {
   RunnerMode
 } from './runner';
 import { YALAM_FILE } from './constants';
-import { TaskLoader } from './task-loader';
+import { printTasks } from './task-show';
 
 export const run = async (entries: string[], flags: FlagsType, reporters: Reporter[]) => {
   const configPath = flags.config || path.join(process.cwd(), YALAM_FILE);
 
   if (flags.show) {
-    TaskLoader.show(configPath);
+    printTasks(configPath);
     return;
   }
 

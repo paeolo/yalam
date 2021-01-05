@@ -109,7 +109,7 @@ export class Cache implements Reporter {
     );
   }
 
-  private async getEventsForEntry(entry: string, task: string): Promise<InputEvent[]> {
+  private async getEventsForEntry(task: string, entry: string): Promise<InputEvent[]> {
     const filePath = this.getCacheFilePath(entry, CacheType.ARTIFACTORY);
     const [
       artifactory,
@@ -178,12 +178,12 @@ export class Cache implements Reporter {
     return events;
   }
 
-  public async getInputEvents(entries: string[], task: string): Promise<InputEvent[]> {
+  public async getInputEvents(task: string, entries: string[]): Promise<InputEvent[]> {
     const events: InputEvent[] = [];
     const lock = this.getLockFilePath();
 
     const addEvents = async (entry: string) => events.push(
-      ...(await this.getEventsForEntry(entry, task))
+      ...(await this.getEventsForEntry(task, entry))
     );
 
     await lockFileAsync(lock);

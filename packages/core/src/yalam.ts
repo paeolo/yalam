@@ -40,20 +40,20 @@ export interface YalamOptions {
 }
 
 interface BuildOptions {
-  taskName: string;
+  task: string;
   entries: string[];
 }
 
 interface EventTypes {
+  input: (events: InputEvent[]) => void;
   built: (asset: FileAsset, task: string) => void;
   deleted: (asset: DeletedAsset) => void;
-  input: (events: InputEvent[]) => void;
-  idle: (events?: FailedAsset[]) => void;
+  idle: (assets?: FailedAsset[]) => void;
 }
 
-interface TaskWithName {
+interface NamedTask {
   name: string;
-  task: Task;
+  fn: Task;
 }
 
 interface BuildEventsOption {
@@ -95,26 +95,29 @@ export class Yalam extends EventEmitter<EventTypes> {
   }
 
   private bindReporter(reporter: Reporter) {
+    if (reporter.onInput) {
+      this.addListener('input', reporter.onInput.bind(reporter));
+    }
     if (reporter.onBuilt) {
       this.addListener('built', reporter.onBuilt.bind(reporter));
     }
     if (reporter.onDeleted) {
       this.addListener('deleted', reporter.onDeleted.bind(reporter));
     }
-    if (reporter.onInput) {
-      this.addListener('input', reporter.onInput.bind(reporter));
-    }
     if (reporter.onIdle) {
       this.addListener('idle', reporter.onIdle.bind(reporter));
     }
   }
 
-  private get(key: string) {
-    const task = this.tasks.get(key);
-    if (!task) {
-      throw new Error(`Task not found: ${key}`)
+  private getNamedTask(key: string): NamedTask {
+    const fn = this.tasks.get(key);
+    if (!fn) {
+      throw new Error(`Task "${key}" is not defined`);
     }
-    return task;
+    return {
+      name: key,
+      fn
+    }
   }
 
   private onFailed(asset: FailedAsset) {
@@ -146,7 +149,7 @@ export class Yalam extends EventEmitter<EventTypes> {
     }
   }
 
-  private getSubscription(task: TaskWithName, entry: string) {
+  private getSubscription(task: NamedTask, entry: string) {
     const onEvents = async (err: Error | null, events: watcher.Event[]) => {
       if (err) {
         throw err;
@@ -178,14 +181,10 @@ export class Yalam extends EventEmitter<EventTypes> {
       }));
   }
 
-  private async buildEvents(taskWithName: TaskWithName, events: InputEvent[], options?: BuildEventsOption) {
-    const {
-      task,
-      name
-    } = taskWithName;
+  private async buildEvents(task: NamedTask, events: InputEvent[], options?: BuildEventsOption) {
     this.emit('input', events);
 
-    await task(from(events))
+    await task.fn(from(events))
       .pipe(
         map(asset => {
           if (options
@@ -198,20 +197,20 @@ export class Yalam extends EventEmitter<EventTypes> {
         mergeAll()
       )
       .forEach(
-        (asset) => this.onBuilt(name, asset)
+        (asset) => this.onBuilt(task.name, asset)
       );
   }
 
-  private queueEvents(task: TaskWithName, events: InputEvent[]) {
+  private queueEvents(task: NamedTask, events: InputEvent[]) {
     return this.queue.add(() => this.buildEvents(task, events));
   }
 
-  private async getInputEvents(entries: string[], task: string): Promise<InputEvent[]> {
+  private async getInputEvents(task: string, entries: string[]): Promise<InputEvent[]> {
     if (this.options.disableCache) {
       return entries.map(entry => new InitialEvent({ path: entry }));
     }
     else {
-      return this.cache.getInputEvents(entries, task);
+      return this.cache.getInputEvents(task, entries);
     }
   }
 
@@ -219,8 +218,8 @@ export class Yalam extends EventEmitter<EventTypes> {
   * @description
   * Add a build task with the provided key to the tasks.
   */
-  public addTask(key: string, task: Task) {
-    this.tasks.set(key, task);
+  public addTask(key: string, fn: Task) {
+    this.tasks.set(key, fn);
     return this;
   }
 
@@ -230,11 +229,11 @@ export class Yalam extends EventEmitter<EventTypes> {
    */
   public async build(options: BuildOptions) {
     const entries = await normalizeEntries(options.entries);
-    const task = this.get(options.taskName);
-    const events = await this.getInputEvents(entries, options.taskName);
+    const task = this.getNamedTask(options.task);
+    const events = await this.getInputEvents(options.task, entries);
 
     await this.buildEvents(
-      { name: options.taskName, task },
+      task,
       events,
       { throwOnFail: true }
     );
@@ -247,20 +246,20 @@ export class Yalam extends EventEmitter<EventTypes> {
    */
   public async watch(options: BuildOptions): Promise<AsyncSubscription> {
     const entries = await normalizeEntries(options.entries);
-    const task = this.get(options.taskName);
-    const events = await this.getInputEvents(entries, options.taskName);
+    const task = this.getNamedTask(options.task);
+    const events = await this.getInputEvents(options.task, entries);
 
     this.queueEvents(
-      { name: options.taskName, task },
+      task,
       events
     );
     await this.queue.onIdle();
 
     const subscriptions = await Promise.all(
       entries.map(entry => this.getSubscription(
-        { name: options.taskName, task },
-        entry)
-      )
+        task,
+        entry
+      ))
     );
 
     return {
