@@ -1,10 +1,5 @@
 import { AssetStatus } from "../types";
 
-export interface CacheOptions {
-  directory: string;
-  cacheKey: string;
-}
-
 export interface BuiltFileInfo {
   status: AssetStatus.ARTIFACT,
   task: string;

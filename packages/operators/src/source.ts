@@ -20,6 +20,7 @@ import {
   FileAsset,
   InputEvent,
   FileEvent,
+  InitialEvent,
   EventType,
 } from '@yalam/core';
 
@@ -31,21 +32,23 @@ interface SourceAssetOptions {
   event: FileEvent,
   path: string,
   fullPath: string;
+  cacheDir: string;
 };
 
-const getEvents = (glob: string, entry: string): FileEvent[] => {
+const getEvents = (glob: string, event: InitialEvent): FileEvent[] => {
   const files = tinyGlob(
     glob,
     {
-      cwd: entry,
+      cwd: event.path,
       filesOnly: true,
       absolute: true
     }
   );
   return files.map(path => new FileEvent({
     type: EventType.UPDATED,
-    entry,
+    entry: event.path,
     path,
+    cacheDir: event.cacheDir
   }));
 };
 
@@ -55,6 +58,7 @@ const getSourceAsset = async (options: SourceAssetOptions) => {
   const asset = new FileAsset({
     path: options.path,
     event: options.event,
+    cacheDir: options.cacheDir
   });
 
   asset.setContents(content);
@@ -72,7 +76,7 @@ export const source = (options: SourceOptions): OperatorFunction<InputEvent, Ass
     map(event => {
       switch (event.type) {
         case EventType.INITIAL:
-          return from(getEvents(options.glob, event.path));
+          return from(getEvents(options.glob, event));
         default:
           return from([event]);
       }
@@ -89,6 +93,7 @@ export const source = (options: SourceOptions): OperatorFunction<InputEvent, Ass
             event: event,
             path: relativePath,
             fullPath: event.path,
+            cacheDir: event.cacheDir
           }));
         case EventType.DELETED:
           return of(

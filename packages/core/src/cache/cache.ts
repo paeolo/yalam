@@ -24,15 +24,18 @@ import {
 } from '../asset';
 import { GLOBAL_LOCK } from '../constants';
 import {
-  CacheOptions,
   CacheType,
   CachedInfo,
   FileInfo,
   FilesTracker
 } from './types';
-import { FileEvent, InitialEvent } from '../events';
+import {
+  FileEvent,
+  InitialEvent
+} from '../events';
 
 const version = require('../../package.json').version;
+const CACHE_DIR = 'core';
 
 export const md5 = (value: string, encoding: BinaryToTextEncoding = 'hex') => {
   return crypto
@@ -42,15 +45,25 @@ export const md5 = (value: string, encoding: BinaryToTextEncoding = 'hex') => {
     .substring(0, 10);
 }
 
+export interface CacheOptions {
+  cacheDir: string;
+  cacheKey: string;
+}
+
 export class Cache implements Reporter {
+  private options: CacheOptions;
   private cacheKey: string;
   private directory: string;
   private hashes: Map<string, string>;
   private filesTracker: FilesTracker;
 
   constructor(options: CacheOptions) {
+    this.options = options;
     this.cacheKey = options.cacheKey;
-    this.directory = path.resolve(options.directory);
+    this.directory = path.join(
+      options.cacheDir,
+      CACHE_DIR
+    );
     this.hashes = new Map();
     this.filesTracker = new Map();
     this.init();
@@ -125,7 +138,10 @@ export class Cache implements Reporter {
 
     if (artifactory.size === 0) {
       return [
-        new InitialEvent({ path: entry })
+        new InitialEvent({
+          path: entry,
+          cacheDir: this.options.cacheDir
+        })
       ];
     }
 
@@ -134,7 +150,8 @@ export class Cache implements Reporter {
         ? EventType.DELETED
         : EventType.UPDATED,
       entry,
-      path: event.path
+      path: event.path,
+      cacheDir: this.options.cacheDir
     }));
 
     const map = Array.from(artifactory.entries());
@@ -147,6 +164,7 @@ export class Cache implements Reporter {
             type: EventType.UPDATED,
             entry: entry,
             path: value.sourcePath,
+            cacheDir: this.options.cacheDir
           }));
         }
         return;
@@ -166,6 +184,7 @@ export class Cache implements Reporter {
             type: EventType.UPDATED,
             entry: entry,
             path: value.sourcePath,
+            cacheDir: this.options.cacheDir
           }));
         }
       }

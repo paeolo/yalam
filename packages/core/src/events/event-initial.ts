@@ -4,6 +4,7 @@ import {
 } from "../types";
 
 interface InitialEventOptions {
+  cacheDir: Path;
   path: Path;
 }
 
@@ -20,5 +21,9 @@ export class InitialEvent {
 
   public get path() {
     return this.options.path;
+  }
+
+  public get cacheDir() {
+    return this.options.cacheDir;
   }
 }

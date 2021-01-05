@@ -5,6 +5,7 @@ import {
 
 interface FileEventOptions {
   type: EventType.UPDATED | EventType.DELETED;
+  cacheDir: Path;
   entry: Path;
   path: Path;
 }
@@ -25,5 +26,9 @@ export class FileEvent {
 
   public get path() {
     return this.options.path;
+  }
+
+  public get cacheDir() {
+    return this.options.cacheDir;
   }
 }

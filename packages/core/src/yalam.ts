@@ -73,7 +73,7 @@ export class Yalam extends EventEmitter<EventTypes> {
 
     this.options = normalizeOptions(options);
     this.cache = new Cache({
-      directory: this.options.cacheDir,
+      cacheDir: this.options.cacheDir,
       cacheKey: this.options.cacheKey
     });
     this.tasks = new Map();
@@ -177,7 +177,8 @@ export class Yalam extends EventEmitter<EventTypes> {
           ? EventType.DELETED
           : EventType.UPDATED,
         entry,
-        path: event.path
+        path: event.path,
+        cacheDir: this.options.cacheDir
       }));
   }
 
@@ -207,7 +208,10 @@ export class Yalam extends EventEmitter<EventTypes> {
 
   private async getInputEvents(task: string, entries: string[]): Promise<InputEvent[]> {
     if (this.options.disableCache) {
-      return entries.map(entry => new InitialEvent({ path: entry }));
+      return entries.map(entry => new InitialEvent({
+        path: entry,
+        cacheDir: this.options.cacheDir
+      }));
     }
     else {
       return this.cache.getInputEvents(task, entries);
