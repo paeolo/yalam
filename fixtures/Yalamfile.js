@@ -1,29 +1,20 @@
 const {
   pipe,
-  concat,
 } = require('@yalam/core');
 const {
   source,
   destination,
 } = require('@yalam/operators');
-const { babel } = require('@yalam/babel');
-const { generateTypes } = require('@yalam/typescript')
+const { createTSCompiler } = require('@yalam/typescript');
 
-const transpile = pipe(
-  source({ glob: 'src/**/*.ts' }),
-  babel(),
-  destination({ path: 'dist' })
-);
+const tsCompiler = createTSCompiler();
 
-const dtsGeneration = pipe(
+const ts = pipe(
   source({ glob: 'src/**/*.ts' }),
-  generateTypes(),
+  tsCompiler.compile(),
   destination({ path: 'dist' })
 );
 
 module.exports = {
-  default: concat(
-    transpile,
-    dtsGeneration
-  ),
+  default: ts
 };

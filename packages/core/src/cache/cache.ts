@@ -139,8 +139,8 @@ export class Cache implements Reporter {
     if (artifactory.size === 0) {
       return [
         new InitialEvent({
+          cacheDir: this.options.cacheDir,
           path: entry,
-          cacheDir: this.options.cacheDir
         })
       ];
     }
@@ -150,8 +150,8 @@ export class Cache implements Reporter {
         ? EventType.DELETED
         : EventType.UPDATED,
       entry,
+      cacheDir: this.options.cacheDir,
       path: event.path,
-      cacheDir: this.options.cacheDir
     }));
 
     const map = Array.from(artifactory.entries());
@@ -162,9 +162,9 @@ export class Cache implements Reporter {
         if (!events.some(event => event.path === value.sourcePath)) {
           events.push(new FileEvent({
             type: EventType.UPDATED,
+            cacheDir: this.options.cacheDir,
             entry: entry,
             path: value.sourcePath,
-            cacheDir: this.options.cacheDir
           }));
         }
         return;

@@ -1,1 +1,2 @@
-export * from './generate-types';
+
+export { createTSCompiler } from './compiler';
