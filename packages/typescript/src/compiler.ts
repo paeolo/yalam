@@ -20,6 +20,7 @@ import {
 import {
   LanguageService
 } from './service';
+import { DocumentRegistry } from './registry';
 
 export class TSCompiler {
 
@@ -27,7 +28,7 @@ export class TSCompiler {
   private services: Map<FilePath, LanguageService>
 
   constructor() {
-    this.registry = ts.createDocumentRegistry();
+    this.registry = new DocumentRegistry();
     this.services = new Map();
   }
 

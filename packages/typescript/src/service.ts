@@ -8,14 +8,20 @@ import {
   FilePath
 } from './types';
 
+const INITAL_VERSION = 0;
+
+interface StoredAsset {
+  value: FileAsset;
+  version: number;
+}
+
 export class LanguageService {
 
   private options: ts.CompilerOptions;
   private host: ts.LanguageServiceHost;
   private registry: ts.DocumentRegistry;
   private service: ts.LanguageService;
-  private assets: Map<FilePath, FileAsset>;
-  private versions: Map<FilePath, number>;
+  private assets: Map<FilePath, StoredAsset>;
 
   constructor(options: ts.CompilerOptions, registry: ts.DocumentRegistry) {
     this.options = options;
@@ -25,12 +31,7 @@ export class LanguageService {
       getScriptSnapshot: fileName => this.getScriptSnapshot(fileName),
       getCurrentDirectory: () => process.cwd(),
       getCompilationSettings: () => this.options,
-      getDefaultLibFileName: options => ts.getDefaultLibFilePath(options),
-      fileExists: ts.sys.fileExists,
-      readFile: ts.sys.readFile,
-      readDirectory: ts.sys.readDirectory,
-      directoryExists: ts.sys.directoryExists,
-      getDirectories: ts.sys.getDirectories,
+      getDefaultLibFileName: ts.getDefaultLibFilePath,
     }
     this.registry = registry;
 
@@ -39,7 +40,6 @@ export class LanguageService {
       this.registry
     );
     this.assets = new Map();
-    this.versions = new Map();
   }
 
   private getScriptFileNames() {
@@ -49,36 +49,36 @@ export class LanguageService {
   }
 
   private getScriptVersion(fileName: FilePath) {
-    const version = this.versions.get(fileName);
+    const asset = this.assets.get(fileName);
 
-    if (!version) {
-      return '0';
-    }
-
-    return version.toString();
+    return asset
+      ? asset.version.toString()
+      : INITAL_VERSION.toString();
   }
 
   private getScriptSnapshot(fileName: FilePath) {
     const asset = this.assets.get(fileName);
 
-    if (!asset) {
-      return ts.ScriptSnapshot.fromString(
-        fs.readFileSync(fileName).toString()
-      );
-    }
-
-    return ts.ScriptSnapshot.fromString(
-      asset.getContentsOrFail().toString()
-    );
+    return asset
+      ? ts.ScriptSnapshot
+        .fromString(asset.value.getContentsOrFail().toString())
+      : ts.ScriptSnapshot
+        .fromString(fs.readFileSync(fileName).toString())
   }
 
   public getEmitOutput(asset: FileAsset) {
-    const fullPath = asset.getFullPath();
+    const fileName = asset.getFullPath();
+    const stored = this.assets.get(fileName);
 
-    this.assets.set(fullPath, asset);
-    const version = this.versions.get(fullPath) || 0;
-    this.versions.set(fullPath, version + 1);
+    const version = stored
+      ? stored.version + 1
+      : INITAL_VERSION;
 
-    return this.service.getEmitOutput(fullPath);
+    this.assets.set(fileName, {
+      value: asset,
+      version,
+    });
+
+    return this.service.getEmitOutput(fileName);
   }
 }
