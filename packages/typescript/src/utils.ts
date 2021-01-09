@@ -1,5 +1,5 @@
 import path from 'path';
-import replaceExt from 'replace-ext';
+import replace from 'replace-ext';
 import { BaseAsset, } from '@yalam/core';
 
 export const enum FileExtension {
@@ -10,5 +10,5 @@ export const enum FileExtension {
 export const isTypescript = (asset: BaseAsset) => ['.ts']
   .includes(path.extname(asset.path));
 
-export const replaceExtension = (extension: FileExtension) =>
-  (asset: BaseAsset) => replaceExt(asset.path, extension)
+export const replaceExt = (extension: FileExtension) =>
+  (asset: BaseAsset) => replace(asset.path, extension)

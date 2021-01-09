@@ -6,7 +6,7 @@ import {
 
 import {
   FilePath
-} from './types';
+} from '../types';
 
 const INITAL_VERSION = 0;
 

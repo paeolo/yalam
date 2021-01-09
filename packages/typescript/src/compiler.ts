@@ -12,7 +12,7 @@ import {
 import {
   FileExtension,
   isTypescript,
-  replaceExtension
+  replaceExt
 } from './utils';
 import {
   FilePath
@@ -20,7 +20,10 @@ import {
 import {
   LanguageService
 } from './service';
-import { DocumentRegistry } from './registry';
+import {
+  createRegistry,
+  createRegistryWithCache
+} from './registry';
 
 export class TSCompiler {
 
@@ -28,7 +31,9 @@ export class TSCompiler {
   private services: Map<FilePath, LanguageService>
 
   constructor() {
-    this.registry = new DocumentRegistry();
+    this.registry = createRegistryWithCache({
+      cacheDir: path.join(process.cwd(), 'ts-cache')
+    });
     this.services = new Map();
   }
 
@@ -83,7 +88,7 @@ export class TSCompiler {
   public compile() {
     return transform({
       filter: isTypescript,
-      getPath: replaceExtension(FileExtension.JS),
+      getPath: replaceExt(FileExtension.JS),
       getResult: this.generate.bind(this),
     })
   }
