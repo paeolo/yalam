@@ -6,7 +6,8 @@ import deepEqual from 'deep-equal';
 import { from } from 'rxjs';
 import {
   map,
-  mergeAll
+  mergeAll,
+  publish
 } from 'rxjs/operators';
 
 import { Cache } from './cache';
@@ -182,6 +183,8 @@ export class Yalam extends EventEmitter<EventTypes> {
   private async buildEvents(task: NamedTask, events: InputEvent[], throwOnFail: boolean) {
     this.emit('input', events);
 
+    const input = publish<InputEvent>()(from(events));
+
     const onAsset = (asset: Asset) => {
       if (throwOnFail && asset.status === AssetStatus.FAILED) {
         throw asset.getError();
@@ -189,14 +192,19 @@ export class Yalam extends EventEmitter<EventTypes> {
       return from(asset.commit());
     }
 
-    await task.fn(from(events))
-      .pipe(
-        map(onAsset),
-        mergeAll()
-      )
-      .forEach(
-        asset => this.onBuilt(task.name, asset)
-      );
+    await new Promise<void>((resolve, reject) => {
+      task.fn(input)
+        .pipe(
+          map(onAsset),
+          mergeAll()
+        )
+        .subscribe({
+          next: asset => this.onBuilt(task.name, asset),
+          error: error => reject(error),
+          complete: () => resolve()
+        });
+      input.connect();
+    });
   }
 
   private queueEvents(task: NamedTask, events: InputEvent[]) {

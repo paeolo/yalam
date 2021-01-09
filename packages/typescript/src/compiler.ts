@@ -5,8 +5,8 @@ import {
   FileAsset
 } from '@yalam/core';
 import {
-  transform,
-  TransformResult
+  oneToOne,
+  OneToOneResult
 } from '@yalam/operators';
 
 import {
@@ -28,7 +28,7 @@ export class TSCompiler {
     this.services = new Map();
   }
 
-  private generate = async (asset: FileAsset): Promise<TransformResult> => {
+  private generate = async (asset: FileAsset): Promise<OneToOneResult> => {
     const service = this.getLanguageService(asset.getEntry());
     const output = service
       .getEmitOutput(asset)
@@ -67,17 +67,17 @@ export class TSCompiler {
 
     const buffer = fs.readFileSync(configPath);
 
-    service = new LanguageService(
-      JSON.parse(buffer.toString()).compilerOptions,
-      this.registry
-    );
+    service = new LanguageService({
+      compilerOptions: JSON.parse(buffer.toString()).compilerOptions,
+      registry: this.registry
+    });
 
     this.services.set(entry, service);
     return service;
   }
 
   public compile() {
-    return transform({
+    return oneToOne({
       filter: isTypescript,
       getPath: replaceExt(FileExtension.JS),
       getResult: this.generate.bind(this),

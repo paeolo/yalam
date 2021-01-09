@@ -9,8 +9,9 @@ export {
   InitialEvent
 } from './events';
 export {
-  concat,
-  merge
+  parallel,
+  series,
+  dispatch
 } from './compose';
 export {
   Yalam,

@@ -15,26 +15,30 @@ interface StoredAsset {
   version: number;
 }
 
+export interface LanguageServiceOptions {
+  compilerOptions: ts.CompilerOptions;
+  registry: ts.DocumentRegistry;
+}
+
 export class LanguageService {
 
-  private options: ts.CompilerOptions;
+  private compilerOptions: ts.CompilerOptions;
   private host: ts.LanguageServiceHost;
   private registry: ts.DocumentRegistry;
   private service: ts.LanguageService;
   private assets: Map<FilePath, StoredAsset>;
 
-  constructor(options: ts.CompilerOptions, registry: ts.DocumentRegistry) {
-    this.options = options;
+  constructor(options: LanguageServiceOptions) {
+    this.compilerOptions = options.compilerOptions;
+    this.registry = options.registry;
     this.host = {
       getScriptFileNames: () => this.getScriptFileNames(),
       getScriptVersion: fileName => this.getScriptVersion(fileName),
       getScriptSnapshot: fileName => this.getScriptSnapshot(fileName),
       getCurrentDirectory: () => process.cwd(),
-      getCompilationSettings: () => this.options,
+      getCompilationSettings: () => this.compilerOptions,
       getDefaultLibFileName: ts.getDefaultLibFilePath,
     }
-    this.registry = registry;
-
     this.service = ts.createLanguageService(
       this.host,
       this.registry

@@ -7,8 +7,8 @@ import {
   FileAsset
 } from '@yalam/core';
 import {
-  transform,
-  TransformResult
+  oneToOne,
+  OneToOneResult
 } from '@yalam/operators';
 
 type BabelOptions = Pick<Babel.TransformOptions,
@@ -44,7 +44,7 @@ const getOptions = (asset: FileAsset, options: BabelOptions): Babel.TransformOpt
   };
 }
 
-const transpile = async (asset: FileAsset, options: BabelOptions): Promise<TransformResult> => {
+const transpile = async (asset: FileAsset, options: BabelOptions): Promise<OneToOneResult> => {
   let sourceMap;
   const code = asset.getContentsOrFail().toString();
   const babelResult = await Babel.transformAsync(
@@ -72,7 +72,7 @@ const transpile = async (asset: FileAsset, options: BabelOptions): Promise<Trans
 const isJavascript = (asset: BaseAsset) => ['.js', '.ts']
   .includes(path.extname(asset.path));
 
-export const babel = (options: BabelOptions = {}) => transform({
+export const babel = (options: BabelOptions = {}) => oneToOne({
   filter: (asset) => isJavascript(asset),
   getPath: (asset) => replaceExt(asset.path, '.js'),
   getResult: (asset) => transpile(asset, options),

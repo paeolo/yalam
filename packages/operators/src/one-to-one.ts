@@ -17,13 +17,13 @@ import {
   FailedAsset
 } from '@yalam/core';
 
-export interface TransformResult {
+export interface OneToOneResult {
   contents: Buffer;
   sourceMap?: SourceMap
 }
 
 interface TransformOptions {
-  getResult: (asset: FileAsset) => Promise<TransformResult>;
+  getResult: (asset: FileAsset) => Promise<OneToOneResult>;
   getPath: (asset: BaseAsset) => string;
   filter?: (asset: BaseAsset) => boolean;
 }
@@ -55,7 +55,7 @@ const handleAsset = async (asset: Asset, options: TransformOptions) => {
   }
 }
 
-export const transform = (options: TransformOptions): OperatorFunction<Asset, Asset> => pipe(
+export const oneToOne = (options: TransformOptions): OperatorFunction<Asset, Asset> => pipe(
   filter((asset => {
     if (!options.filter) {
       return true;
