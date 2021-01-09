@@ -32,7 +32,6 @@ interface SourceAssetOptions {
   event: FileEvent,
   path: string,
   fullPath: string;
-  cacheDir: string;
 };
 
 const getEvents = (glob: string, event: InitialEvent): FileEvent[] => {
@@ -58,7 +57,6 @@ const getSourceAsset = async (options: SourceAssetOptions) => {
   const asset = new FileAsset({
     path: options.path,
     event: options.event,
-    cacheDir: options.cacheDir
   });
 
   asset.setContents(content);
@@ -93,13 +91,12 @@ export const source = (options: SourceOptions): OperatorFunction<InputEvent, Ass
             event: event,
             path: relativePath,
             fullPath: event.path,
-            cacheDir: event.cacheDir
           }));
         case EventType.DELETED:
           return of(
             new DeletedAsset({
               path: relativePath,
-              event: event
+              event: event,
             })
           );
       }

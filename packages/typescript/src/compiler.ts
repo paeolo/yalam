@@ -14,16 +14,9 @@ import {
   isTypescript,
   replaceExt
 } from './utils';
-import {
-  FilePath
-} from './types';
-import {
-  LanguageService
-} from './service';
-import {
-  createRegistry,
-  createRegistryWithCache
-} from './registry';
+import { FilePath } from './types';
+import { LanguageService } from './service';
+import { createRegistry } from './registry';
 
 export class TSCompiler {
 
@@ -31,9 +24,7 @@ export class TSCompiler {
   private services: Map<FilePath, LanguageService>
 
   constructor() {
-    this.registry = createRegistryWithCache({
-      cacheDir: path.join(process.cwd(), 'ts-cache')
-    });
+    this.registry = createRegistry();
     this.services = new Map();
   }
 

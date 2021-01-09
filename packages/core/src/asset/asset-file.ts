@@ -5,7 +5,6 @@ import path from 'path';
 
 import {
   AssetStatus,
-  Path,
   SourceMap
 } from '../types';
 import {
@@ -13,20 +12,14 @@ import {
   BaseAssetOptions
 } from './asset-base';
 
-type FileAssetOptions = {
-  cacheDir: Path;
-} & BaseAssetOptions;
-
 export class FileAsset extends BaseAsset {
   public status: AssetStatus.SOURCE | AssetStatus.ARTIFACT;
   public sourceMap: SourceMap | undefined;
   private contents: Buffer | undefined;
-  public readonly cacheDir: Path;
 
-  constructor(options: FileAssetOptions) {
+  constructor(options: BaseAssetOptions) {
     super(options);
     this.status = AssetStatus.SOURCE;
-    this.cacheDir = options.cacheDir;
   }
 
   public getContentsOrFail() {
