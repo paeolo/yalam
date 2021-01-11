@@ -35,7 +35,7 @@ import {
 } from '../events';
 
 const version = require('../../package.json').version;
-const CACHE_DIR = 'core';
+export const CACHE_NAME = 'core';
 
 export const md5 = (value: string, encoding: BinaryToTextEncoding = 'hex') => {
   return crypto
@@ -62,7 +62,7 @@ export class Cache implements Reporter {
     this.cacheKey = options.cacheKey;
     this.directory = path.join(
       options.cacheDir,
-      CACHE_DIR
+      CACHE_NAME
     );
     this.hashes = new Map();
     this.filesTracker = new Map();
@@ -73,7 +73,7 @@ export class Cache implements Reporter {
     mkdirp.sync(this.directory);
   }
 
-  private getSpecificHashForEntry(entry: string) {
+  public getHashForEntry(entry: string) {
     const key = entry
       .concat(version)
       .concat(this.cacheKey);
@@ -86,7 +86,7 @@ export class Cache implements Reporter {
     return hash;
   }
 
-  private getHashForEntry(entry: string) {
+  private getGenericHashForEntry(entry: string) {
     let hash = this.hashes.get(entry)
     if (!hash) {
       hash = md5(entry);
@@ -99,11 +99,11 @@ export class Cache implements Reporter {
     switch (cacheType) {
       case CacheType.ARTIFACTORY:
         return cacheType.concat('.')
-          .concat(this.getSpecificHashForEntry(entry))
+          .concat(this.getHashForEntry(entry))
           .concat('.json');
       case CacheType.FILE_SYSTEM:
         return cacheType.concat('.')
-          .concat(this.getHashForEntry(entry))
+          .concat(this.getGenericHashForEntry(entry))
           .concat('.txt');
     }
   }
@@ -140,6 +140,7 @@ export class Cache implements Reporter {
       return [
         new InitialEvent({
           cacheDir: this.options.cacheDir,
+          cacheKey: this.getHashForEntry(entry),
           entry,
         })
       ];
@@ -150,6 +151,7 @@ export class Cache implements Reporter {
         ? EventType.DELETED
         : EventType.UPDATED,
       cacheDir: this.options.cacheDir,
+      cacheKey: this.getHashForEntry(entry),
       entry,
       path: event.path,
     }));
@@ -163,7 +165,8 @@ export class Cache implements Reporter {
           events.push(new FileEvent({
             type: EventType.UPDATED,
             cacheDir: this.options.cacheDir,
-            entry: entry,
+            cacheKey: this.getHashForEntry(entry),
+            entry,
             path: value.sourcePath,
           }));
         }
@@ -184,7 +187,8 @@ export class Cache implements Reporter {
             type: EventType.UPDATED,
             entry: entry,
             path: value.sourcePath,
-            cacheDir: this.options.cacheDir
+            cacheDir: this.options.cacheDir,
+            cacheKey: this.getHashForEntry(entry),
           }));
         }
       }

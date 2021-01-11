@@ -33,12 +33,10 @@ const getEvents = (glob: string, sourceBase: string, event: InitialEvent): FileE
       absolute: true
     }
   );
-  return files.map(path => new FileEvent({
+  return files.map(path => event.convertToFileEvent({
     type: EventType.UPDATED,
-    cacheDir: event.cacheDir,
-    entry: event.entry,
     path,
-    sourceBase,
+    sourceBase
   }));
 };
 
@@ -53,15 +51,17 @@ export const source = (options: SourceOptions): OperatorFunction<InputEvent, Fil
     map(event => {
       switch (event.type) {
         case EventType.INITIAL:
-          return from(getEvents(options.glob, sourceBase, event));
+          return from(
+            getEvents(
+              options.glob,
+              sourceBase,
+              event
+            )
+          );
         default:
-          return of(new FileEvent({
-            type: event.type,
-            cacheDir: event.cacheDir,
-            entry: event.entry,
-            path: event.path,
-            sourceBase
-          }));
+          return of(
+            event.withSourceBase(sourceBase)
+          );
       }
     }),
     mergeAll()

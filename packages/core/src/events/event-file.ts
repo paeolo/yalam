@@ -1,40 +1,47 @@
 import {
+  BaseEvent,
+  BaseEventOptions
+} from "./event-base";
+import {
   EventType,
   Path
 } from "../types";
+import { InitialEvent } from "./event-initial";
 
-interface FileEventOptions {
+type FileEventOptions = {
   type: EventType.UPDATED | EventType.DELETED;
-  cacheDir: Path;
-  entry: Path;
   path: Path;
   sourceBase?: Path;
-}
+} & BaseEventOptions;
 
-export class FileEvent {
-  private options: FileEventOptions;
+export class FileEvent extends BaseEvent {
+  public readonly type: EventType.UPDATED | EventType.DELETED;
+  public readonly path: Path;
+  public readonly sourceBase?: Path;
 
   constructor(options: FileEventOptions) {
-    this.options = options;
+    super(options);
+    this.type = options.type;
+    this.path = options.path;
+    this.sourceBase = options.sourceBase;
   }
 
-  public get type() {
-    return this.options.type;
+  public withSourceBase(sourceBase: string) {
+    return new FileEvent({
+      cacheDir: this.cacheDir,
+      cacheKey: this.cacheKey,
+      entry: this.entry,
+      path: this.path,
+      type: this.type,
+      sourceBase: sourceBase
+    })
   }
 
-  public get cacheDir() {
-    return this.options.cacheDir;
-  }
-
-  public get entry() {
-    return this.options.entry;
-  }
-
-  public get path() {
-    return this.options.path;
-  }
-
-  public get sourceBase() {
-    return this.options.sourceBase;
+  public convertToInitialEvent() {
+    return new InitialEvent({
+      cacheDir: this.cacheDir,
+      cacheKey: this.cacheKey,
+      entry: this.entry
+    })
   }
 }
