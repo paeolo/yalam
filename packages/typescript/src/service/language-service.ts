@@ -41,7 +41,7 @@ export class LanguageService {
     }
     this.service = ts.createLanguageService(
       this.host,
-      this.registry
+      this.registry,
     );
     this.assets = new Map();
   }
@@ -70,7 +70,32 @@ export class LanguageService {
         .fromString(fs.readFileSync(fileName).toString())
   }
 
-  public getEmitOutput(asset: FileAsset) {
+  private getFirstSyntacticError(fileName: FilePath) {
+    const diagnotics = this.service
+      .getCompilerOptionsDiagnostics()
+      .concat(this.service.getSyntacticDiagnostics(fileName));
+
+    const diagnostic = diagnotics[0];
+
+    if (!diagnostic) {
+      return;
+    }
+
+    const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
+    if (diagnostic.file && diagnostic.start) {
+      const {
+        line,
+        character
+      } = diagnostic.file.getLineAndCharacterOfPosition(
+        diagnostic.start
+      );
+      return new Error(`${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`)
+    } else {
+      return new Error(message);
+    }
+  }
+
+  public getEmitOutput(asset: FileAsset, emitOnlyDtsFiles?: boolean) {
     const fileName = asset.getFullPath();
     const stored = this.assets.get(fileName);
 
@@ -82,6 +107,12 @@ export class LanguageService {
       value: asset,
       version,
     });
+
+    const error = this.getFirstSyntacticError(fileName);
+
+    if (error) {
+      throw error;
+    }
 
     return this.service.getEmitOutput(fileName);
   }

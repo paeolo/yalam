@@ -140,7 +140,7 @@ export class Cache implements Reporter {
       return [
         new InitialEvent({
           cacheDir: this.options.cacheDir,
-          path: entry,
+          entry,
         })
       ];
     }
@@ -149,8 +149,8 @@ export class Cache implements Reporter {
       type: event.type === 'delete'
         ? EventType.DELETED
         : EventType.UPDATED,
-      entry,
       cacheDir: this.options.cacheDir,
+      entry,
       path: event.path,
     }));
 
@@ -159,7 +159,7 @@ export class Cache implements Reporter {
     const addEvents = async ([filePath, value]: [string, CachedInfo]) => {
       if ((value.status === AssetStatus.ARTIFACT && value.task !== task)
         || value.status === AssetStatus.FAILED) {
-        if (!events.some(event => event.path === value.sourcePath)) {
+        if (!events.some(event => event.entry === value.sourcePath)) {
           events.push(new FileEvent({
             type: EventType.UPDATED,
             cacheDir: this.options.cacheDir,
@@ -179,7 +179,7 @@ export class Cache implements Reporter {
       try {
         await Promise.all(tests);
       } catch {
-        if (!events.some(event => event.path === value.sourcePath)) {
+        if (!events.some(event => event.entry === value.sourcePath)) {
           events.push(new FileEvent({
             type: EventType.UPDATED,
             entry: entry,
@@ -278,7 +278,7 @@ export class Cache implements Reporter {
           {
             status: AssetStatus.ARTIFACT,
             task: task!,
-            withSourceMap: !!asset.sourceMap,
+            withSourceMap: !!asset.getSourceMap(),
             sourcePath: asset.getSourcePath()
           }
         );

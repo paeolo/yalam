@@ -174,7 +174,7 @@ export class Yalam extends EventEmitter<EventTypes> {
         type: event.type === 'delete'
           ? EventType.DELETED
           : EventType.UPDATED,
-        entry,
+        entry: entry,
         path: event.path,
         cacheDir: this.options.cacheDir
       }));
@@ -214,7 +214,7 @@ export class Yalam extends EventEmitter<EventTypes> {
   private async getInputEvents(task: string, entries: string[]): Promise<InputEvent[]> {
     if (this.options.disableCache) {
       return entries.map(entry => new InitialEvent({
-        path: entry,
+        entry: entry,
         cacheDir: this.options.cacheDir
       }));
     }

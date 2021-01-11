@@ -8,6 +8,7 @@ interface FileEventOptions {
   cacheDir: Path;
   entry: Path;
   path: Path;
+  sourceBase?: Path;
 }
 
 export class FileEvent {
@@ -20,6 +21,11 @@ export class FileEvent {
   public get type() {
     return this.options.type;
   }
+
+  public get cacheDir() {
+    return this.options.cacheDir;
+  }
+
   public get entry() {
     return this.options.entry;
   }
@@ -28,7 +34,7 @@ export class FileEvent {
     return this.options.path;
   }
 
-  public get cacheDir() {
-    return this.options.cacheDir;
+  public get sourceBase() {
+    return this.options.sourceBase;
   }
 }

@@ -16,7 +16,6 @@ import {
 } from './utils';
 import { FilePath } from './types';
 import { LanguageService } from './service';
-import { createRegistry } from './registry';
 
 export class TSCompiler {
 
@@ -24,7 +23,7 @@ export class TSCompiler {
   private services: Map<FilePath, LanguageService>
 
   constructor() {
-    this.registry = createRegistry();
+    this.registry = ts.createDocumentRegistry();
     this.services = new Map();
   }
 

@@ -14,7 +14,7 @@ import {
 
 export class FileAsset extends BaseAsset {
   public status: AssetStatus.SOURCE | AssetStatus.ARTIFACT;
-  public sourceMap: SourceMap | undefined;
+  private sourceMap: SourceMap | undefined;
   private contents: Buffer | undefined;
 
   constructor(options: BaseAssetOptions) {
@@ -31,6 +31,18 @@ export class FileAsset extends BaseAsset {
 
   public setContents(contents: Buffer) {
     this.contents = contents;
+  }
+
+  public getSourceMap() {
+    return this.sourceMap;
+  }
+
+  public deleteSourceMap() {
+    this.sourceMap = undefined;
+  }
+
+  public setSourceMap(sourceMap: SourceMap) {
+    this.sourceMap = sourceMap;
   }
 
   public async commit() {

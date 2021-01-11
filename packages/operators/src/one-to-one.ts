@@ -46,7 +46,7 @@ const handleAsset = async (asset: Asset, options: TransformOptions) => {
     asset.path = path;
     asset.setContents(result.contents);
     if (result.sourceMap) {
-      asset.sourceMap = result.sourceMap;
+      asset.setSourceMap(result.sourceMap);
     }
     return asset;
   } catch (error) {

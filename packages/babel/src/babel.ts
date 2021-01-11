@@ -36,7 +36,7 @@ const getOptions = (asset: FileAsset, options: BabelOptions): Babel.TransformOpt
   return {
     cwd: asset.getEntry(),
     filename: asset.getSourcePath(),
-    inputSourceMap: asset.sourceMap,
+    inputSourceMap: asset.getSourceMap(),
     sourceMaps: true,
     plugins,
     presets,

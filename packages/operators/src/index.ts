@@ -8,6 +8,9 @@ export {
   source
 } from './source';
 export {
+  createAsset
+} from './create-asset'
+export {
   oneToOne,
   OneToOneResult
 } from './one-to-one';
