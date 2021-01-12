@@ -47,10 +47,17 @@ const handleAsset = async (asset: Asset, options: TransformOptions) => {
       sourceMap: result.sourceMap,
     });
   } catch (error) {
-    return asset.getFailed(path, error);
+    return asset.getFailed({
+      path,
+      error
+    });
   }
 }
 
+/**
+ * @description
+ * An operator that transforms one asset into another with filtering and failure handling.
+ */
 export const oneToOne = (options: TransformOptions): OperatorFunction<Asset, Asset> => pipe(
   filter((asset => {
     if (!options.filter) {

@@ -11,6 +11,7 @@
     "moduleResolution": "node",
     "strict": true,
     "skipLibCheck": true,
+    "removeComments": false,
     "typeRoots": [
       "./typings",
       "node_modules/@types"

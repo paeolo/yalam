@@ -32,6 +32,15 @@ interface GetTransformedOptions {
   sourceMap?: SourceMap;
 }
 
+interface getArtifactOptions {
+  path: FilePath;
+}
+
+interface GetFailedOptions {
+  path: FilePath;
+  error: Error
+}
+
 export class FileAsset extends ImmutableAsset {
   public readonly status: FileAssetStatus;
   public readonly contents: Buffer | undefined;
@@ -61,22 +70,22 @@ export class FileAsset extends ImmutableAsset {
     });
   }
 
-  public getArtifact(path: FilePath) {
+  public getFailed(options: GetFailedOptions) {
+    return new FailedAsset({
+      event: this.event,
+      path: options.path,
+      error: options.error
+    })
+  }
+
+  public getArtifact(options: getArtifactOptions) {
     return new FileAsset({
       event: this.event,
       status: AssetStatus.ARTIFACT,
-      path,
+      path: options.path,
       contents: this.contents,
       sourceMap: this.sourceMap,
     });
-  }
-
-  public getFailed(path: FilePath, error: Error) {
-    return new FailedAsset({
-      event: this.event,
-      path,
-      error
-    })
   }
 
   public async commit() {

@@ -29,6 +29,10 @@ const getSourceAsset = async (options: SourceAssetOptions) => new FileAsset({
   contents: await fs.readFile(options.event.path)
 })
 
+/**
+ * @description
+ * An operator that buffers each file event into an immutable asset.
+ */
 export const createAsset = (): OperatorFunction<FileEvent, Asset> => pipe(
   map(event => {
     const base = event.sourceBase

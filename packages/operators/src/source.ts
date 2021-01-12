@@ -40,6 +40,10 @@ const getEvents = (glob: string, sourceBase: string, event: InitialEvent): FileE
   }));
 };
 
+/**
+ * @description
+ * An operator that produces file events out of an unique initial event using a glob.
+ */
 export const source = (options: SourceOptions): OperatorFunction<InputEvent, FileEvent> => {
   const { regex } = globrex(options.glob, { globstar: true });
   const sourceBase = globParent(options.glob);
