@@ -26,15 +26,21 @@ export class ConsoleLogger {
   }
 
   public info(message: string) {
-    this.print(chalk.blue(LogLevel.INFO.concat(':')), message);
+    this.print(
+      chalk.blue(LogLevel.INFO.concat(':')), message
+    );
   }
 
   public error(message: string) {
-    this.print(chalk.red(LogLevel.ERROR.concat(':')), message);
+    this.print(
+      chalk.red(LogLevel.ERROR.concat(':')), message
+    );
   }
 
   public success(message: string) {
-    this.print(chalk.green(LogLevel.SUCCESS.concat(':')), message);
+    this.print(
+      chalk.green(LogLevel.SUCCESS.concat(':')), message
+    );
   }
 }
 
@@ -65,10 +71,12 @@ export class ConsoleReporter implements Reporter {
   public onIdle(assets?: FailedAsset[]) {
     if (assets && assets.length !== 0) {
       assets.forEach(
-        (asset) => this.logger.error(asset.getError().toString())
+        (asset) => this.logger.error(asset.error.toString())
       );
     } else {
-      this.logger.success(`Built in ${new Date().getTime() - this.startTime}ms`);
+      this.logger.success(
+        `Built in ${new Date().getTime() - this.startTime}ms`
+      );
     }
     this.processing = false;
   }

@@ -1,4 +1,5 @@
 import ts from 'typescript';
+import path from 'path';
 import fs from 'fs';
 import {
   FileAsset
@@ -15,12 +16,12 @@ interface StoredAsset {
   version: number;
 }
 
-export interface LanguageServiceOptions {
+export interface TranspilerServiceOptions {
   compilerOptions: ts.CompilerOptions;
   registry: ts.DocumentRegistry;
 }
 
-export class LanguageService {
+export class TranspilerService {
 
   private compilerOptions: ts.CompilerOptions;
   private host: ts.LanguageServiceHost;
@@ -28,7 +29,7 @@ export class LanguageService {
   private service: ts.LanguageService;
   private assets: Map<FilePath, StoredAsset>;
 
-  constructor(options: LanguageServiceOptions) {
+  constructor(options: TranspilerServiceOptions) {
     this.compilerOptions = options.compilerOptions;
     this.registry = options.registry;
     this.host = {
@@ -95,8 +96,8 @@ export class LanguageService {
     }
   }
 
-  public getEmitOutput(asset: FileAsset, emitOnlyDtsFiles?: boolean) {
-    const fileName = asset.getFullPath();
+  private storeAsset(asset: FileAsset) {
+    const fileName = asset.fullPath;
     const stored = this.assets.get(fileName);
 
     const version = stored
@@ -107,6 +108,11 @@ export class LanguageService {
       value: asset,
       version,
     });
+  }
+
+  public getJavascript(asset: FileAsset) {
+    const fileName = asset.fullPath;
+    this.storeAsset(asset);
 
     const error = this.getFirstSyntacticError(fileName);
 
@@ -114,6 +120,32 @@ export class LanguageService {
       throw error;
     }
 
-    return this.service.getEmitOutput(fileName);
+    const output = this.service
+      .getEmitOutput(fileName)
+      .outputFiles
+      .find(file => path.extname(file.name) === '.js');
+
+    if (!output) {
+      throw new Error();
+    }
+
+    return output;
+  }
+
+  public getDTS(asset: FileAsset) {
+    const fileName = asset.fullPath;
+    this.storeAsset(asset);
+
+    const output = this.service
+      .getEmitOutput(fileName, true, true)
+      .outputFiles
+      .find(file => path.extname(file.name) === '.ts');
+
+
+    if (!output) {
+      throw new Error();
+    }
+
+    return output;
   }
 }

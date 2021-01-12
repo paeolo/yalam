@@ -2,19 +2,19 @@ import mkdirp from 'mkdirp';
 import path from 'path';
 import {
   EventType,
-  Path
+  DirectoryPath
 } from "../types";
 import { CACHE_NAME } from '../cache'
 
 export interface BaseEventOptions {
-  entry: Path;
-  cacheDir: Path;
+  entry: DirectoryPath;
+  cacheDir: DirectoryPath;
   cacheKey: string;
 }
 
-export abstract class BaseEvent {
-  public readonly entry: Path;
-  public readonly cacheDir: Path;
+export abstract class ImmutableEvent {
+  public readonly entry: DirectoryPath;
+  public readonly cacheDir: DirectoryPath;
   public readonly cacheKey: string;
 
   constructor(options: BaseEventOptions) {
@@ -25,7 +25,7 @@ export abstract class BaseEvent {
 
   public abstract get type(): EventType;
 
-  public getCachePath(cacheName: string) {
+  public getCachePath(cacheName: string): DirectoryPath {
     if (cacheName === CACHE_NAME) {
       throw new Error(
         `Cache name "${CACHE_NAME}" is reserved`

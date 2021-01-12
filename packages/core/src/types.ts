@@ -9,7 +9,9 @@ import {
   InitialEvent
 } from './events';
 
-export type Path = string;
+export type FilePath = string;
+export type DirectoryPath = string;
+export type Path = FilePath | DirectoryPath;
 
 export type InputEvent = InitialEvent | FileEvent;
 export type Asset = FileAsset | DeletedAsset | FailedAsset;

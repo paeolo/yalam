@@ -1,23 +1,24 @@
 import {
-  BaseEvent,
+  ImmutableEvent,
   BaseEventOptions
-} from "./event-base";
+} from "./event-immutable";
 import {
+  DirectoryPath,
   EventType,
-  Path
+  FilePath
 } from "../types";
 import { InitialEvent } from "./event-initial";
 
 type FileEventOptions = {
   type: EventType.UPDATED | EventType.DELETED;
-  path: Path;
-  sourceBase?: Path;
+  path: FilePath;
+  sourceBase?: DirectoryPath;
 } & BaseEventOptions;
 
-export class FileEvent extends BaseEvent {
+export class FileEvent extends ImmutableEvent {
   public readonly type: EventType.UPDATED | EventType.DELETED;
-  public readonly path: Path;
-  public readonly sourceBase?: Path;
+  public readonly path: FilePath;
+  public readonly sourceBase?: DirectoryPath;
 
   constructor(options: FileEventOptions) {
     super(options);
@@ -26,7 +27,7 @@ export class FileEvent extends BaseEvent {
     this.sourceBase = options.sourceBase;
   }
 
-  public withSourceBase(sourceBase: string) {
+  public getWithSourceBase(sourceBase: string) {
     return new FileEvent({
       cacheDir: this.cacheDir,
       cacheKey: this.cacheKey,
@@ -37,7 +38,7 @@ export class FileEvent extends BaseEvent {
     })
   }
 
-  public convertToInitialEvent() {
+  public getInitialEvent() {
     return new InitialEvent({
       cacheDir: this.cacheDir,
       cacheKey: this.cacheKey,

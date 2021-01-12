@@ -10,11 +10,10 @@ import {
 } from 'rxjs/operators';
 import {
   Asset,
-  BaseAsset,
+  ImmutableAsset,
   AssetStatus,
   FileAsset,
   SourceMap,
-  FailedAsset
 } from '@yalam/core';
 
 export interface OneToOneResult {
@@ -24,8 +23,8 @@ export interface OneToOneResult {
 
 interface TransformOptions {
   getResult: (asset: FileAsset) => Promise<OneToOneResult>;
-  getPath: (asset: BaseAsset) => string;
-  filter?: (asset: BaseAsset) => boolean;
+  getPath: (asset: ImmutableAsset) => string;
+  filter?: (asset: ImmutableAsset) => boolean;
 }
 
 const handleAsset = async (asset: Asset, options: TransformOptions) => {
@@ -37,21 +36,18 @@ const handleAsset = async (asset: Asset, options: TransformOptions) => {
   const path = options.getPath(asset);
 
   if (asset.status === AssetStatus.DELETED) {
-    asset.path = path;
-    return asset;
+    return asset.getWithPath(path);
   }
 
   try {
     const result = await options.getResult(asset);
-    asset.path = path;
-    asset.setContents(result.contents);
-    if (result.sourceMap) {
-      asset.setSourceMap(result.sourceMap);
-    }
-    return asset;
+    return asset.getTransformed({
+      path,
+      contents: result.contents,
+      sourceMap: result.sourceMap,
+    });
   } catch (error) {
-    asset.path = path;
-    return FailedAsset.from(asset, error);
+    return asset.getFailed(path, error);
   }
 }
 

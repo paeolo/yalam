@@ -1,5 +1,5 @@
 export {
-  BaseAsset,
+  ImmutableAsset,
   FileAsset,
   DeletedAsset,
   FailedAsset

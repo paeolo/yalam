@@ -11,5 +11,5 @@ type AssetTask = OperatorFunction<Asset, Asset>;
 
 export const dispatch = (...tasks: AssetTask[]): AssetTask => pipe(
   parallel(...tasks),
-  distinct(asset => asset.getFullPath())
+  distinct(asset => asset.fullPath)
 )

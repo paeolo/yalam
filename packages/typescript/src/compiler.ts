@@ -1,13 +1,7 @@
 import ts from 'typescript';
 import fs from 'fs';
-import path from 'path';
-import {
-  FileAsset
-} from '@yalam/core';
-import {
-  oneToOne,
-  OneToOneResult
-} from '@yalam/operators';
+import { FileAsset } from '@yalam/core';
+import { oneToOne } from '@yalam/operators';
 
 import {
   FileExtension,
@@ -15,37 +9,18 @@ import {
   replaceExt
 } from './utils';
 import { FilePath } from './types';
-import { LanguageService } from './service';
+import { TranspilerService } from './service';
 
 export class TSCompiler {
-
   private registry: ts.DocumentRegistry;
-  private services: Map<FilePath, LanguageService>
+  private services: Map<FilePath, TranspilerService>
 
   constructor() {
     this.registry = ts.createDocumentRegistry();
     this.services = new Map();
   }
 
-  private generate = async (asset: FileAsset): Promise<OneToOneResult> => {
-    const service = this.getLanguageService(asset.getEntry());
-    const output = service
-      .getEmitOutput(asset)
-      .outputFiles
-      .find(
-        file => path.extname(file.name) === '.js'
-      );
-
-    if (!output) {
-      throw new Error();
-    }
-
-    return {
-      contents: Buffer.from(output.text)
-    };
-  }
-
-  private getLanguageService(entry: FilePath) {
+  private getTranspilerService(entry: FilePath) {
     let service = this.services.get(entry);
 
     if (service) {
@@ -66,7 +41,7 @@ export class TSCompiler {
 
     const buffer = fs.readFileSync(configPath);
 
-    service = new LanguageService({
+    service = new TranspilerService({
       compilerOptions: JSON.parse(buffer.toString()).compilerOptions,
       registry: this.registry
     });
@@ -75,12 +50,40 @@ export class TSCompiler {
     return service;
   }
 
-  public compile() {
+  public transpileToJS() {
+    const getResult = async (asset: FileAsset) => {
+      const output = this
+        .getTranspilerService(asset.entry)
+        .getJavascript(asset);
+
+      return {
+        contents: Buffer.from(output.text)
+      }
+    };
+
     return oneToOne({
       filter: isTypescript,
       getPath: replaceExt(FileExtension.JS),
-      getResult: this.generate.bind(this),
-    })
+      getResult,
+    });
+  }
+
+  public transpileToDTS() {
+    const getResult = async (asset: FileAsset) => {
+      const output = this
+        .getTranspilerService(asset.entry)
+        .getDTS(asset);
+
+      return {
+        contents: Buffer.from(output.text)
+      }
+    };
+
+    return oneToOne({
+      filter: isTypescript,
+      getPath: replaceExt(FileExtension.DTS),
+      getResult,
+    });
   }
 }
 

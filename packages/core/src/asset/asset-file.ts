@@ -1,48 +1,82 @@
-import fsAsync from 'fs/promises';
 import fs from 'fs';
 import mkdirp from 'mkdirp';
 import path from 'path';
+import { finished } from 'stream';
+import { promisify } from 'util';
+
+const finishedAsync = promisify(finished);
 
 import {
   AssetStatus,
+  FilePath,
   SourceMap
 } from '../types';
+import { FailedAsset } from './asset-failed';
 import {
-  BaseAsset,
-  BaseAssetOptions
-} from './asset-base';
+  ImmutableAsset,
+  ImmutableAssetOptions
+} from './asset-immutable';
 
-export class FileAsset extends BaseAsset {
-  public status: AssetStatus.SOURCE | AssetStatus.ARTIFACT;
-  private sourceMap: SourceMap | undefined;
-  private contents: Buffer | undefined;
+type FileAssetStatus = AssetStatus.SOURCE | AssetStatus.ARTIFACT;
 
-  constructor(options: BaseAssetOptions) {
+type FileAssetOptions = {
+  status?: FileAssetStatus;
+  contents?: Buffer;
+  sourceMap?: SourceMap;
+} & ImmutableAssetOptions;
+
+interface GetTransformedOptions {
+  status?: FileAssetStatus;
+  path: FilePath;
+  contents: Buffer;
+  sourceMap?: SourceMap;
+}
+
+export class FileAsset extends ImmutableAsset {
+  public readonly status: FileAssetStatus;
+  public readonly contents: Buffer | undefined;
+  public readonly sourceMap: SourceMap | undefined;
+
+  constructor(options: FileAssetOptions) {
     super(options);
-    this.status = AssetStatus.SOURCE;
+    this.status = options.status || AssetStatus.SOURCE;
+    this.contents = options.contents;
+    this.sourceMap = options.sourceMap;
   }
 
   public getContentsOrFail() {
-    if (!this.contents) {
+    if (!this.contents)
       throw new Error();
-    }
+
     return this.contents;
   }
 
-  public setContents(contents: Buffer) {
-    this.contents = contents;
+  public getTransformed(options: GetTransformedOptions) {
+    return new FileAsset({
+      event: this.event,
+      status: options.status,
+      path: options.path,
+      contents: options.contents,
+      sourceMap: options.sourceMap,
+    });
   }
 
-  public getSourceMap() {
-    return this.sourceMap;
+  public getArtifact(path: FilePath) {
+    return new FileAsset({
+      event: this.event,
+      status: AssetStatus.ARTIFACT,
+      path,
+      contents: this.contents,
+      sourceMap: this.sourceMap,
+    });
   }
 
-  public deleteSourceMap() {
-    this.sourceMap = undefined;
-  }
-
-  public setSourceMap(sourceMap: SourceMap) {
-    this.sourceMap = sourceMap;
+  public getFailed(path: FilePath, error: Error) {
+    return new FailedAsset({
+      event: this.event,
+      path,
+      error
+    })
   }
 
   public async commit() {
@@ -54,26 +88,28 @@ export class FileAsset extends BaseAsset {
 
   private async write() {
     const contents = this.getContentsOrFail();
-    await mkdirp(this.getDirectory());
+    await mkdirp(this.directory);
 
-    const stream = fs.createWriteStream(this.getFullPath());
+    const stream = fs.createWriteStream(this.fullPath);
     stream.write(contents);
 
     if (this.sourceMap) {
-      const sourceMapPath = this.getFullPath().concat('.map');
+      const sourceMapPath = this.fullPath.concat('.map');
       const sourceMapFilename = path.basename(sourceMapPath);
 
-      await fsAsync.writeFile(
-        sourceMapPath,
-        JSON.stringify(this.sourceMap)
-      );
+      const sourceMapStream = fs.createWriteStream(sourceMapPath);
+      const stringifiedSourceMap = JSON.stringify(this.sourceMap);
+
+      sourceMapStream.write(stringifiedSourceMap);
+      sourceMapStream.end();
 
       stream.write(Buffer.from(
         '\n\n'.concat(this.sourceMap.referencer(sourceMapFilename))
       ));
+      await finishedAsync(sourceMapStream);
     }
 
     stream.end();
-    await new Promise(resolve => stream.once('finish', resolve));
+    await finishedAsync(stream);
   }
 }

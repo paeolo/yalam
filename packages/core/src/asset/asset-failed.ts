@@ -1,26 +1,16 @@
 import { AssetStatus } from '../types';
 
 import {
-  BaseAsset,
-  BaseAssetOptions
-} from './asset-base';
-import { FileAsset } from './asset-file';
+  ImmutableAsset,
+  ImmutableAssetOptions
+} from './asset-immutable';
 
 type FailedAssetOptions = {
   error: Error;
-} & BaseAssetOptions;
+} & ImmutableAssetOptions;
 
-export class FailedAsset extends BaseAsset {
-
-  static from(asset: FileAsset, error: Error) {
-    return new FailedAsset({
-      event: asset.getEvent(),
-      path: asset.path,
-      error
-    })
-  }
-
-  private error: Error;
+export class FailedAsset extends ImmutableAsset {
+  public readonly error: Error;
 
   constructor(options: FailedAssetOptions) {
     super(options);
@@ -33,9 +23,5 @@ export class FailedAsset extends BaseAsset {
 
   public async commit() {
     return this;
-  }
-
-  public getError() {
-    return this.error;
   }
 }

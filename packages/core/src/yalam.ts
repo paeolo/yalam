@@ -16,6 +16,7 @@ import {
   Asset,
   AssetStatus,
   AsyncSubscription,
+  FilePath,
   InputEvent,
   EventType,
   Reporter,
@@ -61,7 +62,7 @@ export class Yalam extends EventEmitter<EventTypes> {
   private options: Required<YalamOptions>;
   private cache: Cache;
   private tasks: Map<string, Task>;
-  private ignoredFiles: Set<string>;
+  private ignoredFiles: Set<FilePath>;
   private queue: PQueue;
   private failed: FailedAsset[];
 
@@ -79,7 +80,6 @@ export class Yalam extends EventEmitter<EventTypes> {
       concurrency: this.options.concurrency
     });
     this.failed = [];
-
     this.init(this.options.reporters);
   }
 
@@ -93,16 +93,28 @@ export class Yalam extends EventEmitter<EventTypes> {
 
   private bindReporter(reporter: Reporter) {
     if (reporter.onInput) {
-      this.addListener('input', reporter.onInput.bind(reporter));
+      this.addListener(
+        'input',
+        reporter.onInput.bind(reporter)
+      );
     }
     if (reporter.onBuilt) {
-      this.addListener('built', reporter.onBuilt.bind(reporter));
+      this.addListener(
+        'built',
+        reporter.onBuilt.bind(reporter)
+      );
     }
     if (reporter.onDeleted) {
-      this.addListener('deleted', reporter.onDeleted.bind(reporter));
+      this.addListener(
+        'deleted',
+        reporter.onDeleted.bind(reporter)
+      );
     }
     if (reporter.onIdle) {
-      this.addListener('idle', reporter.onIdle.bind(reporter));
+      this.addListener(
+        'idle',
+        reporter.onIdle.bind(reporter)
+      );
     }
   }
 
@@ -118,9 +130,7 @@ export class Yalam extends EventEmitter<EventTypes> {
   }
 
   private onFailed(asset: FailedAsset) {
-    if (!this.failed.some(
-      value => deepEqual(value.getEvent(), asset.getEvent())
-    )) {
+    if (!this.failed.some(value => deepEqual(value.event, asset.event))) {
       this.failed.push(asset);
     }
   }
@@ -133,11 +143,11 @@ export class Yalam extends EventEmitter<EventTypes> {
       return;
     }
 
-    this.ignoredFiles.add(asset.getFullPath());
-    this.ignoredFiles.add(asset.getFullPath().concat('.map'));
+    this.ignoredFiles.add(asset.fullPath);
+    this.ignoredFiles.add(asset.fullPath.concat('.map'));
 
     this.failed = this.failed
-      .filter((value) => !(value.getFullPath() === asset.getFullPath()));
+      .filter((value) => !(value.fullPath === asset.fullPath));
 
     if (asset.status === AssetStatus.ARTIFACT) {
       this.emit('built', asset, task);
@@ -188,7 +198,7 @@ export class Yalam extends EventEmitter<EventTypes> {
 
     const onAsset = (asset: Asset) => {
       if (throwOnFail && asset.status === AssetStatus.FAILED) {
-        throw asset.getError();
+        throw asset.error;
       }
       return from(asset.commit());
     }

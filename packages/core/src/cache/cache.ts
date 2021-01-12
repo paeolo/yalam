@@ -270,8 +270,8 @@ export class Cache implements Reporter {
   }
 
   private trackFileStatus(asset: Asset, task?: string) {
-    const entry = asset.getEntry();
-    const fullPath = asset.getFullPath();
+    const entry = asset.entry;
+    const fullPath = asset.fullPath;
     const value: Map<string, FileInfo> = this.filesTracker.get(entry)
       || new Map();
 
@@ -282,8 +282,8 @@ export class Cache implements Reporter {
           {
             status: AssetStatus.ARTIFACT,
             task: task!,
-            withSourceMap: !!asset.getSourceMap(),
-            sourcePath: asset.getSourcePath()
+            withSourceMap: !!asset.sourceMap,
+            sourcePath: asset.sourcePath
           }
         );
         break;
@@ -292,7 +292,7 @@ export class Cache implements Reporter {
           fullPath,
           {
             status: AssetStatus.FAILED,
-            sourcePath: asset.getSourcePath()
+            sourcePath: asset.sourcePath
           }
         );
         break;

@@ -1,20 +1,25 @@
 import path from 'path';
-import fs from 'fs/promises';
-import { constants } from 'fs';
+import fsAsync from 'fs/promises';
+import fs from 'fs';
 
-export const existsOrFail = async (entry: string) => {
+import {
+  DirectoryPath
+} from '../types'
+
+
+export const existsOrFail = async (entry: DirectoryPath) => {
   const directory = path.resolve(entry);
   try {
-    await fs.access(directory, constants.F_OK);
+    await fsAsync.access(directory, fs.constants.F_OK);
   } catch {
     throw new Error(`Directory not found: ${entry}`)
   }
 }
 
-const normalizeEntry = async (entry: string) => {
+const normalizeEntry = async (entry: DirectoryPath) => {
   await existsOrFail(entry);
   const directory = path.resolve(entry);
-  const stats = await fs.lstat(directory);
+  const stats = await fsAsync.lstat(directory);
 
   if (!stats.isDirectory()) {
     throw new Error(`Path is not a directory: ${entry}`)
@@ -23,7 +28,7 @@ const normalizeEntry = async (entry: string) => {
   return directory;
 }
 
-export const normalizeEntries = (entries: string[]) => {
+export const normalizeEntries = (entries: DirectoryPath[]) => {
   const promises = entries.map(normalizeEntry);
   return Promise.all(promises);
 }

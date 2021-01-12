@@ -3,7 +3,7 @@ import replaceExt from 'replace-ext';
 import * as Babel from '@babel/core';
 
 import {
-  BaseAsset,
+  ImmutableAsset,
   FileAsset
 } from '@yalam/core';
 import {
@@ -34,9 +34,9 @@ const getOptions = (asset: FileAsset, options: BabelOptions): Babel.TransformOpt
   }
 
   return {
-    cwd: asset.getEntry(),
-    filename: asset.getSourcePath(),
-    inputSourceMap: asset.getSourceMap(),
+    cwd: asset.entry,
+    filename: asset.sourcePath,
+    inputSourceMap: asset.sourceMap,
     sourceMaps: true,
     plugins,
     presets,
@@ -69,7 +69,7 @@ const transpile = async (asset: FileAsset, options: BabelOptions): Promise<OneTo
   };
 }
 
-const isJavascript = (asset: BaseAsset) => ['.js', '.ts']
+const isJavascript = (asset: ImmutableAsset) => ['.js', '.ts']
   .includes(path.extname(asset.path));
 
 export const babel = (options: BabelOptions = {}) => oneToOne({

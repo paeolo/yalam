@@ -33,7 +33,7 @@ const getEvents = (glob: string, sourceBase: string, event: InitialEvent): FileE
       absolute: true
     }
   );
-  return files.map(path => event.convertToFileEvent({
+  return files.map(path => event.getFileEvent({
     type: EventType.UPDATED,
     path,
     sourceBase
@@ -60,7 +60,7 @@ export const source = (options: SourceOptions): OperatorFunction<InputEvent, Fil
           );
         default:
           return of(
-            event.withSourceBase(sourceBase)
+            event.getWithSourceBase(sourceBase)
           );
       }
     }),

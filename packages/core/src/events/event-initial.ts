@@ -1,18 +1,21 @@
 import {
-  BaseEvent,
+  ImmutableEvent,
   BaseEventOptions
-} from "./event-base";
-import { EventType } from "../types";
+} from "./event-immutable";
+import {
+  EventType,
+  FilePath,
+  DirectoryPath
+} from "../types";
 import { FileEvent } from "./event-file";
 
-interface ToFileEventOptions {
+interface GetFileEventOptions {
   type: EventType.UPDATED | EventType.DELETED
-  path: string;
-  sourceBase?: string;
+  path: FilePath;
+  sourceBase?: DirectoryPath;
 }
 
-export class InitialEvent extends BaseEvent {
-
+export class InitialEvent extends ImmutableEvent {
   constructor(options: BaseEventOptions) {
     super(options);
   }
@@ -21,7 +24,7 @@ export class InitialEvent extends BaseEvent {
     return EventType.INITIAL;
   }
 
-  public convertToFileEvent(options: ToFileEventOptions) {
+  public getFileEvent(options: GetFileEventOptions) {
     return new FileEvent({
       cacheDir: this.cacheDir,
       cacheKey: this.cacheKey,

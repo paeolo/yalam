@@ -1,5 +1,6 @@
 const {
   pipe,
+  dispatch,
 } = require('@yalam/core');
 const {
   source,
@@ -13,7 +14,10 @@ const {
 const ts = pipe(
   source({ glob: 'src/**/*.ts' }),
   createAsset(),
-  tsCompiler.compile(),
+  dispatch(
+    tsCompiler.transpileToJS(),
+    tsCompiler.transpileToDTS()
+  ),
   destination({ path: 'dist' })
 );
 

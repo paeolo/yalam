@@ -15,10 +15,10 @@ interface DestinationOptions {
 
 export const destination = (options: DestinationOptions): OperatorFunction<Asset, Asset> => pipe(
   map(asset => {
-    if (asset.status === AssetStatus.SOURCE) {
-      asset.status = AssetStatus.ARTIFACT;
+    if (asset.status === AssetStatus.SOURCE
+      || asset.status === AssetStatus.ARTIFACT) {
+      return asset.getArtifact(path.join(options.path, asset.path));
     }
-    asset.path = path.join(options.path, asset.path);
     return asset;
   })
 );
