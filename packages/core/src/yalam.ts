@@ -2,25 +2,31 @@ import watcher from '@parcel/watcher';
 import EventEmitter from 'eventemitter3';
 import PQueue from 'p-queue';
 import setImmediatePromise from 'set-immediate-promise';
-import deepEqual from 'deep-equal';
 import { from } from 'rxjs';
 import {
   map,
   mergeAll,
-  publish
+  publish,
 } from 'rxjs/operators';
 
 import { Cache } from './cache';
-import { FileEvent, InitialEvent } from './events';
+import {
+  FileEventIgnorer,
+  FailureService
+} from './services';
+import {
+  FileEvent,
+  InitialEvent
+} from './events';
 import {
   Asset,
   AssetStatus,
   AsyncSubscription,
-  FilePath,
   InputEvent,
   EventType,
   Reporter,
   Task,
+  DirectoryPath,
 } from './types';
 import {
   normalizeEntries,
@@ -61,10 +67,10 @@ interface NamedTask {
 export class Yalam extends EventEmitter<EventTypes> {
   private options: Required<YalamOptions>;
   private cache: Cache;
+  private eventIgnorer: FileEventIgnorer;
+  private failureService: FailureService;
   private tasks: Map<string, Task>;
-  private ignoredFiles: Set<FilePath>;
   private queue: PQueue;
-  private failed: FailedAsset[];
 
   constructor(options: YalamOptions = {}) {
     super();
@@ -74,12 +80,12 @@ export class Yalam extends EventEmitter<EventTypes> {
       cacheDir: this.options.cacheDir,
       cacheKey: this.options.cacheKey
     });
+    this.eventIgnorer = new FileEventIgnorer();
+    this.failureService = new FailureService();
     this.tasks = new Map();
-    this.ignoredFiles = new Set();
     this.queue = new PQueue({
       concurrency: this.options.concurrency
     });
-    this.failed = [];
     this.init(this.options.reporters);
   }
 
@@ -88,7 +94,10 @@ export class Yalam extends EventEmitter<EventTypes> {
       (reporter) => this.bindReporter(reporter)
     );
     this.bindReporter(this.cache);
-    this.queue.on('idle', () => this.emit('idle', this.failed));
+    this.queue.on(
+      'idle',
+      () => this.emit('idle', this.failureService.getFailures())
+    );
   }
 
   private bindReporter(reporter: Reporter) {
@@ -129,45 +138,45 @@ export class Yalam extends EventEmitter<EventTypes> {
     }
   }
 
-  private onFailed(asset: FailedAsset) {
-    if (!this.failed.some(value => deepEqual(value.event, asset.event))) {
-      this.failed.push(asset);
-    }
-  }
-
   private onBuilt(task: string, asset: Asset) {
-    if (asset.status === AssetStatus.SOURCE) {
-      return;
-    } else if (asset.status === AssetStatus.FAILED) {
-      this.onFailed(asset);
-      return;
-    }
-
-    this.ignoredFiles.add(asset.fullPath);
-    this.ignoredFiles.add(asset.fullPath.concat('.map'));
-
-    this.failed = this.failed
-      .filter((value) => !(value.fullPath === asset.fullPath));
-
-    if (asset.status === AssetStatus.ARTIFACT) {
-      this.emit('built', asset, task);
-    }
-    else if (asset.status === AssetStatus.DELETED) {
-      this.emit('deleted', asset);
+    switch (asset.status) {
+      case AssetStatus.FAILED:
+        this.failureService.onFailedAsset(asset);
+        break;
+      case AssetStatus.ARTIFACT:
+        this.eventIgnorer.onFileAsset(asset);
+        this.emit('built', asset, task);
+        break;
+      case AssetStatus.DELETED:
+        this.eventIgnorer.onFileAsset(asset);
+        this.emit('deleted', asset);
+        break;
     }
   }
 
-  private getSubscription(task: NamedTask, entry: string) {
+  private getSubscription(task: NamedTask, entry: DirectoryPath) {
     const onEvents = async (err: Error | null, events: watcher.Event[]) => {
       if (err) {
         throw err;
       }
-      const fileEvents = this.getFileEvents(entry, events);
-      await setImmediatePromise();
+      const input = events.filter(this.eventIgnorer.getEventFilter(entry));
 
-      if (fileEvents.length !== 0) {
-        this.queueEvents(task, fileEvents);
+      if (input.length === 0) {
+        return
       }
+
+      this.failureService
+        .getEvents(entry)
+        .forEach(event => {
+          if (!input.some(value => value.path === event.path)) {
+            input.push(event);
+          }
+        });
+      this.failureService.clear(entry);
+      const fileEvents = this.getFileEvents(entry, input);
+
+      await setImmediatePromise();
+      this.queueEvents(task, fileEvents);
     };
 
     return watcher.subscribe(
@@ -179,7 +188,6 @@ export class Yalam extends EventEmitter<EventTypes> {
 
   private getFileEvents(entry: string, events: watcher.Event[]): FileEvent[] {
     return events
-      .filter((event) => !this.ignoredFiles.has(event.path))
       .map((event) => new FileEvent({
         type: event.type === 'delete'
           ? EventType.DELETED
@@ -212,7 +220,10 @@ export class Yalam extends EventEmitter<EventTypes> {
         .subscribe({
           next: asset => this.onBuilt(task.name, asset),
           error: error => reject(error),
-          complete: () => resolve()
+          complete: async () => {
+            await setImmediatePromise();
+            resolve();
+          }
         });
       input.connect();
     });

@@ -6,7 +6,7 @@ import {
 } from '@yalam/core';
 
 import {
-  FilePath
+  FilePath, OutputType
 } from '../types';
 
 const INITAL_VERSION = 0;
@@ -82,7 +82,10 @@ export class TranspilerService {
       return;
     }
 
-    const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
+    const message = ts.flattenDiagnosticMessageText(
+      diagnostic.messageText, "\n"
+    );
+
     if (diagnostic.file && diagnostic.start) {
       const {
         line,
@@ -110,37 +113,35 @@ export class TranspilerService {
     });
   }
 
-  public getJavascript(asset: FileAsset) {
-    const fileName = asset.fullPath;
-    this.storeAsset(asset);
-
-    const error = this.getFirstSyntacticError(fileName);
-
-    if (error) {
-      throw error;
-    }
-
-    const output = this.service
+  private getJavascript(fileName: FilePath) {
+    return this.service
       .getEmitOutput(fileName)
       .outputFiles
       .find(file => path.extname(file.name) === '.js');
-
-    if (!output) {
-      throw new Error();
-    }
-
-    return output;
   }
 
-  public getDTS(asset: FileAsset) {
-    const fileName = asset.fullPath;
-    this.storeAsset(asset);
-
-    const output = this.service
+  private getDTS(fileName: FilePath) {
+    return this.service
       .getEmitOutput(fileName, true, true)
       .outputFiles
       .find(file => path.extname(file.name) === '.ts');
+  }
 
+  public emitOutput(asset: FileAsset, type: OutputType, checkSyntax: boolean) {
+    const fileName = asset.fullPath;
+    this.storeAsset(asset);
+
+    if (checkSyntax) {
+      const error = this.getFirstSyntacticError(fileName);
+
+      if (error) {
+        throw error;
+      }
+    }
+
+    const output = type === OutputType.JS
+      ? this.getJavascript(fileName)
+      : this.getDTS(fileName);
 
     if (!output) {
       throw new Error();

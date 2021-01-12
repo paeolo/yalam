@@ -15,8 +15,8 @@ const ts = pipe(
   source({ glob: 'src/**/*.ts' }),
   createAsset(),
   dispatch(
-    tsCompiler.transpileToJS(),
-    tsCompiler.transpileToDTS()
+    tsCompiler.transpile(),
+    tsCompiler.generateTypes()
   ),
   destination({ path: 'dist' })
 );

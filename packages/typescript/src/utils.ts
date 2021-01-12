@@ -1,14 +1,15 @@
 import path from 'path';
 import replace from 'replace-ext';
-import { ImmutableAsset, } from '@yalam/core';
+import {
+  ImmutableAsset
+} from '@yalam/core';
 
-export const enum FileExtension {
-  JS = '.js',
-  DTS = '.d.ts'
-}
+import {
+  OutputExtension
+} from './types';
 
 export const isTypescript = (asset: ImmutableAsset) => ['.ts']
   .includes(path.extname(asset.path));
 
-export const replaceExt = (extension: FileExtension) =>
+export const replaceExt = (extension: OutputExtension) =>
   (asset: ImmutableAsset) => replace(asset.path, extension)
