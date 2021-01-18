@@ -66,15 +66,15 @@ export class TranspilerService {
 
     return asset
       ? ts.ScriptSnapshot
-        .fromString(asset.value.getContentsOrFail().toString())
+        .fromString(asset.value.contents.toString())
       : ts.ScriptSnapshot
         .fromString(fs.readFileSync(fileName).toString())
   }
 
-  private getFirstSyntacticError(fileName: FilePath) {
+  private getFirstSyntacticError(asset: FileAsset) {
     const diagnotics = this.service
       .getCompilerOptionsDiagnostics()
-      .concat(this.service.getSyntacticDiagnostics(fileName));
+      .concat(this.service.getSyntacticDiagnostics(asset.distPath));
 
     const diagnostic = diagnotics[0];
 
@@ -93,14 +93,14 @@ export class TranspilerService {
       } = diagnostic.file.getLineAndCharacterOfPosition(
         diagnostic.start
       );
-      return new Error(`${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`)
+      return new Error(`${asset.sourcePath} (${line + 1},${character + 1}): ${message}`)
     } else {
       return new Error(message);
     }
   }
 
   private storeAsset(asset: FileAsset) {
-    const fileName = asset.fullPath;
+    const fileName = asset.distPath;
     const stored = this.assets.get(fileName);
 
     const version = stored
@@ -128,11 +128,11 @@ export class TranspilerService {
   }
 
   public emitOutput(asset: FileAsset, type: OutputType, checkSyntax: boolean) {
-    const fileName = asset.fullPath;
+    const fileName = asset.distPath;
     this.storeAsset(asset);
 
     if (checkSyntax) {
-      const error = this.getFirstSyntacticError(fileName);
+      const error = this.getFirstSyntacticError(asset);
 
       if (error) {
         throw error;

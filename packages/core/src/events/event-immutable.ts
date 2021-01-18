@@ -1,44 +1,36 @@
-import mkdirp from 'mkdirp';
 import path from 'path';
+
 import {
   EventType,
   DirectoryPath
 } from "../types";
-import { CACHE_NAME } from '../cache'
+
+export interface CacheMeta {
+  directory: DirectoryPath;
+  key: string;
+}
 
 export interface BaseEventOptions {
   entry: DirectoryPath;
-  cacheDir: DirectoryPath;
-  cacheKey: string;
+  cache: CacheMeta;
 }
 
 export abstract class ImmutableEvent {
   public readonly entry: DirectoryPath;
-  public readonly cacheDir: DirectoryPath;
-  public readonly cacheKey: string;
+  public readonly cache: CacheMeta;
 
   constructor(options: BaseEventOptions) {
     this.entry = options.entry;
-    this.cacheDir = options.cacheDir;
-    this.cacheKey = options.cacheKey;
+    this.cache = options.cache;
   }
 
   public abstract get type(): EventType;
 
-  public getCachePath(cacheName: string): DirectoryPath {
-    if (cacheName === CACHE_NAME) {
-      throw new Error(
-        `Cache name "${CACHE_NAME}" is reserved`
-      );
-    }
-
-    const cachePath = path.join(
-      this.cacheDir,
+  public getCacheDir(cacheName: string): DirectoryPath {
+    return path.join(
+      this.cache.directory,
       cacheName,
-      this.cacheKey
+      this.cache.key
     );
-
-    mkdirp.sync(cachePath);
-    return cachePath;
   }
 }

@@ -1,6 +1,9 @@
 import fsAsync from 'fs/promises';
-import { AssetStatus } from '../types';
 
+import {
+  AssetStatus,
+  FilePath,
+} from '../types';
 import {
   ImmutableAsset,
   ImmutableAssetOptions
@@ -17,20 +20,16 @@ export class DeletedAsset extends ImmutableAsset {
 
   public getWithPath(path: FilePath) {
     return new DeletedAsset({
+      path,
       event: this.event,
-      path
     });
   }
 
   public async commit() {
-    await this.unlink();
-    return this;
-  }
-
-  private async unlink() {
     try {
-      await fsAsync.unlink(this.fullPath);
-      await fsAsync.unlink(this.fullPath.concat('.map'));
+      await fsAsync.unlink(this.distPath);
+      await fsAsync.unlink(this.distPath.concat('.map'));
     } catch { }
+    return this;
   }
 }

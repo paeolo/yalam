@@ -12,6 +12,7 @@ import {
 } from 'rxjs/operators';
 import {
   Asset,
+  AssetStatus,
   DeletedAsset,
   FileAsset,
   FileEvent,
@@ -24,10 +25,11 @@ interface SourceAssetOptions {
 };
 
 const getSourceAsset = async (options: SourceAssetOptions) => new FileAsset({
-  event: options.event,
+  status: AssetStatus.SOURCE,
   path: options.path,
+  event: options.event,
   contents: await fs.readFile(options.event.path)
-})
+});
 
 /**
  * @description
@@ -47,8 +49,8 @@ export const createAsset = (): OperatorFunction<FileEvent, Asset> => pipe(
       case EventType.UPDATED:
         return from(
           getSourceAsset({
-            event: event,
             path: relativePath,
+            event: event,
           })
         );
       case EventType.DELETED:

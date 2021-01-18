@@ -1,88 +1,80 @@
-import fs from 'fs';
+import fsAsync from 'fs/promises';
 import mkdirp from 'mkdirp';
 import path from 'path';
-import { finished } from 'stream';
-import { promisify } from 'util';
-
-const finishedAsync = promisify(finished);
 
 import {
   AssetStatus,
   FilePath,
   SourceMap
 } from '../types';
-import { FailedAsset } from './asset-failed';
 import {
   ImmutableAsset,
   ImmutableAssetOptions
 } from './asset-immutable';
 
-type FileAssetStatus = AssetStatus.SOURCE | AssetStatus.ARTIFACT;
+export const CACHE_NAME = 'assets';
+
+type FileAssetStatus = AssetStatus.SOURCE
+  | AssetStatus.ARTIFACT;
 
 type FileAssetOptions = {
-  status?: FileAssetStatus;
-  contents?: Buffer;
+  status: FileAssetStatus;
+  contents: Buffer;
   sourceMap?: SourceMap;
 } & ImmutableAssetOptions;
 
 interface GetTransformedOptions {
-  status?: FileAssetStatus;
-  path: FilePath;
   contents: Buffer;
+  path: FilePath;
   sourceMap?: SourceMap;
+  status?: FileAssetStatus;
 }
 
-interface getArtifactOptions {
+interface getWithPathOptions {
   path: FilePath;
-}
-
-interface GetFailedOptions {
-  path: FilePath;
-  error: Error
+  status?: FileAssetStatus;
 }
 
 export class FileAsset extends ImmutableAsset {
   public readonly status: FileAssetStatus;
-  public readonly contents: Buffer | undefined;
+  public readonly contents: Buffer;
   public readonly sourceMap: SourceMap | undefined;
+  private cachePath?: FilePath;
 
   constructor(options: FileAssetOptions) {
     super(options);
-    this.status = options.status || AssetStatus.SOURCE;
+    this.status = options.status;
     this.contents = options.contents;
     this.sourceMap = options.sourceMap;
   }
 
-  public getContentsOrFail() {
-    if (!this.contents)
-      throw new Error();
-
-    return this.contents;
+  public getCachePath(): FilePath | undefined {
+    return this.cachePath;
   }
 
   public getTransformed(options: GetTransformedOptions) {
+    const status = options.status || options.status === 0
+      ? options.status
+      : this.status;
+
     return new FileAsset({
-      event: this.event,
-      status: options.status,
+      status,
       path: options.path,
+      event: this.event,
       contents: options.contents,
       sourceMap: options.sourceMap,
     });
   }
 
-  public getFailed(options: GetFailedOptions) {
-    return new FailedAsset({
-      event: this.event,
-      path: options.path,
-      error: options.error
-    })
-  }
+  public getWithPath(options: getWithPathOptions) {
+    const status = options.status || options.status === 0
+      ? options.status
+      : this.status;
 
-  public getArtifact(options: getArtifactOptions) {
     return new FileAsset({
-      event: this.event,
-      status: AssetStatus.ARTIFACT,
+      status,
       path: options.path,
+      event: this.event,
       contents: this.contents,
       sourceMap: this.sourceMap,
     });
@@ -90,35 +82,62 @@ export class FileAsset extends ImmutableAsset {
 
   public async commit() {
     if (this.status === AssetStatus.ARTIFACT) {
-      await this.write();
+      const distPath = this.distPath;
+      const cachePath = path.join(
+        this.event.getCacheDir(CACHE_NAME),
+        this.path
+      );
+
+      await Promise.all([
+        mkdirp(path.dirname(distPath)),
+        mkdirp(path.dirname(cachePath))
+      ]);
+
+      const contents = this.getContents();
+
+      let promises = [
+        fsAsync.writeFile(distPath, contents),
+        fsAsync.writeFile(cachePath, contents)
+      ];
+
+      const sourceMap = this.getSourceMap();
+
+      if (sourceMap) {
+        promises = promises.concat([
+          fsAsync.writeFile(distPath.concat('.map'), sourceMap),
+          fsAsync.writeFile(cachePath.concat('.map'), sourceMap)
+        ])
+      }
+
+      await Promise.all(promises);
+      this.cachePath = cachePath;
     }
     return this;
   }
 
-  private async write() {
-    const contents = this.getContentsOrFail();
-    await mkdirp(this.directory);
+  private getSourceMap() {
+    if (!this.sourceMap) {
+      return undefined;
+    }
+    else {
+      return Buffer.from(
+        JSON.stringify(this.sourceMap.map)
+      );
+    }
+  }
 
-    const stream = fs.createWriteStream(this.fullPath);
-    stream.write(contents);
-
-    if (this.sourceMap) {
-      const sourceMapPath = this.fullPath.concat('.map');
+  private getContents() {
+    if (!this.sourceMap) {
+      return this.contents;
+    }
+    else {
+      const sourceMapPath = this.distPath.concat('.map');
       const sourceMapFilename = path.basename(sourceMapPath);
 
-      const sourceMapStream = fs.createWriteStream(sourceMapPath);
-      const stringifiedSourceMap = JSON.stringify(this.sourceMap);
-
-      sourceMapStream.write(stringifiedSourceMap);
-      sourceMapStream.end();
-
-      stream.write(Buffer.from(
-        '\n\n'.concat(this.sourceMap.referencer(sourceMapFilename))
-      ));
-      await finishedAsync(sourceMapStream);
+      return Buffer.concat([
+        this.contents,
+        Buffer.from('\n\n'.concat(this.sourceMap.referencer(sourceMapFilename)))
+      ]);
     }
-
-    stream.end();
-    await finishedAsync(stream);
   }
 }

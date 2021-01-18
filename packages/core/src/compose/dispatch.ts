@@ -14,5 +14,5 @@ import { parallel } from '../compose';
  */
 export const dispatch = (...tasks: MonoTypeOperatorFunction<Asset>[]): MonoTypeOperatorFunction<Asset> => pipe(
   parallel(...tasks),
-  distinct(asset => asset.fullPath)
+  distinct(asset => asset.distPath)
 )

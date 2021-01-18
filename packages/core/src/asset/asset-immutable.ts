@@ -1,21 +1,20 @@
 import path from 'path';
 
 import {
-  FileEvent,
-} from '../events';
-import {
   DirectoryPath,
-  FilePath
+  EventType,
+  FilePath,
+  InputEvent,
 } from '../types';
 
 export interface ImmutableAssetOptions {
   path: FilePath;
-  event: FileEvent;
+  event: InputEvent;
 }
 
 export abstract class ImmutableAsset {
   public readonly path: FilePath;
-  public readonly event: FileEvent;
+  public readonly event: InputEvent;
 
   constructor(options: ImmutableAssetOptions) {
     this.path = options.path;
@@ -28,18 +27,23 @@ export abstract class ImmutableAsset {
     return this.event.entry;
   }
 
-  public get fullPath(): FilePath {
+  public get distPath(): FilePath {
     return path.join(
       this.event.entry,
       this.path
     );
   }
 
-  public get sourcePath(): FilePath {
-    return this.event.path;
+  public get sourcePath(): FilePath | undefined {
+    if (this.event.type === EventType.INITIAL) {
+      return undefined;
+    }
+    else {
+      return this.event.path;
+    }
   }
 
   public get directory(): DirectoryPath {
-    return path.dirname(this.fullPath);
+    return path.dirname(this.distPath);
   }
 }

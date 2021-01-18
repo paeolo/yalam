@@ -29,8 +29,7 @@ export class FileEvent extends ImmutableEvent {
 
   public getWithSourceBase(sourceBase: string) {
     return new FileEvent({
-      cacheDir: this.cacheDir,
-      cacheKey: this.cacheKey,
+      cache: this.cache,
       entry: this.entry,
       path: this.path,
       type: this.type,
@@ -40,8 +39,7 @@ export class FileEvent extends ImmutableEvent {
 
   public getInitialEvent() {
     return new InitialEvent({
-      cacheDir: this.cacheDir,
-      cacheKey: this.cacheKey,
+      cache: this.cache,
       entry: this.entry
     })
   }

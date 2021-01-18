@@ -1,49 +1,33 @@
-import path from 'path';
 import mkdirp from 'mkdirp';
-import watcher from '@parcel/watcher';
-import crypto, { BinaryToTextEncoding } from 'crypto';
-import fsAsync from 'fs/promises';
-import { constants } from 'fs';
-import PMap from 'p-map';
+import path from 'path';
 
 import {
-  Asset,
-  AssetStatus,
+  DirectoryPath,
   EventType,
   InputEvent,
   Reporter,
 } from '../types';
 import {
-  lockFileAsync,
-  unlockFileAsync
-} from '../utils';
-import {
   DeletedAsset,
-  FailedAsset,
+  ErrorAsset,
   FileAsset
 } from '../asset';
-import { GLOBAL_LOCK } from '../constants';
 import {
-  CacheType,
-  CachedInfo,
-  FileInfo,
-  FilesTracker
-} from './types';
-import {
+  CacheMeta,
   FileEvent,
   InitialEvent
-} from '../events';
+} from '../events'
+import {
+  AssetService,
+  ErrorService,
+  FSService,
+  HashService
+} from './services';
+import {
+  CACHE_NAME
+} from '../constants';
 
 const version = require('../../package.json').version;
-export const CACHE_NAME = 'core';
-
-export const md5 = (value: string, encoding: BinaryToTextEncoding = 'hex') => {
-  return crypto
-    .createHash('md5')
-    .update(value)
-    .digest(encoding)
-    .substring(0, 10);
-}
 
 export interface CacheOptions {
   cacheDir: string;
@@ -51,294 +35,136 @@ export interface CacheOptions {
 }
 
 export class Cache implements Reporter {
-  private options: CacheOptions;
+  private cacheDir: DirectoryPath;
   private cacheKey: string;
-  private directory: string;
-  private hashes: Map<string, string>;
-  private filesTracker: FilesTracker;
+  private hashes: HashService;
+  private assets: AssetService;
+  private errors: ErrorService;
+  private fs: FSService;
+  private entries: Set<DirectoryPath>;
 
   constructor(options: CacheOptions) {
-    this.options = options;
+    this.cacheDir = options.cacheDir;
     this.cacheKey = options.cacheKey;
-    this.directory = path.join(
-      options.cacheDir,
-      CACHE_NAME
-    );
-    this.hashes = new Map();
-    this.filesTracker = new Map();
-    this.init();
-  }
-
-  private init() {
-    mkdirp.sync(this.directory);
-  }
-
-  public getHashForEntry(entry: string) {
-    const key = entry
-      .concat(version)
-      .concat(this.cacheKey);
-
-    let hash = this.hashes.get(key)
-    if (!hash) {
-      hash = md5(key)
-      this.hashes.set(key, hash);
-    }
-    return hash;
-  }
-
-  private getGenericHashForEntry(entry: string) {
-    let hash = this.hashes.get(entry)
-    if (!hash) {
-      hash = md5(entry);
-      this.hashes.set(entry, hash);
-    }
-    return hash;
-  }
-
-  private getCacheFilename(entry: string, cacheType: CacheType) {
-    switch (cacheType) {
-      case CacheType.ARTIFACTORY:
-        return cacheType.concat('.')
-          .concat(this.getHashForEntry(entry))
-          .concat('.json');
-      case CacheType.FILE_SYSTEM:
-        return cacheType.concat('.')
-          .concat(this.getGenericHashForEntry(entry))
-          .concat('.txt');
-    }
-  }
-
-  private getCacheFilePath(entry: string, cacheType: CacheType) {
-    return path.join(
-      this.directory,
-      this.getCacheFilename(entry, cacheType)
+    this.hashes = new HashService({
+      cacheKey: this.cacheKey,
+      version
+    });
+    this.assets = new AssetService({
+      cacheDir: this.cacheDir,
+      hashes: this.hashes
+    });
+    this.errors = new ErrorService({
+      cacheDir: this.cacheDir,
+      hashes: this.hashes
+    });
+    this.fs = new FSService({
+      cacheDir: this.cacheDir,
+      hashes: this.hashes
+    });
+    this.entries = new Set();
+    mkdirp.sync(
+      path.join(options.cacheDir, CACHE_NAME)
     );
   }
 
-  private getLockFilePath() {
-    return path.join(
-      this.directory,
-      GLOBAL_LOCK
-    );
+  public getCacheMeta(entry: DirectoryPath): CacheMeta {
+    return {
+      directory: this.cacheDir,
+      key: this.hashes.getHashForEntry(entry)
+    }
   }
 
-  private async getEventsForEntry(task: string, entry: string): Promise<InputEvent[]> {
-    const filePath = this.getCacheFilePath(entry, CacheType.ARTIFACTORY);
-    const [
-      artifactory,
-      fileEvents
-    ] = await Promise.all([
-      this.getArtifactory(filePath),
-      watcher.getEventsSince(
-        entry,
-        this.getCacheFilePath(entry, CacheType.FILE_SYSTEM),
-        { ignore: [this.directory] }
-      )]
-    );
+  private async getInitialEvents(task: string, entries: DirectoryPath[],): Promise<InputEvent[]> {
+    const fileEvents = await this.fs.getEventsSince(entries);
 
-    if (artifactory.size === 0) {
-      return [
-        new InitialEvent({
-          cacheDir: this.options.cacheDir,
-          cacheKey: this.getHashForEntry(entry),
-          entry,
-        })
-      ];
-    }
+    const deletedEvents: InputEvent[] = fileEvents
+      .filter((value) => value.event.type === 'delete')
+      .map((value) => new FileEvent({
+        type: EventType.DELETED,
+        entry: value.entry,
+        cache: this.getCacheMeta(value.entry),
+        path: value.event.path,
+      }));
 
-    const events: InputEvent[] = fileEvents.map((event) => new FileEvent({
-      type: event.type === 'delete'
-        ? EventType.DELETED
-        : EventType.UPDATED,
-      cacheDir: this.options.cacheDir,
-      cacheKey: this.getHashForEntry(entry),
+    const initialEvents = entries.map(entry => new InitialEvent({
+      cache: this.getCacheMeta(entry),
       entry,
-      path: event.path,
     }));
 
-    const map = Array.from(artifactory.entries());
-
-    const addEvents = async ([filePath, value]: [string, CachedInfo]) => {
-      if ((value.status === AssetStatus.ARTIFACT && value.task !== task)
-        || value.status === AssetStatus.FAILED) {
-        if (!events.some(event => event.entry === value.sourcePath)) {
-          events.push(new FileEvent({
-            type: EventType.UPDATED,
-            cacheDir: this.options.cacheDir,
-            cacheKey: this.getHashForEntry(entry),
-            entry,
-            path: value.sourcePath,
-          }));
-        }
-        return;
-      }
-
-      const tests = [
-        fsAsync.access(filePath, constants.F_OK)
-      ];
-      if (value.withSourceMap) {
-        tests.push(fsAsync.access(filePath.concat('.map'), constants.F_OK))
-      }
-      try {
-        await Promise.all(tests);
-      } catch {
-        if (!events.some(event => event.entry === value.sourcePath)) {
-          events.push(new FileEvent({
-            type: EventType.UPDATED,
-            entry: entry,
-            path: value.sourcePath,
-            cacheDir: this.options.cacheDir,
-            cacheKey: this.getHashForEntry(entry),
-          }));
-        }
-      }
-    };
-
-    await PMap(
-      map,
-      addEvents
-    );
-    return events;
+    return deletedEvents.concat(initialEvents);
   }
 
-  public async getInputEvents(task: string, entries: string[]): Promise<InputEvent[]> {
-    const events: InputEvent[] = [];
-    const lock = this.getLockFilePath();
+  public async getInputEvents(task: string, entries: DirectoryPath[], disableCache: boolean): Promise<InputEvent[]> {
+    await this.assets.sync(entries);
 
-    const addEvents = async (entry: string) => events.push(
-      ...(await this.getEventsForEntry(task, entry))
-    );
+    if (disableCache) {
+      return this.getInitialEvents(task, entries)
+    }
 
-    await lockFileAsync(lock);
-    await PMap(
-      entries,
-      addEvents
-    );
-    await unlockFileAsync(lock);
-    return events;
-  }
+    const [
+      errorEvents,
+      fileEvents,
+    ] = await Promise.all([
+      this.errors.getEvents(task, entries),
+      this.fs.getEventsSince(entries),
+    ]);
 
-  private async writeSnapshot(entries: string[]) {
-    await Promise.all(
-      entries.map((entry) => {
-        watcher.writeSnapshot(
-          entry,
-          this.getCacheFilePath(entry, CacheType.FILE_SYSTEM),
-          { ignore: [this.directory] }
-        )
+    let events = fileEvents.map((value) => {
+      return new FileEvent({
+        type: value.event.type === 'delete'
+          ? EventType.DELETED
+          : EventType.UPDATED,
+        entry: value.entry,
+        cache: this.getCacheMeta(value.entry),
+        path: value.event.path,
       })
-    )
-  }
+    });
 
-  private async getArtifactory(filePath: string): Promise<Map<string, CachedInfo>> {
-    let mapResult: Map<string, CachedInfo>;
-
-    try {
-      const buffer = await fsAsync.readFile(filePath);
-      mapResult = new Map(JSON.parse(buffer.toString()));
-    } catch {
-      mapResult = new Map();
-    }
-
-    return mapResult;
-  }
-
-  private async updateArtifactory(entry: string, files: Map<string, FileInfo>) {
-    if (files.size === 0) {
-      return;
-    }
-
-    const filePath = this.getCacheFilePath(entry, CacheType.ARTIFACTORY);
-    const artifactory = await this.getArtifactory(filePath);
-
-    files.forEach((value, key) => {
-      switch (value.status) {
-        case AssetStatus.ARTIFACT:
-        case AssetStatus.FAILED:
-          artifactory.set(key, value);
-          break;
-        case AssetStatus.DELETED:
-          artifactory.delete(key);
-          break;
+    errorEvents.forEach((item) => {
+      if (!events.some(
+        (value) => value.entry === item.entry && value.path === item.event.path)
+      ) {
+        events.push(new FileEvent({
+          type: EventType.UPDATED,
+          entry: item.entry,
+          path: item.event.path,
+          cache: this.getCacheMeta(item.entry),
+        }));
       }
     });
 
-    await fsAsync.writeFile(
-      filePath,
-      JSON.stringify(Array.from(artifactory.entries()), undefined, 2)
-    );
+    return events;
   }
 
-  private trackFileStatus(asset: Asset, task?: string) {
-    const entry = asset.entry;
-    const fullPath = asset.fullPath;
-    const value: Map<string, FileInfo> = this.filesTracker.get(entry)
-      || new Map();
-
-    switch (asset.status) {
-      case AssetStatus.ARTIFACT:
-        value.set(
-          fullPath,
-          {
-            status: AssetStatus.ARTIFACT,
-            task: task!,
-            withSourceMap: !!asset.sourceMap,
-            sourcePath: asset.sourcePath
-          }
-        );
-        break;
-      case AssetStatus.FAILED:
-        value.set(
-          fullPath,
-          {
-            status: AssetStatus.FAILED,
-            sourcePath: asset.sourcePath
-          }
-        );
-        break;
-      case AssetStatus.DELETED:
-        value.set(
-          fullPath,
-          { status: AssetStatus.DELETED }
-        );
-        break;
-    }
-    this.filesTracker.set(entry, value);
+  public onInput(task: string, events: InputEvent[]) {
+    events.forEach((event) => {
+      this.entries.add(event.entry);
+    });
+    this.errors.onInput(task, events);
   }
 
-  public onBuilt(asset: FileAsset, task: string) {
-    this.trackFileStatus(asset, task);
+  public onBuilt(task: string, asset: FileAsset) {
+    this.assets.onBuilt(task, asset);
   }
 
-  public onDeleted(asset: DeletedAsset) {
-    this.trackFileStatus(asset);
+  public onError(task: string, error: ErrorAsset) {
+    this.errors.onError(task, error);
   }
 
-  public async onIdle(assets?: FailedAsset[]) {
-    if (assets) {
-      assets.forEach((asset) => this.trackFileStatus(asset));
-    }
+  public onDeleted(task: string, asset: DeletedAsset) {
+    this.assets.onDeleted(task, asset);
+  }
 
-    const entries = Array.from(this.filesTracker.entries());
-    const lock = this.getLockFilePath();
-
-    const updateArtifactory = async () => {
-      await Promise.all(
-        entries.map(([key, value]) => this.updateArtifactory(
-          key,
-          value
-        ))
-      );
-    };
-
-    await lockFileAsync(lock);
+  public async onIdle(errors: ErrorAsset[]) {
+    const entries = Array.from(this.entries);
 
     await Promise.all([
-      updateArtifactory(),
-      this.writeSnapshot(Array.from(this.filesTracker.keys()))
+      this.assets.update(),
+      this.errors.update(),
+      this.fs.writeSnapshot(entries)
     ]);
 
-    await unlockFileAsync(lock);
-    this.filesTracker.clear();
+    this.entries.clear();
   }
 }

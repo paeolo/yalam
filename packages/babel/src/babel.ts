@@ -46,7 +46,7 @@ const getOptions = (asset: FileAsset, options: BabelOptions): Babel.TransformOpt
 
 const transpile = async (asset: FileAsset, options: BabelOptions): Promise<OneToOneResult> => {
   let sourceMap;
-  const code = asset.getContentsOrFail().toString();
+  const code = asset.contents.toString();
   const babelResult = await Babel.transformAsync(
     code,
     getOptions(asset, options)

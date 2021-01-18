@@ -1,2 +1,2 @@
-export * from './event-ignorer';
-export * from './failure-service';
+export * from './service-ignorer';
+export * from './service-error';

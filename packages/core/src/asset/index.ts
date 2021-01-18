@@ -1,4 +1,4 @@
-export * from './asset-immutable';
 export * from './asset-deleted';
 export * from './asset-file';
-export * from './asset-failed';
+export * from './asset-error';
+export * from './asset-immutable';

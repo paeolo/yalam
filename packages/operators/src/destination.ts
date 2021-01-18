@@ -21,9 +21,13 @@ export const destination = (options: DestinationOptions): OperatorFunction<Asset
   map(asset => {
     if (asset.status === AssetStatus.SOURCE
       || asset.status === AssetStatus.ARTIFACT) {
-      return asset.getArtifact({
+      return asset.getWithPath({
+        status: AssetStatus.ARTIFACT,
         path: path.join(options.path, asset.path)
       });
+    }
+    else if (asset.status === AssetStatus.DELETED) {
+      return asset.getWithPath(path.join(options.path, asset.path));
     }
     return asset;
   })

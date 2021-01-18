@@ -1,8 +1,8 @@
 export {
-  ImmutableAsset,
-  FileAsset,
   DeletedAsset,
-  FailedAsset
+  FileAsset,
+  ErrorAsset,
+  ImmutableAsset
 } from './asset';
 export {
   FileEvent,

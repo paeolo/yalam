@@ -14,6 +14,8 @@ import {
   AssetStatus,
   FileAsset,
   SourceMap,
+  ErrorAsset,
+  EventType,
 } from '@yalam/core';
 
 export interface OneToOneResult {
@@ -29,7 +31,7 @@ interface TransformOptions {
 
 const handleAsset = async (asset: Asset, options: TransformOptions) => {
   if (asset.status === AssetStatus.ARTIFACT
-    || asset.status === AssetStatus.FAILED) {
+    || asset.status === AssetStatus.ERROR) {
     return asset;
   }
 
@@ -47,10 +49,16 @@ const handleAsset = async (asset: Asset, options: TransformOptions) => {
       sourceMap: result.sourceMap,
     });
   } catch (error) {
-    return asset.getFailed({
-      path,
-      error
-    });
+    if (asset.event.type !== EventType.INITIAL) {
+      return new ErrorAsset({
+        path: asset.path,
+        event: asset.event,
+        error,
+      });
+    }
+    else {
+      throw error;
+    }
   }
 }
 
@@ -60,10 +68,11 @@ const handleAsset = async (asset: Asset, options: TransformOptions) => {
  */
 export const oneToOne = (options: TransformOptions): OperatorFunction<Asset, Asset> => pipe(
   filter((asset => {
-    if (!options.filter) {
+    if (options.filter) {
+      return options.filter(asset);
+    } else {
       return true;
     }
-    return options.filter(asset);
   })),
   map((asset) => from(handleAsset(asset, options))),
   mergeAll()

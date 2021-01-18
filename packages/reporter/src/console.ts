@@ -1,5 +1,5 @@
 import {
-  FailedAsset,
+  ErrorAsset,
   DeletedAsset,
   FileAsset,
   InputEvent,
@@ -45,32 +45,38 @@ export class ConsoleLogger {
 }
 
 export class ConsoleReporter implements Reporter {
-  private startTime = new Date().getTime();
-  private processing = false;
-  private logger = new ConsoleLogger();
+  private startTime: number;
+  private processing: boolean;
+  private logger: ConsoleLogger;
+
+  constructor() {
+    this.startTime = new Date().getTime();
+    this.processing = false;
+    this.logger = new ConsoleLogger();
+  }
 
   public getLogger() {
     return this.logger;
   }
 
-  public onInput(events: InputEvent[]) {
+  public onInput(task: string, events: InputEvent[]) {
     if (!this.processing) {
       this.startTime = new Date().getTime();
       this.processing = true;
     }
   }
 
-  public onBuilt(asset: FileAsset, task: string) {
+  public onBuilt(task: string, asset: FileAsset) {
     this.logger.info(`Built ${asset.path}`);
   }
 
-  public onDeleted(asset: DeletedAsset) {
+  public onDeleted(task: string, asset: DeletedAsset) {
     this.logger.info(`Deleted ${asset.path}`);
   }
 
-  public onIdle(assets?: FailedAsset[]) {
-    if (assets && assets.length !== 0) {
-      assets.forEach(
+  public onIdle(errors: ErrorAsset[]) {
+    if (errors.length !== 0) {
+      errors.forEach(
         (asset) => this.logger.error(asset.error.toString())
       );
     } else {

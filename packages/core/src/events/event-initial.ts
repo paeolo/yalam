@@ -26,8 +26,7 @@ export class InitialEvent extends ImmutableEvent {
 
   public getFileEvent(options: GetFileEventOptions) {
     return new FileEvent({
-      cacheDir: this.cacheDir,
-      cacheKey: this.cacheKey,
+      cache: this.cache,
       entry: this.entry,
       path: options.path,
       type: options.type,
