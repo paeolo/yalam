@@ -21,7 +21,8 @@ import {
   AssetService,
   ErrorService,
   FSService,
-  HashService
+  HashService,
+  TaskService
 } from './services';
 import {
   CACHE_NAME
@@ -41,6 +42,7 @@ export class Cache implements Reporter {
   private assets: AssetService;
   private errors: ErrorService;
   private fs: FSService;
+  private tasks: TaskService;
   private entries: Set<DirectoryPath>;
 
   constructor(options: CacheOptions) {
@@ -59,6 +61,10 @@ export class Cache implements Reporter {
       hashes: this.hashes
     });
     this.fs = new FSService({
+      cacheDir: this.cacheDir,
+      hashes: this.hashes
+    });
+    this.tasks = new TaskService({
       cacheDir: this.cacheDir,
       hashes: this.hashes
     });
@@ -96,7 +102,10 @@ export class Cache implements Reporter {
   }
 
   public async getInputEvents(task: string, entries: DirectoryPath[], disableCache: boolean): Promise<InputEvent[]> {
-    await this.assets.sync(entries);
+    const [, initialEntries] = await Promise.all([
+      this.assets.sync(entries),
+      this.tasks.update(task, entries)
+    ]);
 
     if (disableCache) {
       return this.getInitialEvents(task, entries)
@@ -104,28 +113,35 @@ export class Cache implements Reporter {
 
     const [
       errorEvents,
-      fileEvents,
+      fsEvents,
     ] = await Promise.all([
       this.errors.getEvents(task, entries),
       this.fs.getEventsSince(entries),
     ]);
 
-    let events = fileEvents.map((value) => {
-      return new FileEvent({
-        type: value.event.type === 'delete'
-          ? EventType.DELETED
-          : EventType.UPDATED,
-        entry: value.entry,
-        cache: this.getCacheMeta(value.entry),
-        path: value.event.path,
-      })
-    });
+    const initialEvents: InputEvent[] = initialEntries.map((entry) => new InitialEvent({
+      entry,
+      cache: this.getCacheMeta(entry),
+    }));
+
+    const fileEvents = fsEvents
+      .filter((value) => !initialEntries.includes(value.entry))
+      .map((value) => {
+        return new FileEvent({
+          type: value.event.type === 'delete'
+            ? EventType.DELETED
+            : EventType.UPDATED,
+          entry: value.entry,
+          cache: this.getCacheMeta(value.entry),
+          path: value.event.path,
+        })
+      });
 
     errorEvents.forEach((item) => {
-      if (!events.some(
+      if (!fileEvents.some(
         (value) => value.entry === item.entry && value.path === item.event.path)
       ) {
-        events.push(new FileEvent({
+        fileEvents.push(new FileEvent({
           type: EventType.UPDATED,
           entry: item.entry,
           path: item.event.path,
@@ -134,7 +150,7 @@ export class Cache implements Reporter {
       }
     });
 
-    return events;
+    return initialEvents.concat(fileEvents);
   }
 
   public onInput(task: string, events: InputEvent[]) {
