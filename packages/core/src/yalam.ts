@@ -176,7 +176,7 @@ export class Yalam extends EventEmitter<EventTypes> {
       await setImmediatePromise();
       this.queueEvents(
         task,
-        this.getFileEvents(entry, input),
+        this.getFileEvents(task.name, entry, input),
         false
       );
     };
@@ -188,13 +188,13 @@ export class Yalam extends EventEmitter<EventTypes> {
     );
   }
 
-  private getFileEvents(entry: DirectoryPath, events: watcher.Event[]): FileEvent[] {
+  private getFileEvents(task: string, entry: DirectoryPath, events: watcher.Event[]): FileEvent[] {
     return events
       .map((event) => new FileEvent({
         type: event.type === 'delete'
           ? EventType.DELETED
           : EventType.UPDATED,
-        cache: this.cache.getCacheMeta(entry),
+        cache: this.cache.getCacheMeta(task, entry),
         entry,
         path: event.path,
       }));

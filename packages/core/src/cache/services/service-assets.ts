@@ -18,24 +18,33 @@ import {
 import { CACHE_NAME } from "../../constants";
 import { HashService } from './service-hash';
 
-const FILE_PREFIX = 'assets';
+const FILE_PREFIX = 'artifacts';
 
-const enum Status {
+const enum ArtifactStatus {
   UPDATED,
   DELETED
 }
 
-interface InMemoryArtifact {
-  status: Status;
+interface UpdatedArtifact {
+  status: ArtifactStatus.UPDATED,
+  task: string,
+  cachePath: FilePath,
   distPath: FilePath;
-  cachePath?: FilePath,
-  sourceMap?: boolean;
+  sourceMap: boolean;
 }
 
+interface DeletedArtifact {
+  status: ArtifactStatus.DELETED,
+  distPath: FilePath;
+}
+
+type InMemoryArtifact = UpdatedArtifact | DeletedArtifact;
+
 interface OnDiskArtifact {
-  distPath: FilePath,
+  task: string;
   cachePath: FilePath,
-  sourceMap?: boolean;
+  distPath: FilePath,
+  sourceMap: boolean;
 }
 
 interface AssetServiceOptions {
@@ -68,7 +77,10 @@ export class AssetService implements Reporter {
 
   private getCacheFilePath(entry: DirectoryPath) {
     const fileName = FILE_PREFIX.concat('.')
-      .concat(this.hashes.getHashForEntry(entry))
+      .concat(this.hashes.getHash({
+        entry,
+        useCacheKey: true
+      }))
       .concat('.json');
 
     return path.join(
@@ -78,7 +90,7 @@ export class AssetService implements Reporter {
     );
   }
 
-  private async getAssets(entry: DirectoryPath): Promise<OnDiskArtifact[]> {
+  private async getArtifacts(entry: DirectoryPath): Promise<OnDiskArtifact[]> {
     try {
       return JSON.parse(
         (await fsAsync.readFile(this.getCacheFilePath(entry)))
@@ -89,37 +101,43 @@ export class AssetService implements Reporter {
     }
   }
 
-  private async writeAssets(entry: DirectoryPath, assets: OnDiskArtifact[]) {
+  private async writeArtifacts(entry: DirectoryPath, artifacts: OnDiskArtifact[]) {
     return fsAsync.writeFile(
       this.getCacheFilePath(entry),
-      JSON.stringify(assets, undefined, 2)
+      JSON.stringify(artifacts, undefined, 2)
     );
   }
 
   private async updateEntry(entry: DirectoryPath) {
-    const assets: OnDiskArtifact[] = [];
-    const onDisk = await this.getAssets(entry);
+    const artifacts: OnDiskArtifact[] = [];
+    const onDisk = await this.getArtifacts(entry);
     const inMemory = this.map.get(entry) || [];
 
-    onDisk.forEach((asset) => {
-      if (!inMemory.some(value => value.distPath === asset.distPath
-        && value.status === Status.DELETED)) {
-        assets.push(asset);
+    onDisk.forEach((artifact) => {
+      if (!inMemory.some(
+        value => value.status === ArtifactStatus.DELETED
+          && value.distPath === artifact.distPath
+      )) {
+        artifacts.push(artifact);
       }
     });
 
-    inMemory.forEach((asset) => {
-      if (!onDisk.some(value => value.distPath === asset.distPath)
-        && asset.status === Status.UPDATED) {
-        assets.push({
-          distPath: asset.distPath,
-          cachePath: asset.cachePath!,
-          sourceMap: asset.sourceMap
+    inMemory.forEach((artifact) => {
+      if (artifact.status === ArtifactStatus.UPDATED
+        && !onDisk.some(
+          value => artifact.task === value.task
+            && value.distPath === artifact.distPath
+        )) {
+        artifacts.push({
+          task: artifact.task,
+          distPath: artifact.distPath,
+          cachePath: artifact.cachePath,
+          sourceMap: artifact.sourceMap
         });
       }
     });
 
-    await this.writeAssets(entry, assets);
+    await this.writeArtifacts(entry, artifacts);
   }
 
   private async copyIfNeeded(cachePath: FilePath, distPath: FilePath) {
@@ -135,7 +153,7 @@ export class AssetService implements Reporter {
   }
 
   private async syncEntry(entry: DirectoryPath) {
-    const onDisk = await this.getAssets(entry);
+    const onDisk = await this.getArtifacts(entry);
 
     const onArtifact = async (artifact: OnDiskArtifact) => {
       const promises = [
@@ -164,11 +182,13 @@ export class AssetService implements Reporter {
     const assets = this.map.get(entry) || [];
 
     const isEqual = (value: InMemoryArtifact) => value.distPath === asset.distPath
-      && value.status === Status.UPDATED;
+      && value.status === ArtifactStatus.UPDATED
+      && value.task === task;
 
     if (!assets.some(isEqual)) {
       assets.push({
-        status: Status.UPDATED,
+        status: ArtifactStatus.UPDATED,
+        task,
         distPath: asset.distPath,
         sourceMap: !!asset.sourceMap,
         cachePath: asset.getCachePath()
@@ -182,11 +202,11 @@ export class AssetService implements Reporter {
     const assets = this.map.get(entry) || [];
 
     const isEqual = (value: InMemoryArtifact) => value.distPath === asset.distPath
-      && value.status === Status.DELETED;
+      && value.status === ArtifactStatus.DELETED;
 
     if (!assets.some(isEqual)) {
       assets.push({
-        status: Status.DELETED,
+        status: ArtifactStatus.DELETED,
         distPath: asset.distPath,
       })
     }

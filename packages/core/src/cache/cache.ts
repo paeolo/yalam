@@ -74,10 +74,14 @@ export class Cache implements Reporter {
     );
   }
 
-  public getCacheMeta(entry: DirectoryPath): CacheMeta {
+  public getCacheMeta(task: string, entry: DirectoryPath): CacheMeta {
     return {
       directory: this.cacheDir,
-      key: this.hashes.getHashForEntry(entry)
+      key: this.hashes.getHash({
+        entry,
+        task,
+        useCacheKey: true
+      })
     }
   }
 
@@ -88,13 +92,13 @@ export class Cache implements Reporter {
       .filter((value) => value.event.type === 'delete')
       .map((value) => new FileEvent({
         type: EventType.DELETED,
+        cache: this.getCacheMeta(task, value.entry),
         entry: value.entry,
-        cache: this.getCacheMeta(value.entry),
         path: value.event.path,
       }));
 
     const initialEvents = entries.map(entry => new InitialEvent({
-      cache: this.getCacheMeta(entry),
+      cache: this.getCacheMeta(task, entry),
       entry,
     }));
 
@@ -121,7 +125,7 @@ export class Cache implements Reporter {
 
     const initialEvents: InputEvent[] = initialEntries.map((entry) => new InitialEvent({
       entry,
-      cache: this.getCacheMeta(entry),
+      cache: this.getCacheMeta(task, entry),
     }));
 
     const fileEvents = fsEvents
@@ -131,8 +135,8 @@ export class Cache implements Reporter {
           type: value.event.type === 'delete'
             ? EventType.DELETED
             : EventType.UPDATED,
+          cache: this.getCacheMeta(task, value.entry),
           entry: value.entry,
-          cache: this.getCacheMeta(value.entry),
           path: value.event.path,
         })
       });
@@ -143,9 +147,9 @@ export class Cache implements Reporter {
       ) {
         fileEvents.push(new FileEvent({
           type: EventType.UPDATED,
+          cache: this.getCacheMeta(task, item.entry),
           entry: item.entry,
           path: item.event.path,
-          cache: this.getCacheMeta(item.entry),
         }));
       }
     });

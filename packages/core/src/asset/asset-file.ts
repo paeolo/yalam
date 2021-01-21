@@ -39,16 +39,20 @@ export class FileAsset extends ImmutableAsset {
   public readonly status: FileAssetStatus;
   public readonly contents: Buffer;
   public readonly sourceMap: SourceMap | undefined;
-  private cachePath?: FilePath;
+  private cachePath: FilePath;
 
   constructor(options: FileAssetOptions) {
     super(options);
     this.status = options.status;
     this.contents = options.contents;
     this.sourceMap = options.sourceMap;
+    this.cachePath = path.join(
+      this.event.getCacheDir(CACHE_NAME),
+      this.path
+    );
   }
 
-  public getCachePath(): FilePath | undefined {
+  public getCachePath(): FilePath {
     return this.cachePath;
   }
 
@@ -82,35 +86,28 @@ export class FileAsset extends ImmutableAsset {
 
   public async commit() {
     if (this.status === AssetStatus.ARTIFACT) {
-      const distPath = this.distPath;
-      const cachePath = path.join(
-        this.event.getCacheDir(CACHE_NAME),
-        this.path
-      );
-
       await Promise.all([
-        mkdirp(path.dirname(distPath)),
-        mkdirp(path.dirname(cachePath))
+        mkdirp(path.dirname(this.distPath)),
+        mkdirp(path.dirname(this.cachePath))
       ]);
 
       const contents = this.getContents();
 
       let promises = [
-        fsAsync.writeFile(distPath, contents),
-        fsAsync.writeFile(cachePath, contents)
+        fsAsync.writeFile(this.distPath, contents),
+        fsAsync.writeFile(this.cachePath, contents)
       ];
 
       const sourceMap = this.getSourceMap();
 
       if (sourceMap) {
         promises = promises.concat([
-          fsAsync.writeFile(distPath.concat('.map'), sourceMap),
-          fsAsync.writeFile(cachePath.concat('.map'), sourceMap)
+          fsAsync.writeFile(this.distPath.concat('.map'), sourceMap),
+          fsAsync.writeFile(this.cachePath.concat('.map'), sourceMap)
         ])
       }
 
       await Promise.all(promises);
-      this.cachePath = cachePath;
     }
     return this;
   }

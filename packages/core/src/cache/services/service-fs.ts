@@ -43,7 +43,9 @@ export class FSService {
 
   private getCacheFilePath(entry: DirectoryPath) {
     const fileName = FILE_PREFIX.concat('.')
-      .concat(this.hashes.getGenericHashForEntry(entry))
+      .concat(this.hashes.getHash({
+        entry
+      }))
       .concat('.txt');
 
     return path.join(

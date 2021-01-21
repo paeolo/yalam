@@ -65,7 +65,10 @@ export class ErrorService implements Reporter {
 
   private getCacheFilePath(entry: DirectoryPath) {
     const fileName = FILE_PREFIX.concat('.')
-      .concat(this.hashes.getHashForEntry(entry))
+      .concat(this.hashes.getHash({
+        entry,
+        useCacheKey: true
+      }))
       .concat('.json');
 
     return path.join(
