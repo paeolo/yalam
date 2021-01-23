@@ -4,5 +4,11 @@
   "private": true,
   "author": "Paul Le Couteur",
   "license": "MIT",
-  "main": "dist/index.js"
+  "main": "dist/index.js",
+  "config": {
+    "yalam": {
+      "build": "default",
+      "watch": "default"
+    }
+  }
 }

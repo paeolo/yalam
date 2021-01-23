@@ -10,7 +10,7 @@ import {
 import {
   ImmutableAsset,
   ImmutableAssetOptions
-} from './asset-immutable';
+} from './immutable';
 
 export const CACHE_NAME = 'assets';
 

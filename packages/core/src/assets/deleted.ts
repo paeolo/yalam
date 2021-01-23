@@ -7,7 +7,7 @@ import {
 import {
   ImmutableAsset,
   ImmutableAssetOptions
-} from './asset-immutable';
+} from './immutable';
 
 export class DeletedAsset extends ImmutableAsset {
   constructor(options: ImmutableAssetOptions) {

@@ -3,7 +3,7 @@ import { AssetStatus } from '../types';
 import {
   ImmutableAsset,
   ImmutableAssetOptions
-} from './asset-immutable';
+} from './immutable';
 
 type ErrorAssetOptions = {
   event: FileEvent;

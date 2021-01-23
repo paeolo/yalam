@@ -1,13 +1,13 @@
 import {
   ImmutableEvent,
   BaseEventOptions
-} from "./event-immutable";
+} from "./immutable";
 import {
   DirectoryPath,
   EventType,
   FilePath
 } from "../types";
-import { InitialEvent } from "./event-initial";
+import { InitialEvent } from "./initial";
 
 type FileEventOptions = {
   type: EventType.UPDATED | EventType.DELETED;
