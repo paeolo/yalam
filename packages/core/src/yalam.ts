@@ -1,9 +1,9 @@
+import PQueue from 'p-queue';
 import path from 'path';
-import EventEmitter from 'eventemitter3';
 import {
   BindingScope,
   Context,
-  instantiateClass
+  instantiateClass,
 } from '@loopback/context';
 
 import {
@@ -11,17 +11,11 @@ import {
   RequestBindings
 } from './keys';
 import {
-  TaskDictionary
+  TaskDictionary,
+  Reporter
 } from './interfaces';
 import {
-  DeletedAsset,
-  ErrorAsset,
-  FileAsset
-} from './assets';
-import {
   DirectoryPath,
-  InputEvent,
-  Reporter
 } from './types';
 import {
   getVersion
@@ -30,7 +24,8 @@ import {
   RequestRunner,
   HashGenerator,
   HashRegistry,
-  TaskRegistry
+  TaskRegistry,
+  ReporterRegistry
 } from './services';
 import {
   CACHE_KEY,
@@ -50,19 +45,19 @@ export interface BuildOptions {
   entry: DirectoryPath;
 }
 
-interface EventTypes {
-  input: (events: InputEvent[]) => void;
-  built: (asset: FileAsset) => void;
-  deleted: (asset: DeletedAsset) => void;
-  idle: (errors: ErrorAsset[]) => void;
-}
-
-export class Yalam extends EventEmitter<EventTypes> {
+export class Yalam {
   private context: Context;
 
   constructor(options: YalamOptions) {
-    super();
     this.context = new Context();
+
+    this.context.bind(CoreBindings.VERSION)
+      .to(getVersion())
+      .lock();
+
+    this.context.bind(CoreBindings.QUEUE)
+      .to(new PQueue())
+      .lock();
 
     this.context.bind(CoreBindings.CACHE_KEY)
       .to(options.cacheKey || CACHE_KEY)
@@ -74,10 +69,6 @@ export class Yalam extends EventEmitter<EventTypes> {
 
     this.context.bind(CoreBindings.DISABLE_CACHE)
       .to(options.disableCache || false)
-      .lock();
-
-    this.context.bind(CoreBindings.VERSION)
-      .to(getVersion())
       .lock();
 
     this.context.bind(CoreBindings.HASH_GENERATOR)
@@ -99,38 +90,14 @@ export class Yalam extends EventEmitter<EventTypes> {
       .inScope(BindingScope.SINGLETON)
       .lock();
 
-    if (options.reporters) {
-      options.reporters.forEach(
-        (reporter) => this.register(reporter)
-      );
-    }
-  }
+    this.context.configure(CoreBindings.REPORTER_REGISTRY)
+      .to(options.reporters || [])
+      .lock();
 
-  private register(reporter: Reporter) {
-    if (reporter.onInput) {
-      this.addListener(
-        'input',
-        reporter.onInput.bind(reporter)
-      );
-    }
-    if (reporter.onBuilt) {
-      this.addListener(
-        'built',
-        reporter.onBuilt.bind(reporter)
-      );
-    }
-    if (reporter.onDeleted) {
-      this.addListener(
-        'deleted',
-        reporter.onDeleted.bind(reporter)
-      );
-    }
-    if (reporter.onIdle) {
-      this.addListener(
-        'idle',
-        reporter.onIdle.bind(reporter)
-      );
-    }
+    this.context.bind(CoreBindings.REPORTER_REGISTRY)
+      .toClass(ReporterRegistry)
+      .inScope(BindingScope.SINGLETON)
+      .lock();
   }
 
   private async getRequestRunner(options: BuildOptions) {

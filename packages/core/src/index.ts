@@ -9,6 +9,9 @@ export {
   InitialEvent
 } from './events';
 export {
+  Reporter
+} from './interfaces';
+export {
   parallel,
   series,
   dispatch

@@ -24,13 +24,6 @@ export interface AsyncSubscription {
   unsubscribe(): Promise<void>;
 };
 
-export interface Reporter {
-  onInput?: (events: InputEvent[]) => void;
-  onBuilt?: (asset: FileAsset) => void;
-  onDeleted?: (asset: DeletedAsset) => void;
-  onIdle?: (errors: ErrorAsset[]) => void;
-};
-
 export const enum EventType {
   DELETED,
   INITIAL,

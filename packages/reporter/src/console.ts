@@ -59,18 +59,18 @@ export class ConsoleReporter implements Reporter {
     return this.logger;
   }
 
-  public onInput(events: InputEvent[]) {
+  public onInput(task: string, events: InputEvent[]) {
     if (!this.processing) {
       this.startTime = new Date().getTime();
       this.processing = true;
     }
   }
 
-  public onBuilt(asset: FileAsset) {
+  public onBuilt(task: string, asset: FileAsset) {
     this.logger.info(`Built ${asset.path}`);
   }
 
-  public onDeleted(asset: DeletedAsset) {
+  public onDeleted(task: string, asset: DeletedAsset) {
     this.logger.info(`Deleted ${asset.path}`);
   }
 
