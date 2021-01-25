@@ -4,13 +4,13 @@ import {
   GetHashOptions,
   IHashRegistry,
   IHashGenerator
-} from "../interfaces";
+} from "../../interfaces";
 import {
   CoreBindings,
-} from "../keys";
+} from "../../keys";
 import {
   DirectoryPath
-} from "../types";
+} from "../../types";
 
 export class HashRegistry implements IHashRegistry {
   private hashes: Map<DirectoryPath, string>;

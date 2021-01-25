@@ -2,7 +2,7 @@ import crypto from 'crypto';
 
 import {
   IHashGenerator
-} from "../interfaces";
+} from "../../interfaces";
 
 export class HashGenerator implements IHashGenerator {
   public async hash(value: string) {

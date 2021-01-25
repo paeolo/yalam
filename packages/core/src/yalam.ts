@@ -8,14 +8,15 @@ import {
 
 import {
   CoreBindings,
+  RegistryBindings,
   RequestBindings
 } from './keys';
 import {
   TaskDictionary,
-  Reporter
 } from './interfaces';
 import {
   DirectoryPath,
+  Reporter
 } from './types';
 import {
   getVersion
@@ -25,7 +26,8 @@ import {
   HashGenerator,
   HashRegistry,
   TaskRegistry,
-  ReporterRegistry
+  ReporterRegistry,
+  ErrorRegistry
 } from './services';
 import {
   CACHE_KEY,
@@ -76,26 +78,31 @@ export class Yalam {
       .inScope(BindingScope.SINGLETON)
       .lock();
 
-    this.context.bind(CoreBindings.HASH_REGISTRY)
+    this.context.bind(RegistryBindings.HASH_REGISTRY)
       .toClass(HashRegistry)
       .inScope(BindingScope.SINGLETON)
       .lock();
 
-    this.context.configure(CoreBindings.TASK_REGISTRY)
+    this.context.configure(RegistryBindings.TASK_REGISTRY)
       .to(options.config)
       .lock();
 
-    this.context.bind(CoreBindings.TASK_REGISTRY)
+    this.context.bind(RegistryBindings.TASK_REGISTRY)
       .toClass(TaskRegistry)
       .inScope(BindingScope.SINGLETON)
       .lock();
 
-    this.context.configure(CoreBindings.REPORTER_REGISTRY)
+    this.context.configure(RegistryBindings.REPORTER_REGISTRY)
       .to(options.reporters || [])
       .lock();
 
-    this.context.bind(CoreBindings.REPORTER_REGISTRY)
+    this.context.bind(RegistryBindings.REPORTER_REGISTRY)
       .toClass(ReporterRegistry)
+      .inScope(BindingScope.SINGLETON)
+      .lock();
+
+    this.context.bind(RegistryBindings.ERROR_REGISTRY)
+      .toClass(ErrorRegistry)
       .inScope(BindingScope.SINGLETON)
       .lock();
   }
@@ -106,7 +113,7 @@ export class Yalam {
 
     const registry = await this
       .context
-      .get(CoreBindings.TASK_REGISTRY);
+      .get(RegistryBindings.TASK_REGISTRY);
 
     const registryResult = await registry.getResult({
       task: options.task,

@@ -16,80 +16,88 @@ import {
   EventType,
   InputEvent,
   Task
-} from '../types';
+} from '../../types';
 import {
+  IErrorRegistry,
   IReporterRegistry,
   IRequestRunner
-} from "../interfaces";
+} from "../../interfaces";
 import {
   CoreBindings,
+  RegistryBindings,
   RequestBindings
-} from '../keys';
-import { FileEvent, InitialEvent } from '../events';
+} from '../../keys';
+import {
+  FileEvent,
+  InitialEvent
+} from '../../events';
 
 export class RequestRunner implements IRequestRunner {
+  private ignoreSet: Set<FilePath>;
+
   constructor(
     @inject(CoreBindings.QUEUE) private queue: PQueue,
-    @inject(CoreBindings.CACHE_DIR) private cacheDir: DirectoryPath,
-    @inject(CoreBindings.REPORTER_REGISTRY) private reporterRegistry: IReporterRegistry,
+    @inject(RegistryBindings.REPORTER_REGISTRY) private reporters: IReporterRegistry,
+    @inject(RegistryBindings.ERROR_REGISTRY) private errors: IErrorRegistry,
     @inject(RequestBindings.TASK_NAME) private task: string,
     @inject(RequestBindings.TASK_FN) private fn: Task,
     @inject(RequestBindings.ENTRY) private entry: DirectoryPath,
+    @inject(CoreBindings.CACHE_DIR) private cacheDir: DirectoryPath,
     @inject(RequestBindings.CACHE_KEY) private cacheKey: string,
-  ) { }
+  ) {
+    this.ignoreSet = new Set();
+  }
 
   private onBuilt(asset: Asset) {
     switch (asset.status) {
+      case AssetStatus.ERROR:
+        this.errors.onError(this.task, asset);
+        break;
       case AssetStatus.ARTIFACT:
-        this
-          .reporterRegistry
-          .onBuilt(this.task, asset);
+        this.reporters.onBuilt(this.task, asset);
+        this.ignoreSet.add(asset.distPath);
+        this.ignoreSet.add(asset.distPath.concat('.map'));
         break;
       case AssetStatus.DELETED:
-        this
-          .reporterRegistry
-          .onDeleted(this.task, asset);
+        this.reporters.onDeleted(this.task, asset);
+        this.ignoreSet.add(asset.distPath);
+        this.ignoreSet.add(asset.distPath.concat('.map'));
         break;
     }
   }
 
-  private getSubscription() {
-    const onEvents = async (err: Error | null, events: watcher.Event[]) => {
-      if (err) {
-        throw err;
-      }
+  private async onEvents(error: Error | null, events: watcher.Event[]) {
+    if (error) {
+      throw error;
+    }
+    const input = events
+      .filter((event) => !this.ignoreSet.has(event.path));
 
-      this.queueEvents(
-        this.getFileEvents(events),
-        false
-      );
-    };
+    if (input.length === 0) {
+      return;
+    }
 
-    return watcher.subscribe(
-      this.entry,
-      onEvents,
-      { ignore: [this.cacheDir] }
-    );
+    this.queueEvents(this.getFileEvents(events), false);
   }
 
   private getFileEvents(events: watcher.Event[]): FileEvent[] {
-    return events
-      .map((event) => new FileEvent({
-        type: event.type === 'delete'
-          ? EventType.DELETED
-          : EventType.UPDATED,
-        cache: {
-          directory: this.cacheDir,
-          key: this.cacheKey,
-        },
-        entry: this.entry,
-        path: event.path,
-      }));
+    return events.map((event) => new FileEvent({
+      type: event.type === 'delete'
+        ? EventType.DELETED
+        : EventType.UPDATED,
+      entry: this.entry,
+      path: event.path,
+      cache: {
+        directory: this.cacheDir,
+        key: this.cacheKey,
+      },
+    }));
   }
 
   private queueEvents(events: InputEvent[], throwOnFail: boolean) {
-    this
-      .reporterRegistry
+    this.errors
+      .onInput(this.task, events);
+    this.reporters
       .onInput(this.task, events);
 
     return this.queue.add(async () => {
@@ -119,7 +127,29 @@ export class RequestRunner implements IRequestRunner {
     });
   }
 
+  private getSubscription() {
+    return watcher
+      .subscribe(
+        this.entry,
+        this.onEvents.bind(this),
+        {
+          ignore: [
+            this.cacheDir
+          ]
+        }
+      );
+  }
+
   public async build() {
+    const initialEvent = new InitialEvent({
+      entry: this.entry,
+      cache: {
+        directory: this.cacheDir,
+        key: this.cacheKey
+      }
+    });
+
+    await this.queueEvents([initialEvent], true);
   }
 
   public async watch(): Promise<AsyncSubscription> {

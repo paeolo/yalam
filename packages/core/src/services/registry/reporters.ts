@@ -3,32 +3,39 @@ import EventEmitter from 'eventemitter3';
 import { config, inject } from "@loopback/context";
 
 import {
-  CoreBindings
-} from '../keys';
+  CoreBindings,
+  RegistryBindings
+} from '../../keys';
 import {
   EventTypes,
+  IErrorRegistry,
   IReporterRegistry,
-  Reporter
-} from "../interfaces";
+} from "../../interfaces";
 import {
-  InputEvent
-} from "../types";
+  InputEvent,
+  Reporter
+} from "../../types";
 import {
   DeletedAsset,
-  ErrorAsset,
   FileAsset
-} from "../assets";
+} from "../../assets";
 
 export class ReporterRegistry extends EventEmitter<EventTypes> implements IReporterRegistry {
   constructor(
     @config() reporters: Reporter[],
-    @inject(CoreBindings.QUEUE) queue: PQueue
+    @inject(CoreBindings.QUEUE) queue: PQueue,
+    @inject(RegistryBindings.ERROR_REGISTRY) private errors: IErrorRegistry,
   ) {
     super();
-    queue.on('idle', () => this.emit('idle', []));
+    queue.on('idle', this.onIdle.bind(this));
     reporters.forEach(
       (reporter) => this.bindReporter(reporter)
     );
+  }
+
+  private onIdle() {
+    this.errors.batchUpdate();
+    this.emit('idle', this.errors.getErrors());
   }
 
   private bindReporter(reporter: Reporter) {
@@ -68,9 +75,5 @@ export class ReporterRegistry extends EventEmitter<EventTypes> implements IRepor
 
   public onDeleted(task: string, asset: DeletedAsset) {
     this.emit('deleted', task, asset);
-  }
-
-  public onIdle(errors: ErrorAsset[]) {
-    this.emit('idle', errors);
   }
 }

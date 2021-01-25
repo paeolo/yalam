@@ -1,7 +1,7 @@
 import {
   DirectoryPath,
   Task
-} from '../types';
+} from '../../types';
 
 export interface TaskDictionary {
   [key: string]: Task;

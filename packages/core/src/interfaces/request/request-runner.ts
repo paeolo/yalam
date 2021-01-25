@@ -1,6 +1,6 @@
 import {
   AsyncSubscription
-} from '../types';
+} from '../../types';
 
 export interface IRequestRunner {
   build(): Promise<void>;

@@ -1,8 +1,10 @@
 #!/usr/bin/env node
+require('v8-compile-cache');
 
 import meow from 'meow';
-import { run } from '.';
 import { ConsoleReporter } from '@yalam/reporter';
+
+import { run } from '.';
 
 const cli = meow(`
   Usage

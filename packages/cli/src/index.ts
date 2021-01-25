@@ -1,5 +1,3 @@
-require('v8-compile-cache');
-
 import path from 'path';
 import md5File from 'md5-file';
 import { Reporter } from '@yalam/core';

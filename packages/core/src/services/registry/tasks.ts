@@ -4,20 +4,20 @@ import {
 } from "@loopback/context";
 
 import {
-  CoreBindings
-} from "../keys";
+  RegistryBindings
+} from "../../keys";
 import {
   IHashRegistry,
   ITaskRegistry,
   TaskDictionary,
   GetTaskOptions,
   RegistryResult
-} from "../interfaces";
+} from "../../interfaces";
 
 export class TaskRegistry implements ITaskRegistry {
   constructor(
     @config() private dictionary: TaskDictionary,
-    @inject(CoreBindings.HASH_REGISTRY) private hashRegistry: IHashRegistry,
+    @inject(RegistryBindings.HASH_REGISTRY) private hashRegistry: IHashRegistry,
   ) { }
 
   public async getResult(options: GetTaskOptions): Promise<RegistryResult> {
