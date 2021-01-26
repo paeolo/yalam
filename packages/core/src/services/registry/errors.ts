@@ -48,16 +48,16 @@ export class ErrorRegistry implements IErrorRegistry {
 
     switch (event.type) {
       case EventType.INITIAL:
-        filter = (error: TaskError) => error.task !== task || error.asset.entry !== event.entry;
+        filter = (error: TaskError) => error.task !== task
+          || error.asset.entry !== event.entry;
         break;
       default:
-        filter = (error: TaskError) => error.task !== task || error.asset.sourcePath !== event.path;
+        filter = (error: TaskError) => error.task !== task
+          || error.asset.sourcePath !== event.path;
         break;
     }
 
-    this.errors = this
-      .errors
-      .filter(filter);
+    this.errors = this.errors.filter(filter);
   }
 
   private batchUpdateError(task: string, error: ErrorAsset) {

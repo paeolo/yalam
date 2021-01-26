@@ -2,10 +2,14 @@ import PQueue from 'p-queue';
 import { BindingKey } from '@loopback/context';
 
 import {
+  IAssetCache,
+  IErrorCache,
   IErrorRegistry,
+  IFSCache,
   IHashGenerator,
   IHashRegistry,
   IReporterRegistry,
+  IRequestCache,
   ITaskRegistry
 } from './interfaces';
 import {
@@ -34,4 +38,12 @@ export namespace RequestBindings {
   export const TASK_FN = BindingKey.create<Task>('request.task.fn');
   export const ENTRY = BindingKey.create<DirectoryPath>('request.entry');
   export const CACHE_KEY = BindingKey.create<string>('request.cache.key');
+}
+
+export namespace CacheBindings {
+  export const REQUEST_CACHE_DIR = BindingKey.create<DirectoryPath>('cache.request.directory');
+  export const REQUEST_CACHE = BindingKey.create<IRequestCache>('cache.request');
+  export const FS_CACHE = BindingKey.create<IFSCache>('cache.fs');
+  export const ASSET_CACHE = BindingKey.create<IAssetCache>('cache.assets');
+  export const ERROR_CACHE = BindingKey.create<IErrorCache>('cache.errors');
 }

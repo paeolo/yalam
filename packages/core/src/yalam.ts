@@ -7,6 +7,7 @@ import {
 } from '@loopback/context';
 
 import {
+  CacheBindings,
   CoreBindings,
   RegistryBindings,
   RequestBindings
@@ -27,11 +28,16 @@ import {
   HashRegistry,
   TaskRegistry,
   ReporterRegistry,
-  ErrorRegistry
+  ErrorRegistry,
+  RequestCache,
+  FSCache,
+  AssetCache,
+  ErrorCache
 } from './services';
 import {
   CACHE_KEY,
-  CACHE_DIR
+  CACHE_DIR,
+  CACHE_NAME
 } from './constants';
 
 export interface YalamOptions {
@@ -134,6 +140,35 @@ export class Yalam {
 
     context.bind(RequestBindings.CACHE_KEY)
       .to(registryResult.cacheKey)
+      .lock();
+
+    context.bind(CacheBindings.REQUEST_CACHE_DIR)
+      .to(
+        path.join(
+          await this.context.get(CoreBindings.CACHE_DIR),
+          CACHE_NAME,
+          registryResult.cacheKey
+        ))
+      .lock();
+
+    context.bind(CacheBindings.FS_CACHE)
+      .toClass(FSCache)
+      .inScope(BindingScope.SINGLETON)
+      .lock();
+
+    context.bind(CacheBindings.ASSET_CACHE)
+      .toClass(AssetCache)
+      .inScope(BindingScope.SINGLETON)
+      .lock();
+
+    context.bind(CacheBindings.ERROR_CACHE)
+      .toClass(ErrorCache)
+      .inScope(BindingScope.SINGLETON)
+      .lock();
+
+    context.bind(CacheBindings.REQUEST_CACHE)
+      .toClass(RequestCache)
+      .inScope(BindingScope.SINGLETON)
       .lock();
 
     return instantiateClass(RequestRunner, context);
