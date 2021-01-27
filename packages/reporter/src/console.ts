@@ -67,11 +67,11 @@ export class ConsoleReporter implements Reporter {
   }
 
   public onBuilt(task: string, asset: FileAsset) {
-    this.logger.info(`Built ${asset.path}`);
+    this.logger.info(`${chalk.magentaBright(`<${task}>`)} Built ${asset.path}`);
   }
 
   public onDeleted(task: string, asset: DeletedAsset) {
-    this.logger.info(`Deleted ${asset.path}`);
+    this.logger.info(`${chalk.magentaBright(`<${task}>`)} Deleted ${asset.path}`);
   }
 
   public onIdle(errors: ErrorAsset[]) {

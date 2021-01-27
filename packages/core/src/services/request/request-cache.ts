@@ -40,6 +40,7 @@ export class RequestCache implements IRequestCache {
 
   constructor(
     @inject(CoreBindings.CACHE_DIR) private cacheDir: DirectoryPath,
+    @inject(CoreBindings.DISABLE_CACHE) private disableCache: boolean,
     @inject(CacheBindings.REQUEST_CACHE_DIR) private requestCacheDir: DirectoryPath,
     @inject(CacheBindings.FS_CACHE) private fs: IFSCache,
     @inject(CacheBindings.ASSET_CACHE) private assets: IAssetCache,
@@ -71,7 +72,7 @@ export class RequestCache implements IRequestCache {
   public async getInputEvents(): Promise<InputEvent[]> {
     const hasSync = await this.assets.sync();
 
-    if (!hasSync) {
+    if (!hasSync || this.disableCache) {
       return [
         new InitialEvent({
           entry: this.entry,
