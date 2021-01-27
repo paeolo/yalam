@@ -9,6 +9,7 @@ import {
 } from '../../utils';
 import {
   DirectoryPath,
+  FilePath,
   EventType,
   InputEvent
 } from '../../types';
@@ -35,6 +36,8 @@ import {
 const LOCKFILE = '.lock';
 
 export class RequestCache implements IRequestCache {
+  private lockFilePath: FilePath;
+
   constructor(
     @inject(CoreBindings.CACHE_DIR) private cacheDir: DirectoryPath,
     @inject(CacheBindings.REQUEST_CACHE_DIR) private requestCacheDir: DirectoryPath,
@@ -44,7 +47,25 @@ export class RequestCache implements IRequestCache {
     @inject(RequestBindings.ENTRY) private entry: DirectoryPath,
     @inject(RequestBindings.CACHE_KEY) private cacheKey: string,
   ) {
+    this.lockFilePath = path.join(
+      this.requestCacheDir,
+      LOCKFILE
+    );
     mkdirp.sync(this.requestCacheDir);
+  }
+
+  public convertEvent(event: watcher.Event): FileEvent {
+    return new FileEvent({
+      type: event.type === 'delete'
+        ? EventType.DELETED
+        : EventType.UPDATED,
+      entry: this.entry,
+      path: event.path,
+      cache: {
+        directory: this.cacheDir,
+        key: this.cacheKey,
+      },
+    });
   }
 
   public async getInputEvents(): Promise<InputEvent[]> {
@@ -62,7 +83,22 @@ export class RequestCache implements IRequestCache {
       ];
     }
 
-    return [];
+    const [
+      errorEvents,
+      fsEvents,
+    ] = await Promise.all([
+      this.errors.getEvents(),
+      this.fs.getEventsSince(),
+    ]);
+
+    errorEvents.forEach(event => {
+      if (!fsEvents.some(value => value.path === event.path)) {
+        fsEvents.push(event);
+      }
+    });
+
+    return fsEvents
+      .map((event) => this.convertEvent(event));
   }
 
   public onInput(events: InputEvent[]) {
@@ -81,26 +117,8 @@ export class RequestCache implements IRequestCache {
     this.assets.onDeleted(asset);
   }
 
-  public convertEvent(event: watcher.Event): FileEvent {
-    return new FileEvent({
-      type: event.type === 'delete'
-        ? EventType.DELETED
-        : EventType.UPDATED,
-      entry: this.entry,
-      path: event.path,
-      cache: {
-        directory: this.cacheDir,
-        key: this.cacheKey,
-      },
-    });
-  }
-
   public async batchUpdate() {
-    const lockFilePath = path.join(
-      this.requestCacheDir,
-      LOCKFILE
-    );
-    await lockFileAsync(lockFilePath);
+    await lockFileAsync(this.lockFilePath);
 
     await Promise.all([
       this.fs.batchUpdate(),
@@ -108,6 +126,6 @@ export class RequestCache implements IRequestCache {
       this.errors.batchUpdate()
     ]);
 
-    await unlockFileAsync(lockFilePath);
+    await unlockFileAsync(this.lockFilePath);
   }
 }

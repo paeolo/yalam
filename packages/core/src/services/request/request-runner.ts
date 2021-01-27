@@ -1,5 +1,6 @@
 import PQueue from 'p-queue';
 import watcher from '@parcel/watcher';
+import setImmediatePromise from 'set-immediate-promise';
 import { inject } from '@loopback/context';
 import { from } from 'rxjs';
 import {
@@ -91,6 +92,7 @@ export class RequestRunner implements IRequestRunner {
 
     return this.queue.add(async () => {
       const input = publish<InputEvent>()(from(events));
+      await setImmediatePromise();
 
       const onAsset = (asset: Asset) => {
         if (throwOnFail
@@ -114,6 +116,7 @@ export class RequestRunner implements IRequestRunner {
         input.connect();
       });
 
+      await setImmediatePromise();
       this.requestCache.batchUpdate();
     });
   }

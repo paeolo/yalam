@@ -22,18 +22,7 @@ import {
 import {
   getVersion
 } from './utils'
-import {
-  RequestRunner,
-  HashGenerator,
-  HashRegistry,
-  TaskRegistry,
-  ReporterRegistry,
-  ErrorRegistry,
-  RequestCache,
-  FSCache,
-  AssetCache,
-  ErrorCache
-} from './services';
+import * as Services from './services';
 import {
   CACHE_KEY,
   CACHE_DIR,
@@ -80,12 +69,12 @@ export class Yalam {
       .lock();
 
     this.context.bind(CoreBindings.HASH_GENERATOR)
-      .toClass(HashGenerator)
+      .toClass(Services.HashGenerator)
       .inScope(BindingScope.SINGLETON)
       .lock();
 
     this.context.bind(RegistryBindings.HASH_REGISTRY)
-      .toClass(HashRegistry)
+      .toClass(Services.HashRegistry)
       .inScope(BindingScope.SINGLETON)
       .lock();
 
@@ -94,7 +83,7 @@ export class Yalam {
       .lock();
 
     this.context.bind(RegistryBindings.TASK_REGISTRY)
-      .toClass(TaskRegistry)
+      .toClass(Services.TaskRegistry)
       .inScope(BindingScope.SINGLETON)
       .lock();
 
@@ -103,12 +92,12 @@ export class Yalam {
       .lock();
 
     this.context.bind(RegistryBindings.REPORTER_REGISTRY)
-      .toClass(ReporterRegistry)
+      .toClass(Services.ReporterRegistry)
       .inScope(BindingScope.SINGLETON)
       .lock();
 
     this.context.bind(RegistryBindings.ERROR_REGISTRY)
-      .toClass(ErrorRegistry)
+      .toClass(Services.ErrorRegistry)
       .inScope(BindingScope.SINGLETON)
       .lock();
   }
@@ -152,26 +141,29 @@ export class Yalam {
       .lock();
 
     context.bind(CacheBindings.FS_CACHE)
-      .toClass(FSCache)
+      .toClass(Services.FSCache)
       .inScope(BindingScope.SINGLETON)
       .lock();
 
     context.bind(CacheBindings.ASSET_CACHE)
-      .toClass(AssetCache)
+      .toClass(Services.AssetCache)
       .inScope(BindingScope.SINGLETON)
       .lock();
 
     context.bind(CacheBindings.ERROR_CACHE)
-      .toClass(ErrorCache)
+      .toClass(Services.ErrorCache)
       .inScope(BindingScope.SINGLETON)
       .lock();
 
     context.bind(CacheBindings.REQUEST_CACHE)
-      .toClass(RequestCache)
+      .toClass(Services.RequestCache)
       .inScope(BindingScope.SINGLETON)
       .lock();
 
-    return instantiateClass(RequestRunner, context);
+    return instantiateClass(
+      Services.RequestRunner,
+      context
+    );
   }
 
   public async build(options: BuildOptions) {
