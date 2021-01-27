@@ -1,5 +1,6 @@
 import PQueue from 'p-queue';
 import EventEmitter from 'eventemitter3';
+import setImmediatePromise from 'set-immediate-promise';
 import { config, inject } from "@loopback/context";
 
 import {
@@ -33,9 +34,14 @@ export class ReporterRegistry extends EventEmitter<EventTypes> implements IRepor
     );
   }
 
-  private onIdle() {
+  private async onIdle() {
     this.errors.batchUpdate();
-    this.emit('idle', this.errors.getErrors());
+    await setImmediatePromise();
+
+    this.emit(
+      'idle',
+      this.errors.getErrors()
+    );
   }
 
   private bindReporter(reporter: Reporter) {
