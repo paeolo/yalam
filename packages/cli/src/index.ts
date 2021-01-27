@@ -1,5 +1,3 @@
-require('v8-compile-cache');
-
 import path from 'path';
 import md5File from 'md5-file';
 import { Reporter } from '@yalam/core';
@@ -9,18 +7,25 @@ import {
   Runner,
   RunnerMode
 } from './runner';
-import { YALAM_FILE } from './constants';
-import { printTasks } from './task-show';
+import {
+  getConfig
+} from './utils';
+import {
+  YALAM_FILE
+} from './constants';
 
 export const run = async (entries: string[], flags: FlagsType, reporters: Reporter[]) => {
-  const configPath = flags.config || path.join(process.cwd(), YALAM_FILE);
+  const configPath = flags.config
+    || path.join(process.cwd(), YALAM_FILE);
 
-  if (flags.show) {
-    printTasks(configPath);
-    return;
-  }
+  const [
+    config,
+    cacheKey
+  ] = await Promise.all([
+    getConfig(configPath),
+    md5File(configPath),
+  ]);
 
-  const cacheKey = await md5File(configPath);
   let mode = flags.watch
     ? RunnerMode.WATCH
     : RunnerMode.BUILD;
@@ -28,13 +33,13 @@ export const run = async (entries: string[], flags: FlagsType, reporters: Report
   const runner = new Runner({
     mode,
     entries,
-    taskName: flags.task,
-    configPath,
-    yalamOptions: {
+    options: {
+      config,
       disableCache: flags.cache === false,
       cacheKey,
       reporters,
     }
   });
+
   await runner.run();
 }

@@ -3,7 +3,7 @@ import {
   DeletedAsset,
   FileAsset,
   ErrorAsset
-} from './asset';
+} from './assets';
 import {
   FileEvent,
   InitialEvent
@@ -27,7 +27,6 @@ export interface AsyncSubscription {
 export interface Reporter {
   onInput?: (task: string, events: InputEvent[]) => void;
   onBuilt?: (task: string, asset: FileAsset) => void;
-  onError?: (task: string, error: ErrorAsset) => void;
   onDeleted?: (task: string, asset: DeletedAsset) => void;
   onIdle?: (errors: ErrorAsset[]) => void;
 };

@@ -14,7 +14,6 @@
     "eventemitter3": "^4.0.7",
     "lockfile": "^1.0.4",
     "mkdirp": "^1.0.4",
-    "p-map": "^4.0.0",
     "p-queue": "^6.6.2",
     "rxjs": "^7.0.0-beta.9",
     "set-immediate-promise": "^1.0.7"

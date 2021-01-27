@@ -3,7 +3,7 @@ export {
   FileAsset,
   ErrorAsset,
   ImmutableAsset
-} from './asset';
+} from './assets';
 export {
   FileEvent,
   InitialEvent
@@ -12,7 +12,7 @@ export {
   parallel,
   series,
   dispatch
-} from './compose';
+} from './meta-operators';
 export {
   Yalam,
   YalamOptions
