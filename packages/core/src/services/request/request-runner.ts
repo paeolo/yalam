@@ -79,46 +79,42 @@ export class RequestRunner implements IRequestRunner {
       return;
     }
 
-    await this.queueEvents(input, false);
+    await this.queue.add(
+      () => this.buildEvents(input, false)
+    );
   }
 
-  private queueEvents(events: InputEvent[], throwOnFail: boolean) {
-    this.errors
-      .onInput(this.task, events);
-    this.reporters
-      .onInput(this.task, events);
-
+  private async buildEvents(events: InputEvent[], throwOnFail: boolean) {
+    this.reporters.onInput(this.task, events);
     this.requestCache.onInput(events);
+    this.errors.onInput(this.task, events);
 
-    return this.queue.add(async () => {
-      const input = publish<InputEvent>()(from(events));
-      await setImmediatePromise();
+    const input = publish<InputEvent>()(from(events));
 
-      const onAsset = (asset: Asset) => {
-        if (throwOnFail
-          && asset.status === AssetStatus.ERROR) {
-          throw asset.error;
-        }
-        return from(asset.commit());
+    const onAsset = (asset: Asset) => {
+      if (throwOnFail
+        && asset.status === AssetStatus.ERROR) {
+        throw asset.error;
       }
+      return from(asset.commit());
+    }
 
-      await new Promise<void>((resolve, reject) => {
-        this.fn(input)
-          .pipe(
-            map(onAsset),
-            mergeAll()
-          )
-          .subscribe({
-            next: asset => this.onBuilt(asset),
-            error: reject,
-            complete: resolve
-          });
-        input.connect();
-      });
-
-      await setImmediatePromise();
-      this.requestCache.batchUpdate();
+    await new Promise<void>((resolve, reject) => {
+      this.fn(input)
+        .pipe(
+          map(onAsset),
+          mergeAll()
+        )
+        .subscribe({
+          next: asset => this.onBuilt(asset),
+          error: reject,
+          complete: resolve
+        });
+      input.connect();
     });
+
+    await setImmediatePromise();
+    this.requestCache.batchUpdate();
   }
 
   private getSubscription() {
@@ -134,13 +130,21 @@ export class RequestRunner implements IRequestRunner {
   }
 
   public async build() {
-    const events = await this.requestCache.getInputEvents();
-    await this.queueEvents(events, true);
+    await this.queue.add(
+      async () => {
+        const events = await this.requestCache.getInputEvents();
+        await this.buildEvents(events, true)
+      }
+    );
   }
 
   public async watch(): Promise<AsyncSubscription> {
-    const events = await this.requestCache.getInputEvents();
-    await this.queueEvents(events, false);
+    await this.queue.add(
+      async () => {
+        const events = await this.requestCache.getInputEvents();
+        await this.buildEvents(events, false)
+      }
+    );
 
     const subscription = await this.getSubscription();
 
