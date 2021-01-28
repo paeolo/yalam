@@ -6,8 +6,12 @@ import {
 } from '@yalam/core';
 
 import {
-  FilePath, OutputType
+  FilePath,
+  OutputType
 } from '../types';
+import {
+  formatDiagnostic
+} from '../utils';
 
 const INITAL_VERSION = 0;
 
@@ -90,21 +94,12 @@ export class TranspilerService {
       return;
     }
 
-    const message = ts.flattenDiagnosticMessageText(
-      diagnostic.messageText, "\n"
+    return new SyntaxError(
+      formatDiagnostic(
+        diagnostic,
+        asset.sourcePath
+      )
     );
-
-    if (diagnostic.file && diagnostic.start) {
-      const {
-        line,
-        character
-      } = diagnostic.file.getLineAndCharacterOfPosition(
-        diagnostic.start
-      );
-      return new Error(`${asset.sourcePath} (${line + 1},${character + 1}): ${message}`)
-    } else {
-      return new Error(message);
-    }
   }
 
   private storeAsset(asset: FileAsset) {
