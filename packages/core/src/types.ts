@@ -54,5 +54,5 @@ export type SourceMap = {
     mappings: string;
     file: string;
   };
-  referencer: (path: string) => string
+  referencer?: (path: string) => string
 };

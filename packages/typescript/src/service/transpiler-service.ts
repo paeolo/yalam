@@ -11,9 +11,14 @@ import {
 
 const INITAL_VERSION = 0;
 
-interface StoredAsset {
-  value: FileAsset;
+interface Asset {
+  file: FileAsset;
   version: number;
+}
+
+interface Emit {
+  contents?: ts.OutputFile;
+  sourceMap?: ts.OutputFile;
 }
 
 export interface TranspilerServiceOptions {
@@ -27,10 +32,13 @@ export class TranspilerService {
   private host: ts.LanguageServiceHost;
   private registry: ts.DocumentRegistry;
   private service: ts.LanguageService;
-  private assets: Map<FilePath, StoredAsset>;
+  private assets: Map<FilePath, Asset>;
 
   constructor(options: TranspilerServiceOptions) {
-    this.compilerOptions = options.compilerOptions;
+    this.compilerOptions = {
+      ...options.compilerOptions,
+      sourceMap: true
+    };
     this.registry = options.registry;
     this.host = {
       getScriptFileNames: () => this.getScriptFileNames(),
@@ -66,7 +74,7 @@ export class TranspilerService {
 
     return asset
       ? ts.ScriptSnapshot
-        .fromString(asset.value.contents.toString())
+        .fromString(asset.file.contents.toString())
       : ts.ScriptSnapshot
         .fromString(fs.readFileSync(fileName).toString())
   }
@@ -108,26 +116,40 @@ export class TranspilerService {
       : INITAL_VERSION;
 
     this.assets.set(fileName, {
-      value: asset,
+      file: asset,
       version,
     });
   }
 
   private getJavascript(fileName: FilePath) {
-    return this.service
+    const outputFiles = this.service
       .getEmitOutput(fileName)
-      .outputFiles
-      .find(file => path.extname(file.name) === '.js');
+      .outputFiles;
+
+    return {
+      contents: outputFiles.find(
+        file => path.extname(file.name) === '.js'
+      ),
+      sourceMap: outputFiles.find(
+        file => path.extname(file.name) === '.map'
+      )
+    }
   }
 
   private getDTS(fileName: FilePath) {
-    return this.service
+    const outputFiles = this.service
       .getEmitOutput(fileName, true, true)
-      .outputFiles
-      .find(file => path.extname(file.name) === '.ts');
+      .outputFiles;
+
+    return {
+      contents: outputFiles.find(
+        file => path.extname(file.name) === '.ts'
+      ),
+      sourceMap: undefined
+    }
   }
 
-  public emitOutput(asset: FileAsset, type: OutputType, checkSyntax: boolean) {
+  public emitOutput(asset: FileAsset, type: OutputType, checkSyntax: boolean): Emit {
     const fileName = asset.distPath;
     this.storeAsset(asset);
 
@@ -142,10 +164,6 @@ export class TranspilerService {
     const output = type === OutputType.JS
       ? this.getJavascript(fileName)
       : this.getDTS(fileName);
-
-    if (!output) {
-      throw new Error();
-    }
 
     return output;
   }

@@ -124,7 +124,7 @@ export class FileAsset extends ImmutableAsset {
   }
 
   private getContents() {
-    if (!this.sourceMap) {
+    if (!this.sourceMap || !this.sourceMap.referencer) {
       return this.contents;
     }
     else {

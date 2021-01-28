@@ -30,15 +30,28 @@ export class TSCompiler {
       const syntaxCheck = options.forceSyntaxCheck
         || options.type === OutputType.JS;
 
-      const output = this.service.getTranspiler(asset.entry)
+      let sourceMap;
+      const output = this.service
+        .getTranspiler(asset.entry)
         .emitOutput(
           asset,
           options.type,
           syntaxCheck
         );
 
+      if (!output.contents) {
+        throw new Error();
+      }
+
+      if (output.sourceMap) {
+        sourceMap = {
+          map: JSON.parse(output.sourceMap.text)
+        };
+      }
+
       return {
-        contents: Buffer.from(output.text)
+        contents: Buffer.from(output.contents.text),
+        sourceMap,
       }
     };
 
