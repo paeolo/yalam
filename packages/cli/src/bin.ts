@@ -1,8 +1,10 @@
 #!/usr/bin/env node
+require('v8-compile-cache');
 
 import meow from 'meow';
-import { run } from '.';
 import { ConsoleReporter } from '@yalam/reporter';
+
+import { run } from '.';
 
 const cli = meow(`
   Usage
@@ -10,32 +12,22 @@ const cli = meow(`
 
   List of options
     - config |> Specify a custom path to config file
-    - no-cache |> Disable any caching features
-    - show |> List the tasks present in the config file
     - watch |> Build your changes while your are coding
+    - no-cache |> Disable any caching features
 `, {
   flags: {
-    cache: {
-      type: 'boolean',
-      default: true
-    },
     config: {
       type: 'string',
       alias: 'c'
-    },
-    task: {
-      type: 'string',
-      alias: 't',
     },
     watch: {
       type: 'boolean',
       alias: 'w',
     },
-    show: {
+    cache: {
       type: 'boolean',
-      alias: 's',
-      default: false
-    }
+      default: true
+    },
   },
 });
 
@@ -44,16 +36,15 @@ if (cli.input.length === 0 && !cli.flags.show)
 
 export type FlagsType = typeof cli.flags;
 
-const consoleReporter = new ConsoleReporter();
+const reporter = new ConsoleReporter();
 
 run(
   cli.input,
   cli.flags,
   [
-    consoleReporter
-  ]
-)
+    reporter
+  ])
   .catch((err: Error) => {
-    consoleReporter.getLogger().error(err.toString())
+    reporter.getLogger().error(err.toString())
     process.exit(1);
   });

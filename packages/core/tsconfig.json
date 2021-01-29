@@ -11,6 +11,9 @@
     "moduleResolution": "node",
     "strict": true,
     "skipLibCheck": true,
+    "removeComments": false,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
     "typeRoots": [
       "./typings",
       "node_modules/@types"

@@ -1,13 +1,15 @@
 import lockFile from 'lockfile';
 
+const WAIT_DURATION = 1000;
+const STALE_DURATION = 1500;
+
 export const lockFileAsync = (filePath: string) =>
   new Promise<void>((resolve, reject) => {
-    const lockPath = filePath.concat('.lock');
     lockFile.lock(
-      lockPath,
+      filePath,
       {
-        wait: 1000,
-        stale: 1500
+        wait: WAIT_DURATION,
+        stale: STALE_DURATION
       },
       (err) => {
         if (err) {
@@ -21,8 +23,7 @@ export const lockFileAsync = (filePath: string) =>
 
 export const unlockFileAsync = (filePath: string) =>
   new Promise<void>((resolve, reject) => {
-    const lockPath = filePath.concat('.lock');
-    lockFile.unlock(lockPath, (err) => {
+    lockFile.unlock(filePath, (err) => {
       if (err) {
         reject(err);
       }

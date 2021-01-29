@@ -16,7 +16,6 @@
     "@yalam/operators": "^1.0.0",
     "@yalam/reporter": "^1.0.0",
     "archy": "^1.0.0",
-    "chalk": "^4.1.0",
     "exits": "^2.0.1",
     "md5-file": "^5.0.0",
     "meow": "^7.1.1",

@@ -8,7 +8,6 @@ import {
 } from '@yalam/core';
 
 import { initTTY } from './utils';
-import { TaskLoader } from './task-loader';
 
 export const enum RunnerMode {
   BUILD,
@@ -18,25 +17,16 @@ export const enum RunnerMode {
 export interface RunnerOptions {
   mode: RunnerMode;
   entries: string[];
-  configPath: string;
-  taskName?: string;
-  yalamOptions: YalamOptions;
+  options: YalamOptions;
 };
-
-const DEFAULT_TASK = 'default';
 
 export class Runner {
   private options: RunnerOptions;
   private yalam: Yalam;
-  private taskLoader: TaskLoader;
 
   constructor(options: RunnerOptions) {
     this.options = options;
-    this.yalam = new Yalam(options.yalamOptions);
-    this.taskLoader = new TaskLoader({
-      yalam: this.yalam,
-      configPath: options.configPath,
-    });
+    this.yalam = new Yalam(options.options);
   }
 
   public async run() {
@@ -51,23 +41,36 @@ export class Runner {
   }
 
   private async build() {
-    await this.taskLoader.load();
-    await this.yalam.build({
-      task: this.options.taskName || DEFAULT_TASK,
-      entries: this.options.entries,
-    });
+    const promises = this.options.entries
+      .map(
+        entry => this.yalam.build({
+          task: 'default',
+          entry,
+        })
+      );
+
+    await Promise.all(promises);
   }
 
   private async watch() {
-    await this.taskLoader.load();
     attach();
+
     if (process.stdin.isTTY) {
       initTTY();
     }
-    const subscription = await this.yalam.watch({
-      task: this.options.taskName || DEFAULT_TASK,
-      entries: this.options.entries,
-    });
-    add(subscription.unsubscribe);
+
+    const promises = this.options.entries
+      .map(
+        entry => this.yalam.watch({
+          task: 'default',
+          entry,
+        })
+      );
+
+    const subscriptions = await Promise.all(promises);
+
+    subscriptions.forEach(
+      (subscription) => add(subscription.unsubscribe)
+    );
   }
 }

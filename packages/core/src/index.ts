@@ -1,17 +1,18 @@
 export {
-  BaseAsset,
-  FileAsset,
   DeletedAsset,
-  FailedAsset
-} from './asset';
+  FileAsset,
+  ErrorAsset,
+  ImmutableAsset
+} from './assets';
 export {
   FileEvent,
   InitialEvent
 } from './events';
 export {
-  concat,
-  merge
-} from './compose';
+  parallel,
+  series,
+  dispatch
+} from './meta-operators';
 export {
   Yalam,
   YalamOptions
