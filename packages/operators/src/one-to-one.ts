@@ -51,7 +51,6 @@ const handleAsset = async (asset: Asset, options: TransformOptions) => {
   } catch (error) {
     if (asset.event.type !== EventType.INITIAL) {
       return new ErrorAsset({
-        path: asset.path,
         event: asset.event,
         error,
       });
