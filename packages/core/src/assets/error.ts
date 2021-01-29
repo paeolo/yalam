@@ -2,20 +2,22 @@ import { FileEvent } from '../events';
 import { AssetStatus } from '../types';
 import {
   ImmutableAsset,
-  ImmutableAssetOptions
 } from './immutable';
 
 type ErrorAssetOptions = {
   event: FileEvent;
   error: Error;
-} & ImmutableAssetOptions;
+};
 
 export class ErrorAsset extends ImmutableAsset {
   public readonly event: FileEvent;
   public readonly error: Error;
 
   constructor(options: ErrorAssetOptions) {
-    super(options);
+    super({
+      path: options.event.path,
+      event: options.event,
+    });
     this.event = options.event;
     this.error = options.error;
   }

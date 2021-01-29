@@ -118,7 +118,6 @@ export class TSCompiler {
 
       if (error) {
         errors.push(new ErrorAsset({
-          path: event.path,
           error,
           event,
         }));

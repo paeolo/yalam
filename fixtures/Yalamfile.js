@@ -1,11 +1,12 @@
 const {
-  pipe,
-  dispatch,
+  apply,
+  parallel,
+  pipe
 } = require('@yalam/core');
 const {
-  source,
   createAsset,
   destination,
+  source,
 } = require('@yalam/operators');
 const {
   tsCompiler
@@ -14,8 +15,8 @@ const {
 const ts = pipe(
   source({ glob: 'src/**/*.ts' }),
   createAsset(),
-  dispatch(
-    tsCompiler.transpile(),
+  apply(['.ts'])(
+    tsCompiler.transpile({ syntaxCheck: false }),
     tsCompiler.generateTypes()
   ),
   destination({ path: 'dist' })
@@ -24,9 +25,8 @@ const ts = pipe(
 const checkTypes = pipe(
   source({ glob: 'src/**/*.ts' }),
   tsCompiler.checkTypes()
-);
+)
 
 module.exports = {
-  default: ts,
-  checkTypes
+  default: parallel(ts, checkTypes),
 };

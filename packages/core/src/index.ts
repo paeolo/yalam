@@ -1,7 +1,7 @@
 export {
   DeletedAsset,
-  FileAsset,
   ErrorAsset,
+  FileAsset,
   ImmutableAsset
 } from './assets';
 export {
@@ -9,9 +9,9 @@ export {
   InitialEvent
 } from './events';
 export {
+  apply,
   parallel,
   series,
-  dispatch
 } from './meta-operators';
 export {
   Yalam,

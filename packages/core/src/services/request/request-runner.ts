@@ -46,6 +46,17 @@ export class RequestRunner implements IRequestRunner {
     this.ignoreSet = new Set();
   }
 
+  private onInput(events: InputEvent[]) {
+    this.requestCache.onInput(events);
+
+    this
+      .reporters
+      .onInput(this.task, events);
+    this
+      .errors
+      .onInput(this.task, events);
+  }
+
   private onBuilt(asset: Asset) {
     switch (asset.status) {
       case AssetStatus.ERROR:
@@ -85,10 +96,7 @@ export class RequestRunner implements IRequestRunner {
   }
 
   private async buildEvents(events: InputEvent[], throwOnFail: boolean) {
-    this.reporters.onInput(this.task, events);
-    this.requestCache.onInput(events);
-    this.errors.onInput(this.task, events);
-
+    this.onInput(events);
     const input = publish<InputEvent>()(from(events));
 
     const onAsset = (asset: Asset) => {
@@ -110,6 +118,7 @@ export class RequestRunner implements IRequestRunner {
           error: reject,
           complete: resolve
         });
+
       input.connect();
     });
 
