@@ -1,1 +1,5 @@
-export * from './generate-types';
+import {
+  createTSCompiler
+} from './compiler';
+
+export const tsCompiler = createTSCompiler();

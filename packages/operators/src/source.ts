@@ -1,4 +1,3 @@
-import fs from 'fs/promises';
 import path from 'path';
 import {
   from,
@@ -15,11 +14,9 @@ import tinyGlob from 'tiny-glob/sync';
 import globrex from 'globrex';
 import globParent from 'glob-parent';
 import {
-  Asset,
-  DeletedAsset,
-  FileAsset,
   InputEvent,
   FileEvent,
+  InitialEvent,
   EventType,
 } from '@yalam/core';
 
@@ -27,41 +24,27 @@ interface SourceOptions {
   glob: string;
 };
 
-interface SourceAssetOptions {
-  event: FileEvent,
-  path: string,
-  fullPath: string;
-};
-
-const getEvents = (glob: string, entry: string): FileEvent[] => {
+const getEvents = (glob: string, sourceBase: string, event: InitialEvent): FileEvent[] => {
   const files = tinyGlob(
     glob,
     {
-      cwd: entry,
+      cwd: event.entry,
       filesOnly: true,
       absolute: true
     }
   );
-  return files.map(path => new FileEvent({
+  return files.map(path => event.getFileEvent({
     type: EventType.UPDATED,
-    entry,
     path,
+    sourceBase
   }));
 };
 
-const getSourceAsset = async (options: SourceAssetOptions) => {
-  const content = await fs.readFile(options.fullPath);
-
-  const asset = new FileAsset({
-    path: options.path,
-    event: options.event,
-  });
-
-  asset.setContents(content);
-  return asset;
-};
-
-export const source = (options: SourceOptions): OperatorFunction<InputEvent, Asset> => {
+/**
+ * @description
+ * An operator that produces file events out of an unique initial event using a glob.
+ */
+export const source = (options: SourceOptions): OperatorFunction<InputEvent, FileEvent> => {
   const { regex } = globrex(options.glob, { globstar: true });
   const sourceBase = globParent(options.glob);
 
@@ -72,30 +55,16 @@ export const source = (options: SourceOptions): OperatorFunction<InputEvent, Ass
     map(event => {
       switch (event.type) {
         case EventType.INITIAL:
-          return from(getEvents(options.glob, event.path));
+          return from(
+            getEvents(
+              options.glob,
+              sourceBase,
+              event
+            )
+          );
         default:
-          return from([event]);
-      }
-    }),
-    mergeAll(),
-    map(event => {
-      const relativePath = path.relative(
-        path.join(event.entry, sourceBase),
-        event.path
-      );
-      switch (event.type) {
-        case EventType.UPDATED:
-          return from(getSourceAsset({
-            event: event,
-            path: relativePath,
-            fullPath: event.path,
-          }));
-        case EventType.DELETED:
           return of(
-            new DeletedAsset({
-              path: relativePath,
-              event: event
-            })
+            event.getWithSourceBase(sourceBase)
           );
       }
     }),

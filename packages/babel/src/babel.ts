@@ -3,12 +3,12 @@ import replaceExt from 'replace-ext';
 import * as Babel from '@babel/core';
 
 import {
-  BaseAsset,
+  ImmutableAsset,
   FileAsset
 } from '@yalam/core';
 import {
-  transform,
-  TransformResult
+  oneToOne,
+  OneToOneResult
 } from '@yalam/operators';
 
 type BabelOptions = Pick<Babel.TransformOptions,
@@ -34,8 +34,8 @@ const getOptions = (asset: FileAsset, options: BabelOptions): Babel.TransformOpt
   }
 
   return {
-    cwd: asset.getEntry(),
-    filename: asset.getSourcePath(),
+    cwd: asset.entry,
+    filename: asset.sourcePath,
     inputSourceMap: asset.sourceMap,
     sourceMaps: true,
     plugins,
@@ -44,9 +44,9 @@ const getOptions = (asset: FileAsset, options: BabelOptions): Babel.TransformOpt
   };
 }
 
-const transpile = async (asset: FileAsset, options: BabelOptions): Promise<TransformResult> => {
+const transpile = async (asset: FileAsset, options: BabelOptions): Promise<OneToOneResult> => {
   let sourceMap;
-  const code = asset.getContentsOrFail().toString();
+  const code = asset.contents.toString();
   const babelResult = await Babel.transformAsync(
     code,
     getOptions(asset, options)
@@ -69,10 +69,10 @@ const transpile = async (asset: FileAsset, options: BabelOptions): Promise<Trans
   };
 }
 
-const isJavascript = (asset: BaseAsset) => ['.js', '.ts']
+const isJavascript = (asset: ImmutableAsset) => ['.js', '.ts']
   .includes(path.extname(asset.path));
 
-export const babel = (options: BabelOptions = {}) => transform({
+export const babel = (options: BabelOptions = {}) => oneToOne({
   filter: (asset) => isJavascript(asset),
   getPath: (asset) => replaceExt(asset.path, '.js'),
   getResult: (asset) => transpile(asset, options),
