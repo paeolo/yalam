@@ -1,4 +1,17 @@
-import { FileAsset } from '@yalam/core';
+import {
+  OperatorFunction,
+  pipe,
+  Observable,
+  from
+} from 'rxjs';
+import {
+  filter, map, mergeAll
+} from 'rxjs/operators';
+import {
+  ErrorAsset,
+  FileAsset,
+  FileEvent
+} from '@yalam/core';
 import { oneToOne } from '@yalam/operators';
 
 import {
@@ -6,42 +19,47 @@ import {
   replaceExt
 } from './utils';
 import {
-  CompilerService
+  TranspilerRegistry
 } from './service';
 import {
   OutputExtension,
   OutputType
 } from './types';
 
-interface TranspileOptions {
+interface TranspileAssetOptions {
   type: OutputType;
-  forceSyntaxCheck?: boolean;
+  syntaxCheck: boolean;
 };
 
+interface TranspileOptions {
+  syntaxCheck?: boolean;
+};
+
+interface GenerateTypesOptions {
+  forceSyntaxCheck?: boolean
+}
+
 export class TSCompiler {
-  private service: CompilerService
+  private registry: TranspilerRegistry
 
   constructor() {
-    this.service = new CompilerService();
+    this.registry = new TranspilerRegistry();
   }
 
-  private getEmittedOutput(options: TranspileOptions) {
+  private transpileAsset(options: TranspileAssetOptions) {
     const getResult = async (asset: FileAsset) => {
-      const syntaxCheck = options.forceSyntaxCheck
-        || options.type === OutputType.JS;
-
-      let sourceMap;
-      const output = this.service
-        .getTranspiler(asset.entry)
+      const output = this.registry.getAssetTranspiler(asset.entry)
         .emitOutput(
           asset,
           options.type,
-          syntaxCheck
+          options.syntaxCheck
         );
 
       if (!output.contents) {
         throw new Error();
       }
+
+      let sourceMap;
 
       if (output.sourceMap) {
         sourceMap = {
@@ -66,17 +84,54 @@ export class TSCompiler {
     });
   }
 
-  public transpile() {
-    return this.getEmittedOutput({
-      type: OutputType.JS
+  /**
+ * @description
+ * Emit a javascript file asset from your typescript asset.
+ */
+  public transpile(options?: TranspileOptions) {
+    return this.transpileAsset({
+      type: OutputType.JS,
+      syntaxCheck: (options && options.syntaxCheck) || true
     });
   }
 
-  public generateTypes(options?: { forceSyntaxCheck: boolean }) {
-    return this.getEmittedOutput({
+  /**
+   * @description
+   * Emit a declaration file asset from your typescript asset.
+   */
+  public generateTypes(options?: GenerateTypesOptions) {
+    return this.transpileAsset({
       type: OutputType.DTS,
-      forceSyntaxCheck: options && options.forceSyntaxCheck
+      syntaxCheck: (options && options.forceSyntaxCheck) || false
     });
+  }
+
+  /**
+  * @description
+  * Perform type-checking on your file events.
+  */
+  public checkTypes(): OperatorFunction<FileEvent, ErrorAsset> {
+    const handleEvent = (event: FileEvent): Observable<ErrorAsset> => {
+      const errors: ErrorAsset[] = [];
+      const error = this.registry.getEventChecker(event.entry)
+        .checkTypes(event);
+
+      if (error) {
+        errors.push(new ErrorAsset({
+          path: event.path,
+          error,
+          event,
+        }));
+      }
+
+      return from(errors);
+    };
+
+    return pipe(
+      filter(event => isTypescript(event)),
+      map(handleEvent),
+      mergeAll()
+    )
   }
 }
 

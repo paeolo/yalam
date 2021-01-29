@@ -25,20 +25,19 @@ interface Emit {
   sourceMap?: ts.OutputFile;
 }
 
-export interface TranspilerServiceOptions {
+export interface AssetTranspilerOptions {
   compilerOptions: ts.CompilerOptions;
   registry: ts.DocumentRegistry;
 }
 
-export class TranspilerService {
-
+export class AssetTranspiler {
   private compilerOptions: ts.CompilerOptions;
-  private host: ts.LanguageServiceHost;
   private registry: ts.DocumentRegistry;
+  private host: ts.LanguageServiceHost;
   private service: ts.LanguageService;
   private assets: Map<FilePath, Asset>;
 
-  constructor(options: TranspilerServiceOptions) {
+  constructor(options: AssetTranspilerOptions) {
     this.compilerOptions = {
       ...options.compilerOptions,
       sourceMap: true
@@ -60,9 +59,7 @@ export class TranspilerService {
   }
 
   private getScriptFileNames() {
-    return Array.from(
-      this.assets.keys()
-    );
+    return Array.from(this.assets.keys());
   }
 
   private getScriptVersion(fileName: FilePath) {
@@ -94,26 +91,21 @@ export class TranspilerService {
       return;
     }
 
-    return new SyntaxError(
-      formatDiagnostic(
-        diagnostic,
-        asset.sourcePath
-      )
-    );
+    return new SyntaxError(formatDiagnostic(
+      diagnostic,
+      asset.sourcePath
+    ));
   }
 
-  private storeAsset(asset: FileAsset) {
-    const fileName = asset.distPath;
-    const stored = this.assets.get(fileName);
+  private storeAsset(file: FileAsset) {
+    const fileName = file.distPath;
+    const asset = this.assets.get(fileName);
 
-    const version = stored
-      ? stored.version + 1
+    const version = asset
+      ? asset.version + 1
       : INITAL_VERSION;
 
-    this.assets.set(fileName, {
-      file: asset,
-      version,
-    });
+    this.assets.set(fileName, { file, version, });
   }
 
   private getJavascript(fileName: FilePath) {

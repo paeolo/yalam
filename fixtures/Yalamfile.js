@@ -21,6 +21,12 @@ const ts = pipe(
   destination({ path: 'dist' })
 );
 
+const checkTypes = pipe(
+  source({ glob: 'src/**/*.ts' }),
+  tsCompiler.checkTypes()
+);
+
 module.exports = {
-  default: ts
+  default: ts,
+  checkTypes
 };
