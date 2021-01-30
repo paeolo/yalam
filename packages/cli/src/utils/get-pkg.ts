@@ -25,11 +25,26 @@ export const getTask = (directory: DirectoryPath, mode: RunnerMode): string => {
   if (!pkg.config
     || !pkg.config.yalam
     || !pkg.config.yalam[mode]
-    || typeof pkg.config.yalam[mode] !== 'string') {
+    || typeof pkg.config.yalam[mode] !== 'string'
+  ) {
     throw new Error(
       `Your "package.json" at ${directory} should provide a task name at path config.yalam.${mode}`
     );
   }
 
   return pkg.config.yalam[mode];
+}
+
+export const isSkipped = (directory: DirectoryPath): boolean => {
+  const pkg = getPKG(directory);
+
+  if (!pkg.config
+    || !pkg.config.yalam
+  ) {
+    throw new Error(
+      `Your "package.json" at ${directory} should provide an object at config.yalam`
+    );
+  }
+
+  return pkg.config.yalam === "skip";
 }

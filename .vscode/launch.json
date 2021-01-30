@@ -5,7 +5,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Fixtures",
+      "name": "debug",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/yalam",

@@ -9,7 +9,8 @@ import {
 
 import {
   initTTY,
-  getTask
+  getTask,
+  isSkipped
 } from './utils';
 
 export const enum RunnerMode {
@@ -45,6 +46,7 @@ export class Runner {
 
   private async build() {
     const promises = this.options.entries
+      .filter(entry => !isSkipped(entry))
       .map(
         entry => this.yalam.build({
           task: getTask(entry, RunnerMode.BUILD),
@@ -63,6 +65,7 @@ export class Runner {
     }
 
     const promises = this.options.entries
+      .filter(entry => !isSkipped(entry))
       .map(
         entry => this.yalam.watch({
           task: getTask(entry, RunnerMode.WATCH),
