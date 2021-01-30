@@ -1,6 +1,6 @@
 {
   "name": "@yalam/babel",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Use Babel with Yalam",
   "author": "Paul Le Couteur",
   "license": "MIT",
@@ -10,10 +10,9 @@
   },
   "dependencies": {
     "@babel/core": "^7.12.10",
-    "@babel/plugin-transform-typescript": "^7.12.1",
-    "@babel/preset-env": "^7.12.11",
-    "@yalam/core": "^1.0.0",
-    "@yalam/operators": "^1.0.0",
+    "@babel/preset-typescript": "^7.12.7",
+    "@yalam/core": "^0.1.0",
+    "@yalam/operators": "^0.1.0",
     "replace-ext": "^2.0.0"
   },
   "devDependencies": {

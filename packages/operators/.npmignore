@@ -8,6 +8,7 @@ test*
 .env
 src/
 tsconfig.json
+tsconfig.tsbuildinfo
 .nyc_output
 .babelrc
 .yalam

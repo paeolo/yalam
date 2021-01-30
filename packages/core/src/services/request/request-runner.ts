@@ -2,11 +2,14 @@ import PQueue from 'p-queue';
 import watcher from '@parcel/watcher';
 import setImmediatePromise from 'set-immediate-promise';
 import { inject } from '@loopback/context';
-import { from } from 'rxjs';
+import {
+  from,
+  connectable,
+  Subject
+} from 'rxjs';
 import {
   map,
   mergeAll,
-  publish,
 } from 'rxjs/operators';
 
 import {
@@ -97,7 +100,8 @@ export class RequestRunner implements IRequestRunner {
 
   private async buildEvents(events: InputEvent[], throwOnFail: boolean) {
     this.onInput(events);
-    const input = publish<InputEvent>()(from(events));
+
+    const input = connectable(from(events), new Subject());
 
     const onAsset = (asset: Asset) => {
       if (throwOnFail
