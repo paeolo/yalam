@@ -1,6 +1,6 @@
 {
   "name": "@yalam/reporter",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "A console reporter for Yalam",
   "author": "Paul Le Couteur",
   "license": "MIT",
@@ -9,7 +9,7 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@yalam/core": "^1.0.0",
+    "@yalam/core": "^0.1.0",
     "chalk": "^4.1.0",
     "dateformat": "^4.4.1"
   },

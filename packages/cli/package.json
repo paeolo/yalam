@@ -1,6 +1,6 @@
 {
   "name": "@yalam/cli",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "A command line interface for Yalam",
   "author": "Paul Le Couteur",
   "license": "MIT",
@@ -12,9 +12,9 @@
     "yalam": "./dist/bin.js"
   },
   "dependencies": {
-    "@yalam/core": "^1.0.0",
-    "@yalam/operators": "^1.0.0",
-    "@yalam/reporter": "^1.0.0",
+    "@yalam/core": "^0.1.0",
+    "@yalam/operators": "^0.1.0",
+    "@yalam/reporter": "^0.1.0",
     "exits": "^2.0.1",
     "md5-file": "^5.0.0",
     "meow": "^7.1.1",
