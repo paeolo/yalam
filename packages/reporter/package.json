@@ -4,6 +4,9 @@
   "description": "A console reporter for Yalam",
   "author": "Paul Le Couteur",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc"
