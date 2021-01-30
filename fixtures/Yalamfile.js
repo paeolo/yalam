@@ -1,5 +1,4 @@
 const {
-  apply,
   parallel,
   pipe
 } = require('@yalam/core');
@@ -15,10 +14,7 @@ const {
 const ts = pipe(
   source({ glob: 'src/**/*.ts' }),
   createAsset(),
-  apply(['.ts'])(
-    tsCompiler.transpile({ syntaxCheck: false }),
-    tsCompiler.generateTypes()
-  ),
+  tsCompiler.transpile({ syntaxCheck: false }),
   destination({ path: 'dist' })
 );
 

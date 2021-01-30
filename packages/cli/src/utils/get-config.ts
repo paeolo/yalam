@@ -21,14 +21,27 @@ export const getConfig = async (filePath: string) => {
       fs.constants.F_OK
     );
   } catch {
-    throw new Error(`File not found: ${prettyConfigPath}`);
+    throw new Error(
+      `${prettyConfigPath} is not found.`
+    );
   }
 
-  const result = require(configPath);
+  let result;
+
+  try {
+    result = require(configPath);
+  } catch {
+    throw new Error(
+      `${prettyConfigPath} is not a valid config file.`
+    );
+  }
+
 
   Object.entries(result).forEach(([task, fn]) => {
     if (typeof fn !== 'function') {
-      throw new Error(`Task is not a function: ${task}`);
+      throw new Error(
+        `${task} is not a function.`
+      );
     }
   });
 

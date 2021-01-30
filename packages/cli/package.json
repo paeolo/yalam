@@ -15,7 +15,6 @@
     "@yalam/core": "^1.0.0",
     "@yalam/operators": "^1.0.0",
     "@yalam/reporter": "^1.0.0",
-    "archy": "^1.0.0",
     "exits": "^2.0.1",
     "md5-file": "^5.0.0",
     "meow": "^7.1.1",

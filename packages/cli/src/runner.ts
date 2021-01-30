@@ -7,11 +7,14 @@ import {
   YalamOptions
 } from '@yalam/core';
 
-import { initTTY } from './utils';
+import {
+  initTTY,
+  getTask
+} from './utils';
 
 export const enum RunnerMode {
-  BUILD,
-  WATCH,
+  BUILD = 'build',
+  WATCH = 'watch',
 };
 
 export interface RunnerOptions {
@@ -44,7 +47,7 @@ export class Runner {
     const promises = this.options.entries
       .map(
         entry => this.yalam.build({
-          task: 'default',
+          task: getTask(entry, RunnerMode.BUILD),
           entry,
         })
       );
@@ -62,7 +65,7 @@ export class Runner {
     const promises = this.options.entries
       .map(
         entry => this.yalam.watch({
-          task: 'default',
+          task: getTask(entry, RunnerMode.WATCH),
           entry,
         })
       );
