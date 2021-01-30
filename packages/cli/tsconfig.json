@@ -12,6 +12,7 @@
     "strict": true,
     "skipLibCheck": true,
     "removeComments": false,
+    "sourceMap": true,
     "typeRoots": [
       "./typings",
       "node_modules/@types"

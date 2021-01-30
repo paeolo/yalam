@@ -14,7 +14,7 @@
     "@yalam/operators": "^1.0.0",
     "mkdirp": "^1.0.4",
     "replace-ext": "^2.0.0",
-    "rxjs": "^7.0.0-beta.9",
+    "rxjs": "7.0.0-beta.10",
     "typescript": "^4.0.3"
   },
   "devDependencies": {
