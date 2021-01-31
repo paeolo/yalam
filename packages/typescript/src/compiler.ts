@@ -5,7 +5,9 @@ import {
   from
 } from 'rxjs';
 import {
-  filter, map, mergeAll
+  filter,
+  map,
+  mergeAll
 } from 'rxjs/operators';
 import {
   ErrorAsset,

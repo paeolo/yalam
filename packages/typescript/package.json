@@ -8,9 +8,6 @@
     "access": "public"
   },
   "main": "dist/index.js",
-  "scripts": {
-    "build": "tsc"
-  },
   "dependencies": {
     "@babel/code-frame": "^7.12.11",
     "@yalam/core": "^0.1.0",

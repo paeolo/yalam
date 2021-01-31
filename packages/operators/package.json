@@ -8,9 +8,6 @@
     "access": "public"
   },
   "main": "dist/index.js",
-  "scripts": {
-    "build": "tsc"
-  },
   "dependencies": {
     "@yalam/core": "^0.1.0",
     "glob-parent": "^5.1.1",

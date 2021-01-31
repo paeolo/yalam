@@ -8,9 +8,6 @@
     "access": "public"
   },
   "main": "dist/index.js",
-  "scripts": {
-    "build": "tsc"
-  },
   "dependencies": {
     "@loopback/context": "^3.13.2",
     "@parcel/watcher": "^2.0.0-alpha.9",

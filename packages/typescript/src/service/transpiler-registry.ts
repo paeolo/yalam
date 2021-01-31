@@ -6,8 +6,12 @@ import {
 import {
   getTSConfigOrFail
 } from '../utils';
-import { AssetTranspiler } from './asset-transpiler';
-import { EventChecker } from './event-checker';
+import {
+  AssetTranspiler
+} from './asset-transpiler';
+import {
+  EventChecker
+} from './event-checker';
 
 export class TranspilerRegistry {
   private documentRegistry: ts.DocumentRegistry;

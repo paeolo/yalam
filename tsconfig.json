@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "composite": true
+  },
+  "references": [
+    {
+      "path": "packages/babel/tsconfig.json"
+    },
+    {
+      "path": "packages/cli/tsconfig.json"
+    },
+    {
+      "path": "packages/core/tsconfig.json"
+    },
+    {
+      "path": "packages/operators/tsconfig.json"
+    },
+    {
+      "path": "packages/reporter/tsconfig.json"
+    },
+    {
+      "path": "packages/typescript/tsconfig.json"
+    }
+  ],
+  "files": []
+}

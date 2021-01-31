@@ -8,9 +8,6 @@
     "access": "public"
   },
   "main": "dist/index.js",
-  "scripts": {
-    "build": "tsc && chmod +x ./dist/bin.js"
-  },
   "bin": {
     "yalam": "./dist/bin.js"
   },
