@@ -1,4 +1,3 @@
-import fs from 'fs';
 import ts from 'typescript';
 
 import {
@@ -18,8 +17,5 @@ export const getTSConfigOrFail = (entry: FilePath) => {
     );
   }
 
-  const buffer = fs.readFileSync(configPath);
-
-  return JSON
-    .parse(buffer.toString())
+  return require(configPath);
 }

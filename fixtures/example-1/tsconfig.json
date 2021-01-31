@@ -1,14 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "display": "Node 14",
-  "compilerOptions": {
-    "module": "commonjs",
-    "target": "ES6",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
-  },
+  "extends": "../../tsconfig.common.json",
   "include": [
     "src/**/*"
   ]
