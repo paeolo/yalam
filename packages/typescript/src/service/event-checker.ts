@@ -40,6 +40,11 @@ export class EventChecker {
       getCurrentDirectory: () => process.cwd(),
       getCompilationSettings: () => this.config.compilerOptions,
       getDefaultLibFileName: ts.getDefaultLibFilePath,
+      fileExists: ts.sys.fileExists,
+      readFile: ts.sys.readFile,
+      readDirectory: ts.sys.readDirectory,
+      directoryExists: ts.sys.directoryExists,
+      getDirectories: ts.sys.getDirectories,
     }
     this.service = ts.createLanguageService(
       this.host,

@@ -30,12 +30,9 @@ export const getConfig = async (filePath: string) => {
 
   try {
     result = require(configPath);
-  } catch {
-    throw new Error(
-      `${prettyConfigPath} is not a valid config file.`
-    );
+  } catch (error) {
+    throw new Error(error.stack);
   }
-
 
   Object.entries(result).forEach(([task, fn]) => {
     if (typeof fn !== 'function') {
