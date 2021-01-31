@@ -1,5 +1,10 @@
-import { FileEvent } from '../events';
-import { AssetStatus } from '../types';
+import {
+  FileEvent
+} from '../events';
+import {
+  AssetStatus,
+  FilePath
+} from '../types';
 import {
   ImmutableAsset,
 } from './immutable';

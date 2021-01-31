@@ -4,13 +4,20 @@
   "description": "A Gulp-inspired incremental build system",
   "author": "Paul Le Couteur",
   "license": "MIT",
+  "repository": "github:paeolo/yalam",
   "publishConfig": {
     "access": "public"
   },
+  "keywords": [
+    "builder",
+    "pipeline",
+    "watcher",
+    "incremental",
+    "source map",
+    "typescript",
+    "babel"
+  ],
   "main": "dist/index.js",
-  "scripts": {
-    "build": "tsc"
-  },
   "dependencies": {
     "@loopback/context": "^3.13.2",
     "@parcel/watcher": "^2.0.0-alpha.9",

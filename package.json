@@ -8,7 +8,7 @@
     "test": "cd fixtures && yalam --watch example-1 example-2",
     "build:clean": "rm -rf packages/*/dist packages/*/tsconfig.tsbuildinfo",
     "fixtures:clean": "rm -rf fixtures/.yalam",
-    "build": "lerna run build",
+    "build": "tsc -b && chmod +x ./packages/cli/dist/bin.js",
     "update-ts-project-refs": "yarn workspace scripts run update-ts-project-refs"
   },
   "devDependencies": {

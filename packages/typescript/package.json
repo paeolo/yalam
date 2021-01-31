@@ -4,13 +4,11 @@
   "description": "Use Typescript with Yalam",
   "author": "Paul Le Couteur",
   "license": "MIT",
+  "repository": "github:paeolo/yalam",
   "publishConfig": {
     "access": "public"
   },
   "main": "dist/index.js",
-  "scripts": {
-    "build": "tsc"
-  },
   "dependencies": {
     "@babel/code-frame": "^7.12.11",
     "@yalam/core": "^0.1.0",

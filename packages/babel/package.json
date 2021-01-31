@@ -4,13 +4,11 @@
   "description": "Use Babel with Yalam",
   "author": "Paul Le Couteur",
   "license": "MIT",
+  "repository": "github:paeolo/yalam",
   "publishConfig": {
     "access": "public"
   },
   "main": "dist/index.js",
-  "scripts": {
-    "build": "tsc"
-  },
   "dependencies": {
     "@babel/core": "^7.12.10",
     "@babel/preset-typescript": "^7.12.7",
