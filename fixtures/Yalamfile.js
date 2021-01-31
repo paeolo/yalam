@@ -21,7 +21,7 @@ const ts = pipe(
 const checkTypes = pipe(
   source({ glob: 'src/**/*.ts' }),
   tsCompiler.checkTypes()
-)
+);
 
 module.exports = {
   default: parallel(ts, checkTypes),

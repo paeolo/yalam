@@ -2,6 +2,7 @@ import ts from 'typescript';
 import path from 'path';
 import fs from 'fs';
 import {
+  DirectoryPath,
   FileAsset
 } from '@yalam/core';
 
@@ -26,11 +27,13 @@ interface Emit {
 }
 
 export interface AssetTranspilerOptions {
-  compilerOptions: ts.CompilerOptions;
+  config: any;
+  entry: DirectoryPath;
   registry: ts.DocumentRegistry;
 }
 
 export class AssetTranspiler {
+  private entry: DirectoryPath;
   private compilerOptions: ts.CompilerOptions;
   private registry: ts.DocumentRegistry;
   private host: ts.LanguageServiceHost;
@@ -38,10 +41,7 @@ export class AssetTranspiler {
   private assets: Map<FilePath, Asset>;
 
   constructor(options: AssetTranspilerOptions) {
-    this.compilerOptions = {
-      ...options.compilerOptions,
-      sourceMap: true
-    };
+    this.entry = options.entry;
     this.registry = options.registry;
     this.host = {
       getScriptFileNames: () => this.getScriptFileNames(),
@@ -56,6 +56,22 @@ export class AssetTranspiler {
       this.registry,
     );
     this.assets = new Map();
+
+    const commandLine = ts.parseJsonConfigFileContent(
+      options.config,
+      {
+        fileExists: ts.sys.fileExists,
+        readDirectory: () => [],
+        readFile: ts.sys.readFile,
+        useCaseSensitiveFileNames: true,
+      },
+      this.entry
+    );
+
+    this.compilerOptions = {
+      ...commandLine.options,
+      sourceMap: true
+    };
   }
 
   private getScriptFileNames() {

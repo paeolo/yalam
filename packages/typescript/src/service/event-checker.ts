@@ -21,8 +21,8 @@ export interface EventTranspilerOptions {
 }
 
 export class EventChecker {
-  private config: any;
   private entry: DirectoryPath;
+  private compilerOptions: ts.CompilerOptions;
   private registry: ts.DocumentRegistry;
   private host: ts.LanguageServiceHost;
   private service: ts.LanguageService;
@@ -30,7 +30,6 @@ export class EventChecker {
 
 
   constructor(options: EventTranspilerOptions) {
-    this.config = options.config;
     this.entry = options.entry;
     this.registry = options.registry;
     this.host = {
@@ -38,7 +37,7 @@ export class EventChecker {
       getScriptVersion: fileName => this.getScriptVersion(fileName),
       getScriptSnapshot: fileName => this.getScriptSnapshot(fileName),
       getCurrentDirectory: () => process.cwd(),
-      getCompilationSettings: () => this.config.compilerOptions,
+      getCompilationSettings: () => this.compilerOptions,
       getDefaultLibFileName: ts.getDefaultLibFilePath,
       fileExists: ts.sys.fileExists,
       readFile: ts.sys.readFile,
@@ -51,16 +50,18 @@ export class EventChecker {
       this.registry,
     );
     this.versions = new Map();
-    this.init()
-  }
 
-  private init() {
     const commandLine = ts.parseJsonConfigFileContent(
-      this.config,
+      options.config,
       ts.sys,
       this.entry
     );
 
+    this.compilerOptions = commandLine.options;
+    this.initVersion(commandLine);
+  }
+
+  private initVersion(commandLine: ts.ParsedCommandLine) {
     commandLine.fileNames.forEach(fileName => {
       this.versions.set(
         fileName,

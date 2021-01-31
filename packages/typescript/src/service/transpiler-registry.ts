@@ -31,7 +31,8 @@ export class TranspilerRegistry {
       return transpiler;
 
     transpiler = new AssetTranspiler({
-      compilerOptions: getTSConfigOrFail(entry).compilerOptions,
+      config: getTSConfigOrFail(entry),
+      entry,
       registry: this.documentRegistry,
     });
 
