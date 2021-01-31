@@ -20,16 +20,24 @@ type BabelOptions = Pick<Babel.TransformOptions,
 
 const getOptions = (asset: FileAsset, options: BabelOptions): Babel.TransformOptions => {
   const presets = [
-    '@babel/preset-typescript'
+    [
+      '@babel/preset-env',
+      {
+        configPath: asset.entry
+      }
+    ]
   ];
 
+  if (path.extname(asset.path) === '.ts') {
+    presets.push(['@babel/preset-typescript']);
+  }
+
   return {
-    cwd: asset.entry,
     filename: asset.sourcePath,
+    cwd: asset.entry,
     inputSourceMap: asset.sourceMap,
     sourceMaps: true,
     presets,
-    babelrcRoots: asset.entry,
     ...options
   };
 }
