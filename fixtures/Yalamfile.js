@@ -8,13 +8,16 @@ const {
   source,
 } = require('@yalam/operators');
 const {
+  babel
+} = require('@yalam/babel');
+const {
   tsCompiler
 } = require('@yalam/typescript');
 
 const ts = pipe(
   source({ glob: 'src/**/*.ts' }),
   createAsset(),
-  tsCompiler.transpile({ syntaxCheck: false }),
+  babel(),
   destination({ path: 'dist' })
 );
 

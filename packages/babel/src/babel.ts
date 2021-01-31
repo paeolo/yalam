@@ -35,6 +35,7 @@ const getOptions = (asset: FileAsset, options: BabelOptions): Babel.TransformOpt
 }
 
 const transpile = async (asset: FileAsset, options: BabelOptions): Promise<OneToOneResult> => {
+  let contents;
   let sourceMap;
   const code = asset.contents.toString();
   const babelResult = await Babel.transformAsync(
@@ -42,8 +43,12 @@ const transpile = async (asset: FileAsset, options: BabelOptions): Promise<OneTo
     getOptions(asset, options)
   );
 
-  if (!babelResult || !babelResult.code) {
-    throw new Error();
+  if (!babelResult) {
+    throw new Error(`BabelResult is undefined for asset ${asset.distPath}`);
+  }
+
+  if (babelResult.code) {
+    contents = Buffer.from(babelResult.code);
   }
 
   if (babelResult.map) {
@@ -54,7 +59,7 @@ const transpile = async (asset: FileAsset, options: BabelOptions): Promise<OneTo
   }
 
   return {
-    contents: Buffer.from(babelResult.code),
+    contents,
     sourceMap
   };
 }

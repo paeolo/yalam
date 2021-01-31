@@ -1,7 +1,7 @@
 import {
   pipe,
   OperatorFunction,
-  from
+  from,
 } from 'rxjs';
 import {
   map,
@@ -19,7 +19,7 @@ import {
 } from '@yalam/core';
 
 export interface OneToOneResult {
-  contents: Buffer;
+  contents?: Buffer;
   sourceMap?: SourceMap
 }
 
@@ -29,7 +29,9 @@ interface TransformOptions {
   filter?: (asset: ImmutableAsset) => boolean;
 }
 
-const handleAsset = async (asset: Asset, options: TransformOptions) => {
+const filterNullish = <T>() => filter(x => x != null) as OperatorFunction<T | null | undefined, T>;
+
+const transformAsset = async (asset: Asset, options: TransformOptions): Promise<Asset | undefined> => {
   if (asset.status === AssetStatus.ARTIFACT
     || asset.status === AssetStatus.ERROR) {
     return asset;
@@ -43,11 +45,13 @@ const handleAsset = async (asset: Asset, options: TransformOptions) => {
 
   try {
     const result = await options.getResult(asset);
-    return asset.getTransformed({
-      path,
-      contents: result.contents,
-      sourceMap: result.sourceMap,
-    });
+    if (result.contents) {
+      return asset.getTransformed({
+        path,
+        contents: result.contents,
+        sourceMap: result.sourceMap,
+      });
+    }
   } catch (error) {
     if (asset.event.type !== EventType.INITIAL) {
       return new ErrorAsset({
@@ -73,6 +77,7 @@ export const oneToOne = (options: TransformOptions): OperatorFunction<Asset, Ass
       return true;
     }
   })),
-  map((asset) => from(handleAsset(asset, options))),
-  mergeAll()
+  map((asset) => from(transformAsset(asset, options))),
+  mergeAll(),
+  filterNullish()
 );
