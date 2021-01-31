@@ -70,6 +70,7 @@ export class AssetTranspiler {
 
     this.compilerOptions = {
       ...commandLine.options,
+      rootDir: undefined,
       sourceMap: true
     };
   }
