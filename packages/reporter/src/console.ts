@@ -45,11 +45,13 @@ export class ConsoleLogger {
 }
 
 export class ConsoleReporter implements Reporter {
+  private count: number;
   private startTime: number;
   private processing: boolean;
   private logger: ConsoleLogger;
 
   constructor() {
+    this.count = 0;
     this.startTime = new Date().getTime();
     this.processing = false;
     this.logger = new ConsoleLogger();
@@ -67,10 +69,12 @@ export class ConsoleReporter implements Reporter {
   }
 
   public onBuilt(task: string, asset: FileAsset) {
+    this.count += 1;
     this.logger.info(`${chalk.magentaBright(`<${task}>`)} Built ${asset.path}`);
   }
 
   public onDeleted(task: string, asset: DeletedAsset) {
+    this.count += 1;
     this.logger.info(`${chalk.magentaBright(`<${task}>`)} Deleted ${asset.path}`);
   }
 
@@ -79,11 +83,12 @@ export class ConsoleReporter implements Reporter {
       errors.forEach(
         (asset) => this.logger.error(asset.error.toString())
       );
-    } else {
+    } else if (this.count > 0) {
       this.logger.success(
         `Built in ${new Date().getTime() - this.startTime}ms`
       );
     }
+    this.count = 0;
     this.processing = false;
   }
 }

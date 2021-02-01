@@ -5,6 +5,7 @@
   "author": "Paul Le Couteur",
   "license": "MIT",
   "main": "dist/index.js",
+  "browserslist": "node 14",
   "config": {
     "yalam": {
       "build": "default",
