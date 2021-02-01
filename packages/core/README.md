@@ -1,5 +1,5 @@
 # Welcome to yalam 👋
-![Version](https://img.shields.io/badge/version-0.1.5-blue.svg?cacheSeconds=2592000)
+![Version](https://img.shields.io/badge/version-0.1.6-blue.svg?cacheSeconds=2592000)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](#)
 
 > A Gulp-inspired incremental build system
