@@ -46,12 +46,14 @@ export class ConsoleLogger {
 
 export class ConsoleReporter implements Reporter {
   private count: number;
+  private hasBuilt: boolean;
   private startTime: number;
   private processing: boolean;
   private logger: ConsoleLogger;
 
   constructor() {
     this.count = 0;
+    this.hasBuilt = false;
     this.startTime = new Date().getTime();
     this.processing = false;
     this.logger = new ConsoleLogger();
@@ -83,12 +85,13 @@ export class ConsoleReporter implements Reporter {
       errors.forEach(
         (asset) => this.logger.error(asset.error.toString())
       );
-    } else if (this.count > 0) {
+    } else if (this.count > 0 || !this.hasBuilt) {
       this.logger.success(
         `Built in ${new Date().getTime() - this.startTime}ms`
       );
     }
     this.count = 0;
+    this.hasBuilt = true;
     this.processing = false;
   }
 }
