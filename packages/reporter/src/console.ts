@@ -1,3 +1,6 @@
+import path from 'path';
+import chalk from 'chalk';
+import dateFormat from 'dateformat';
 import {
   ErrorAsset,
   DeletedAsset,
@@ -5,8 +8,6 @@ import {
   InputEvent,
   Reporter,
 } from '@yalam/core';
-import chalk from 'chalk';
-import dateFormat from 'dateformat';
 
 export const enum LogLevel {
   INFO = 'Info',
@@ -72,12 +73,14 @@ export class ConsoleReporter implements Reporter {
 
   public onBuilt(task: string, asset: FileAsset) {
     this.count += 1;
-    this.logger.info(`${chalk.magentaBright(`<${task}>`)} Built ${asset.path}`);
+    const fileName = path.basename(asset.path);
+    this.logger.info(`${chalk.magentaBright(`<${task}>`)} Built ${fileName}`);
   }
 
   public onDeleted(task: string, asset: DeletedAsset) {
     this.count += 1;
-    this.logger.info(`${chalk.magentaBright(`<${task}>`)} Deleted ${asset.path}`);
+    const fileName = path.basename(asset.path);
+    this.logger.info(`${chalk.magentaBright(`<${task}>`)} Deleted ${fileName}`);
   }
 
   public onIdle(errors: ErrorAsset[]) {
