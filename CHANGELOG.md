@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - In @yalam/reporter onBuilt and onDeleted print the basename of files.
 
+### Fixed
+
+- Fix @yalam/typescript checkTypes crash on deleted events.
+
 ## [0.1.7] - 2021-02-03
 
 ### Fixed

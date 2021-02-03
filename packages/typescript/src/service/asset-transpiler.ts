@@ -3,11 +3,11 @@ import path from 'path';
 import fs from 'fs';
 import {
   DirectoryPath,
-  FileAsset
+  FileAsset,
+  FilePath
 } from '@yalam/core';
 
 import {
-  FilePath,
   OutputType
 } from '../types';
 import {

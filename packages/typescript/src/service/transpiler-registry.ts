@@ -1,8 +1,8 @@
 import ts from 'typescript';
-
 import {
   FilePath
-} from "../types";
+} from '@yalam/core';
+
 import {
   getTSConfigOrFail
 } from '../utils';

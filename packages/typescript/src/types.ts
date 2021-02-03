@@ -1,5 +1,3 @@
-export type FilePath = string;
-
 export const enum OutputType {
   JS,
   DTS

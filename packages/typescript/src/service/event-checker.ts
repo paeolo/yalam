@@ -2,12 +2,11 @@ import ts from 'typescript';
 import fs from 'fs';
 import {
   DirectoryPath,
-  FileEvent
+  EventType,
+  FileEvent,
+  FilePath
 } from '@yalam/core';
 
-import {
-  FilePath,
-} from '../types';
 import {
   formatDiagnostic
 } from '../utils';
@@ -83,16 +82,24 @@ export class EventChecker {
       .fromString(fs.readFileSync(fileName).toString())
   }
 
-  private updateVersion(event: FileEvent) {
-    const fileName = event.path;
+  private updateVersion(path: FilePath) {
     this.versions.set(
-      fileName,
-      (this.versions.get(fileName) || INITAL_VERSION) + 1
+      path,
+      (this.versions.get(path) || INITAL_VERSION) + 1
     );
   }
 
+  private deleteVersion(path: FilePath) {
+    this.versions.delete(path);
+  }
+
   public checkTypes(event: FileEvent): Error | undefined {
-    this.updateVersion(event);
+    if (event.type === EventType.DELETED) {
+      this.deleteVersion(event.path)
+      return;
+    }
+
+    this.updateVersion(event.path);
 
     const diagnotics = this.service
       .getCompilerOptionsDiagnostics()
