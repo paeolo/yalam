@@ -117,9 +117,19 @@ export class FileAsset extends ImmutableAsset {
       return undefined;
     }
     else {
-      return Buffer.from(
-        JSON.stringify(this.sourceMap.map)
-      );
+      const map = {
+        ...this.sourceMap.map,
+        sourceRoot: path.relative(
+          path.dirname(this.distPath),
+          this.entry
+        ),
+        sources: this.sourcePath
+          ? [path.relative(this.entry, this.sourcePath)]
+          : []
+      };
+
+      delete map.sourcesContent;
+      return Buffer.from(JSON.stringify(map));
     }
   }
 

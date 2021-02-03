@@ -20,7 +20,7 @@
   "main": "dist/index.js",
   "dependencies": {
     "@loopback/context": "^3.13.2",
-    "@parcel/watcher": "^2.0.0-alpha.9",
+    "@parcel/watcher": "2.0.0-alpha.9",
     "eventemitter3": "^4.0.7",
     "lockfile": "^1.0.4",
     "mkdirp": "^1.0.4",
