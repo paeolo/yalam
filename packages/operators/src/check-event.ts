@@ -18,7 +18,9 @@ interface CheckEventOptions {
   filter?: (event: FileEvent) => boolean;
 }
 
+const alwaysTrue = (event: FileEvent) => true;
 const filterNullish = <T>() => filter(x => x != null) as OperatorFunction<T | null | undefined, T>;
+
 
 const respondToEvent = async (event: FileEvent, options: CheckEventOptions) => {
   try {
@@ -37,13 +39,7 @@ const respondToEvent = async (event: FileEvent, options: CheckEventOptions) => {
  * An operator that apply a check function on file event and return error asset on failure.
  */
 export const checkEvent = (options: CheckEventOptions): OperatorFunction<FileEvent, ErrorAsset> => pipe(
-  filter((event => {
-    if (options.filter) {
-      return options.filter(event);
-    } else {
-      return true;
-    }
-  })),
+  filter(options.filter || alwaysTrue),
   map((event) => from(respondToEvent(event, options))),
   mergeAll(),
   filterNullish()

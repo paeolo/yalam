@@ -43,14 +43,14 @@ export class AssetCache implements IAssetCache {
     this.deleted = [];
   }
 
-  private async getAssets(): Promise<Asset[]> {
+  private async getAssets(): Promise<Asset[] | undefined> {
     try {
       return JSON.parse(
         (await fsAsync.readFile(this.filePath))
           .toString()
       )
     } catch {
-      return [];
+      return;
     }
   }
 
@@ -93,9 +93,9 @@ export class AssetCache implements IAssetCache {
   }
 
   public async sync() {
-    const assets = await this.getAssets();
+    let assets = await this.getAssets();
 
-    if (assets.length === 0) {
+    if (assets === undefined) {
       return false;
     }
 
@@ -122,7 +122,7 @@ export class AssetCache implements IAssetCache {
 
   public async batchUpdate() {
     const result: Asset[] = [];
-    const assets = await this.getAssets();
+    const assets = (await this.getAssets()) ?? [];
 
     assets.forEach((asset) => {
       if (!this.deleted.some(value => value === asset.distPath)) {
