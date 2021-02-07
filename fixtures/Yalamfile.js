@@ -13,7 +13,8 @@ const {
 
 const ts = pipe(
   source({ glob: 'src/**/*.ts' }),
-  tsCompiler.checkTypes()
+  tsCompiler.transpile(),
+  destination({ path: 'dist' })
 );
 
 module.exports = {

@@ -2,11 +2,13 @@ import {
   FileEvent
 } from '@yalam/core';
 import {
-  checkEvent
+  checkEvent,
+  transformEvent,
 } from '@yalam/operators';
 
 import {
   isTypescript,
+  replaceExt
 } from './utils';
 import {
   TranspilerRegistry
@@ -17,6 +19,31 @@ export class TSCompiler {
 
   constructor() {
     this.registry = new TranspilerRegistry();
+  }
+
+  /**
+* @description
+* Emit a javascript file asset from your typescript asset.
+*/
+  public transpile() {
+    const getResult = async (event: FileEvent) => {
+      const transpiler = this.registry.getTSTranspiler(event.entry);
+      transpiler.onEvent(event);
+      const output = transpiler.emitJavascript(event);
+
+      return {
+        contents: Buffer.from(output.contents.text),
+        sourceMap: {
+          map: JSON.parse(output.sourceMap.text)
+        },
+      }
+
+    }
+    return transformEvent({
+      filter: isTypescript,
+      getPath: replaceExt('.js'),
+      getResult
+    });
   }
 
   /**
@@ -33,7 +60,7 @@ export class TSCompiler {
     return checkEvent({
       checkEvent: respondToEvent,
       filter: isTypescript
-    })
+    });
   }
 }
 

@@ -128,10 +128,10 @@ export class TSTranspiler {
     return {
       contents: outputFiles.find(
         file => path.extname(file.name) === '.js'
-      ),
+      )!,
       sourceMap: outputFiles.find(
         file => path.extname(file.name) === '.map'
-      )
+      )!
     }
   }
 
@@ -143,8 +143,7 @@ export class TSTranspiler {
     return {
       contents: outputFiles.find(
         file => path.extname(file.name) === '.ts'
-      ),
-      sourceMap: undefined
+      )!
     }
   }
 }

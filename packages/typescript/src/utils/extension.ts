@@ -5,12 +5,8 @@ import {
   ImmutableAsset
 } from '@yalam/core';
 
-import {
-  OutputExtension
-} from '../types';
-
 export const isTypescript = (asset: ImmutableAsset | FileEvent) => ['.ts']
   .includes(path.extname(asset.path));
 
-export const replaceExt = (extension: OutputExtension) =>
-  (asset: ImmutableAsset) => replace(asset.path, extension)
+export const replaceExt = (extension: string) =>
+  (value: ImmutableAsset | FileEvent) => replace(value.path, extension)
