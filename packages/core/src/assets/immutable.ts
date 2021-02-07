@@ -21,7 +21,7 @@ export abstract class ImmutableAsset {
     this.event = options.event;
   }
 
-  abstract commit(): Promise<this>;
+  abstract commit(): Promise<void>;
 
   public get entry() {
     return this.event.entry;
