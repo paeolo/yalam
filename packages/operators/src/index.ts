@@ -1,4 +1,7 @@
 export {
+  checkEvent
+} from './check-event'
+export {
   destination
 } from './destination';
 export {

@@ -13,11 +13,9 @@ const {
 
 const ts = pipe(
   source({ glob: 'src/**/*.ts' }),
-  createAsset(),
-  tsCompiler.transpile({ syntaxCheck: false }),
-  destination({ path: 'dist' })
+  tsCompiler.checkTypes()
 );
 
 module.exports = {
-  ts
+  default: ts
 };
