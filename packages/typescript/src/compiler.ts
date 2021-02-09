@@ -1,6 +1,8 @@
 import {
   FileEvent
 } from '@yalam/core';
+import { pipe } from 'rxjs';
+import { mergeAll, tap, toArray } from 'rxjs/operators'
 import {
   checkEvent,
   transformEvent,
@@ -26,10 +28,19 @@ export class TSCompiler {
 * Emit a javascript file asset from your typescript asset.
 */
   public transpile() {
+    const notify = (events: FileEvent[]) => {
+      if (events.length === 0) {
+        return;
+      }
+      this.registry
+        .getTSTranspiler(events[0].entry)
+        .notify(events);
+    }
+
     const getResult = async (event: FileEvent) => {
-      const transpiler = this.registry.getTSTranspiler(event.entry);
-      transpiler.onEvent(event);
-      const output = transpiler.emitJavascript(event);
+      const output = this.registry
+        .getTSTranspiler(event.entry)
+        .emitJavascript(event);
 
       return {
         contents: Buffer.from(output.contents.text),
@@ -37,13 +48,18 @@ export class TSCompiler {
           map: JSON.parse(output.sourceMap.text)
         },
       }
-
     }
-    return transformEvent({
-      filter: isTypescript,
-      getPath: replaceExt('.js'),
-      getResult
-    });
+
+    return pipe(
+      toArray<FileEvent>(),
+      tap(notify),
+      mergeAll(),
+      transformEvent({
+        filter: isTypescript,
+        getPath: replaceExt('.js'),
+        getResult
+      })
+    );
   }
 
   /**
@@ -51,16 +67,30 @@ export class TSCompiler {
   * Perform type-checking on your file events.
   */
   public checkTypes() {
-    const respondToEvent = async (event: FileEvent) => {
-      const transpiler = this.registry.getTSTranspiler(event.entry);
-      transpiler.onEvent(event);
-      transpiler.failOnFirstError(event.path);
-
+    const notify = (events: FileEvent[]) => {
+      if (events.length === 0) {
+        return;
+      }
+      this.registry
+        .getTSTranspiler(events[0].entry)
+        .notify(events);
     }
-    return checkEvent({
-      checkEvent: respondToEvent,
-      filter: isTypescript
-    });
+
+    const respondToEvent = async (event: FileEvent) => {
+      this.registry
+        .getTSTranspiler(event.entry)
+        .failOnFirstError(event.path);
+    }
+
+    return pipe(
+      toArray<FileEvent>(),
+      tap(notify),
+      mergeAll(),
+      checkEvent({
+        checkEvent: respondToEvent,
+        filter: isTypescript
+      })
+    );
   }
 }
 

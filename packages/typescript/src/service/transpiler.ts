@@ -92,11 +92,13 @@ export class TSTranspiler {
     this.versions.delete(filePath);
   }
 
-  public onEvent(event: FileEvent) {
-    if (event.type === EventType.DELETED) {
-      this.deleteVersion(event.path)
-    } else if (event.type === EventType.UPDATED) {
-      this.updateVersion(event.path);
+  public notify(events: FileEvent[]) {
+    for (const event of events) {
+      if (event.type === EventType.DELETED) {
+        this.deleteVersion(event.path)
+      } else if (event.type === EventType.UPDATED) {
+        this.updateVersion(event.path);
+      }
     }
   }
 
