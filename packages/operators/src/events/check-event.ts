@@ -3,6 +3,7 @@ import {
   OperatorFunction,
   from,
 } from 'rxjs';
+import setImmediatePromise from 'set-immediate-promise';
 import {
   map,
   filter,
@@ -24,6 +25,7 @@ const filterNullish = <T>() => filter(x => x != null) as OperatorFunction<T | nu
 
 const respondToEvent = async (event: FileEvent, options: CheckEventOptions) => {
   try {
+    await setImmediatePromise();
     await options.checkEvent(event);
     return;
   } catch (error) {

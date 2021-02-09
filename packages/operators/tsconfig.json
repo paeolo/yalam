@@ -4,7 +4,10 @@
   "compilerOptions": {
     "composite": true,
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    "typeRoots": [
+      "./typings"
+    ]
   },
   "include": [
     "src/**/*"

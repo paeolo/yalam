@@ -3,6 +3,7 @@ import {
   OperatorFunction,
   from,
 } from 'rxjs';
+import setImmediatePromise from 'set-immediate-promise';
 import {
   map,
   filter,
@@ -44,6 +45,7 @@ const transformAsset = async (event: FileEvent, options: TransformOptions): Prom
   }
 
   try {
+    await setImmediatePromise();
     const result = await options.getResult(event);
     if (result.contents) {
       return new FileAsset({
