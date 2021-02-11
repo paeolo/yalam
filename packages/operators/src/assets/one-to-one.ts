@@ -16,6 +16,7 @@ import {
   SourceMap,
   ErrorAsset,
   EventType,
+  FilePath,
 } from '@yalam/core';
 
 export interface OneToOneResult {
@@ -25,7 +26,7 @@ export interface OneToOneResult {
 
 interface TransformOptions {
   getResult: (asset: FileAsset) => Promise<OneToOneResult>;
-  getPath: (asset: ImmutableAsset) => string;
+  getPath: (path: FilePath) => string;
   filter?: (asset: ImmutableAsset) => boolean;
 }
 
@@ -38,7 +39,7 @@ const transformAsset = async (asset: Asset, options: TransformOptions): Promise<
     return asset;
   }
 
-  const path = options.getPath(asset);
+  const path = options.getPath(asset.path);
 
   if (asset.status === AssetStatus.DELETED) {
     return asset.getWithPath(path);

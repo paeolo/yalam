@@ -1,10 +1,12 @@
 import {
+  FileAsset,
   FileEvent
 } from '@yalam/core';
 import { pipe } from 'rxjs';
 import { mergeAll, tap, toArray } from 'rxjs/operators'
 import {
   checkEvent,
+  oneToOne,
   transformEvent,
 } from '@yalam/operators';
 
@@ -16,6 +18,10 @@ import {
   TranspilerRegistry
 } from './service';
 
+interface TranspileModuleOptions {
+  disableSyntacticCheck?: boolean;
+}
+
 export class TSCompiler {
   private registry: TranspilerRegistry
 
@@ -25,7 +31,7 @@ export class TSCompiler {
 
   /**
 * @description
-* Emit a javascript file asset from your typescript asset.
+* Emit a javascript file asset from your file events.
 */
   public transpile() {
     const notify = (events: FileEvent[]) => {
@@ -91,6 +97,53 @@ export class TSCompiler {
         filter: isTypescript
       })
     );
+  }
+
+  /**
+   * @description
+   * Emit a declaration file asset from your typescript asset.
+   */
+  public generateTypes() {
+    const getResult = async (asset: FileAsset) => {
+      const output = this.registry
+        .getAssetTranspiler(asset.entry)
+        .emitDTS(asset);
+
+      return {
+        contents: Buffer.from(output.contents.text),
+      }
+    }
+
+    return oneToOne({
+      filter: isTypescript,
+      getPath: replaceExt('.d.ts'),
+      getResult
+    });
+  }
+
+  /**
+  * @description
+  * Emit a javascript file asset from your typescript asset.
+  */
+  public transpileModule(options?: TranspileModuleOptions) {
+    const getResult = async (asset: FileAsset) => {
+      const output = this.registry
+        .getAssetTranspiler(asset.entry)
+        .emitJavascript(asset, options?.disableSyntacticCheck);
+
+      return {
+        contents: Buffer.from(output.contents.text),
+        sourceMap: {
+          map: JSON.parse(output.sourceMap.text)
+        },
+      }
+    }
+
+    return oneToOne({
+      filter: isTypescript,
+      getPath: replaceExt('.js'),
+      getResult
+    });
   }
 }
 

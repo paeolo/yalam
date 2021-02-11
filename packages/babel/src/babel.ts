@@ -77,6 +77,6 @@ const isJavascript = (asset: ImmutableAsset) => ['.js', '.ts']
 
 export const babel = (options: BabelOptions = {}) => oneToOne({
   filter: (asset) => isJavascript(asset),
-  getPath: (asset) => replaceExt(asset.path, '.js'),
+  getPath: (path) => replaceExt(path, '.js'),
   getResult: (asset) => transpile(asset, options),
 });

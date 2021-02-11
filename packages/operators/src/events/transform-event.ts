@@ -1,3 +1,4 @@
+import path from 'path';
 import {
   pipe,
   OperatorFunction,
@@ -18,6 +19,7 @@ import {
   EventType,
   FileEvent,
   DeletedAsset,
+  FilePath,
 } from '@yalam/core';
 
 export interface TransformEventResult {
@@ -27,7 +29,7 @@ export interface TransformEventResult {
 
 interface TransformOptions {
   getResult: (event: FileEvent) => Promise<TransformEventResult>;
-  getPath: (event: FileEvent) => string;
+  getPath: (path: FilePath) => string;
   filter?: (event: FileEvent) => boolean;
 }
 
@@ -35,12 +37,21 @@ const alwaysTrue = (event: FileEvent) => true;
 const filterNullish = <T>() => filter(x => x != null) as OperatorFunction<T | null | undefined, T>;
 
 const transformAsset = async (event: FileEvent, options: TransformOptions): Promise<Asset | undefined> => {
-  const path = options.getPath(event);
+  const base = event.sourceBase
+    ? path.join(event.entry, event.sourceBase)
+    : event.entry;
+
+  const relativePath = path.relative(
+    base,
+    event.path
+  );
+
+  const outputPath = options.getPath(relativePath);
 
   if (event.type === EventType.DELETED) {
     return new DeletedAsset({
       event,
-      path
+      path: outputPath
     })
   }
 
@@ -52,7 +63,7 @@ const transformAsset = async (event: FileEvent, options: TransformOptions): Prom
         status: AssetStatus.SOURCE,
         contents: result.contents,
         sourceMap: result.sourceMap,
-        path,
+        path: outputPath,
         event,
       })
     }

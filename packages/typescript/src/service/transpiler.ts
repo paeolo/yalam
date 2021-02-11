@@ -43,13 +43,10 @@ export class TSTranspiler {
       { ...commandLine.options, rootDir: undefined, sourceMap: true }
     );
 
-    this.service = ts.createLanguageService(serviceHost, options.registry);
-
-    const diagnostic = this.service.getCompilerOptionsDiagnostics()[0];
-
-    if (diagnostic) {
-      throw new Error(formatDiagnostic(diagnostic));
-    }
+    this.service = ts.createLanguageService(
+      serviceHost,
+      options.registry
+    );
   }
 
   private getHost(entry: DirectoryPath, compilerOptions: ts.CompilerOptions): ts.LanguageServiceHost {

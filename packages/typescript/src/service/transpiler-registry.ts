@@ -1,22 +1,27 @@
 import ts from 'typescript';
 import {
-  FilePath
+  DirectoryPath,
 } from '@yalam/core';
 
 import {
   TSTranspiler
 } from './transpiler';
+import {
+  AssetTranspiler
+} from './asset-transpiler';
 
 export class TranspilerRegistry {
   private documentRegistry: ts.DocumentRegistry;
-  private transpilers: Map<FilePath, TSTranspiler>;
+  private transpilers: Map<DirectoryPath, TSTranspiler>;
+  private assetTranspilers: Map<DirectoryPath, AssetTranspiler>;
 
   constructor() {
     this.documentRegistry = ts.createDocumentRegistry();
     this.transpilers = new Map();
+    this.assetTranspilers = new Map();
   }
 
-  public getTSTranspiler(entry: FilePath) {
+  public getTSTranspiler(entry: DirectoryPath) {
     let transpiler = this.transpilers.get(entry);
 
     if (transpiler) {
@@ -29,6 +34,22 @@ export class TranspilerRegistry {
     });
 
     this.transpilers.set(entry, transpiler);
+    return transpiler;
+  }
+
+  public getAssetTranspiler(entry: DirectoryPath) {
+    let transpiler = this.assetTranspilers.get(entry);
+
+    if (transpiler) {
+      return transpiler;
+    }
+
+    transpiler = new AssetTranspiler({
+      entry,
+      registry: this.documentRegistry,
+    });
+
+    this.assetTranspilers.set(entry, transpiler);
     return transpiler;
   }
 }
