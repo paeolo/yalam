@@ -109,7 +109,6 @@ export class FileAsset extends ImmutableAsset {
 
       await Promise.all(promises);
     }
-    return this;
   }
 
   private getSourceMap() {

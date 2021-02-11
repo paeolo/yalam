@@ -1,4 +1,9 @@
 export {
+  checkEvent,
+  transformEvent,
+  TransformEventResult
+} from './events';
+export {
   destination
 } from './destination';
 export {
@@ -8,10 +13,8 @@ export {
   source
 } from './source';
 export {
-  createAsset
-} from './create-asset'
-export {
+  createAsset,
   oneToOne,
   OneToOneResult
-} from './one-to-one';
+} from './assets';
 export * from 'rxjs/operators';

@@ -30,6 +30,5 @@ export class DeletedAsset extends ImmutableAsset {
       await fsAsync.unlink(this.distPath);
       await fsAsync.unlink(this.distPath.concat('.map'));
     } catch { }
-    return this;
   }
 }

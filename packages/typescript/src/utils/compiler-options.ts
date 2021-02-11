@@ -5,11 +5,7 @@ import {
 } from '@yalam/core';
 
 export const getTSConfigOrFail = (entry: FilePath) => {
-  const configPath = ts.findConfigFile(
-    entry,
-    ts.sys.fileExists,
-    'tsconfig.json'
-  );
+  const configPath = ts.findConfigFile(entry, ts.sys.fileExists, 'tsconfig.json');
 
   if (!configPath) {
     throw new Error(
@@ -17,5 +13,5 @@ export const getTSConfigOrFail = (entry: FilePath) => {
     );
   }
 
-  return require(configPath);
+  return ts.readJsonConfigFile(configPath, ts.sys.readFile)
 }

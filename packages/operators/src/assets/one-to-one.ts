@@ -16,6 +16,7 @@ import {
   SourceMap,
   ErrorAsset,
   EventType,
+  FilePath,
 } from '@yalam/core';
 
 export interface OneToOneResult {
@@ -25,10 +26,11 @@ export interface OneToOneResult {
 
 interface TransformOptions {
   getResult: (asset: FileAsset) => Promise<OneToOneResult>;
-  getPath: (asset: ImmutableAsset) => string;
+  getPath: (path: FilePath) => string;
   filter?: (asset: ImmutableAsset) => boolean;
 }
 
+const alwaysTrue = (asset: Asset) => true;
 const filterNullish = <T>() => filter(x => x != null) as OperatorFunction<T | null | undefined, T>;
 
 const transformAsset = async (asset: Asset, options: TransformOptions): Promise<Asset | undefined> => {
@@ -37,7 +39,7 @@ const transformAsset = async (asset: Asset, options: TransformOptions): Promise<
     return asset;
   }
 
-  const path = options.getPath(asset);
+  const path = options.getPath(asset.path);
 
   if (asset.status === AssetStatus.DELETED) {
     return asset.getWithPath(path);
@@ -70,13 +72,7 @@ const transformAsset = async (asset: Asset, options: TransformOptions): Promise<
  * An operator that transforms one asset into another with filtering and failure handling.
  */
 export const oneToOne = (options: TransformOptions): OperatorFunction<Asset, Asset> => pipe(
-  filter((asset => {
-    if (options.filter) {
-      return options.filter(asset);
-    } else {
-      return true;
-    }
-  })),
+  filter(options.filter || alwaysTrue),
   map((asset) => from(transformAsset(asset, options))),
   mergeAll(),
   filterNullish()

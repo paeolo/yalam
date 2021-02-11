@@ -1,174 +1,142 @@
-import ts from 'typescript';
 import path from 'path';
+import ts from 'typescript';
 import fs from 'fs';
 import {
   DirectoryPath,
-  FileAsset,
-  FilePath
+  FilePath,
+  FileAsset
 } from '@yalam/core';
 
 import {
-  OutputType
-} from '../types';
-import {
-  formatDiagnostic
+  formatDiagnostic,
+  getTSConfigOrFail
 } from '../utils';
 
 const INITAL_VERSION = 0;
 
-interface Asset {
-  file: FileAsset;
-  version: number;
-}
-
-interface Emit {
-  contents?: ts.OutputFile;
-  sourceMap?: ts.OutputFile;
-}
-
 export interface AssetTranspilerOptions {
-  config: any;
   entry: DirectoryPath;
   registry: ts.DocumentRegistry;
 }
 
 export class AssetTranspiler {
-  private entry: DirectoryPath;
-  private compilerOptions: ts.CompilerOptions;
-  private registry: ts.DocumentRegistry;
-  private host: ts.LanguageServiceHost;
   private service: ts.LanguageService;
-  private assets: Map<FilePath, Asset>;
+  private currentAsset: FileAsset | undefined;
+  private currentVersion: number = INITAL_VERSION;
 
   constructor(options: AssetTranspilerOptions) {
-    this.entry = options.entry;
-    this.registry = options.registry;
-    this.host = {
-      getScriptFileNames: () => this.getScriptFileNames(),
-      getScriptVersion: fileName => this.getScriptVersion(fileName),
-      getScriptSnapshot: fileName => this.getScriptSnapshot(fileName),
-      getCurrentDirectory: () => process.cwd(),
-      getCompilationSettings: () => this.compilerOptions,
-      getDefaultLibFileName: ts.getDefaultLibFilePath,
-    }
-    this.service = ts.createLanguageService(
-      this.host,
-      this.registry,
-    );
-    this.assets = new Map();
-
-    const commandLine = ts.parseJsonConfigFileContent(
-      options.config,
+    const tsConfig = getTSConfigOrFail(options.entry);
+    const commandLine = ts.parseJsonSourceFileConfigFileContent(
+      tsConfig,
       {
         fileExists: ts.sys.fileExists,
         readDirectory: () => [],
         readFile: ts.sys.readFile,
         useCaseSensitiveFileNames: true,
       },
-      this.entry
+      options.entry
     );
 
-    this.compilerOptions = {
-      ...commandLine.options,
-      rootDir: undefined,
-      sourceMap: true
-    };
+    const serviceHost = this.getHost(
+      options.entry,
+      { ...commandLine.options, rootDir: undefined, sourceMap: true }
+    );
+
+    this.service = ts.createLanguageService(
+      serviceHost,
+      options.registry
+    );
+  }
+
+  private getHost(entry: DirectoryPath, compilerOptions: ts.CompilerOptions): ts.LanguageServiceHost {
+    return {
+      getScriptFileNames: () => this.getScriptFileNames(),
+      getScriptVersion: fileName => this.getScriptVersion(fileName),
+      getScriptSnapshot: fileName => this.getScriptSnapshot(fileName),
+      getCurrentDirectory: () => entry,
+      getCompilationSettings: () => compilerOptions,
+      getDefaultLibFileName: ts.getDefaultLibFilePath,
+    }
   }
 
   private getScriptFileNames() {
-    return Array.from(this.assets.keys());
+    return this.currentAsset
+      ? [this.currentAsset.distPath]
+      : [];
   }
 
   private getScriptVersion(fileName: FilePath) {
-    const asset = this.assets.get(fileName);
-
-    return asset
-      ? asset.version.toString()
+    return this.currentAsset && fileName === this.currentAsset.distPath
+      ? this.currentVersion.toString()
       : INITAL_VERSION.toString();
   }
 
   private getScriptSnapshot(fileName: FilePath) {
-    const asset = this.assets.get(fileName);
-
-    return asset
+    return this.currentAsset && fileName === this.currentAsset.distPath
       ? ts.ScriptSnapshot
-        .fromString(asset.file.contents.toString())
+        .fromString(this.currentAsset.contents.toString())
       : ts.ScriptSnapshot
-        .fromString(fs.readFileSync(fileName).toString())
+        .fromString(fs.readFileSync(fileName).toString());
   }
 
-  private getFirstSyntacticError(asset: FileAsset) {
-    const diagnotics = this.service
-      .getCompilerOptionsDiagnostics()
-      .concat(this.service.getSyntacticDiagnostics(asset.distPath));
+  private setAsset(asset: FileAsset) {
+    this.currentAsset = asset;
+    this.currentVersion++;
+  }
 
+  private free() {
+    this.currentAsset = undefined;
+  }
+
+  private failOnFirstSyntacticError(asset: FileAsset) {
+    const diagnotics = this.service.getSyntacticDiagnostics(asset.distPath);
     const diagnostic = diagnotics[0];
 
     if (!diagnostic) {
       return;
     }
 
-    return new SyntaxError(formatDiagnostic(
-      diagnostic,
-      asset.sourcePath
-    ));
+    throw new Error(
+      formatDiagnostic(diagnostic, asset.sourcePath)
+    );
   }
 
-  private storeAsset(file: FileAsset) {
-    const fileName = file.distPath;
-    const asset = this.assets.get(fileName);
+  public emitJavascript(asset: FileAsset, disableSyntacticCheck?: boolean) {
+    this.setAsset(asset);
 
-    const version = asset
-      ? asset.version + 1
-      : INITAL_VERSION;
-
-    this.assets.set(fileName, { file, version, });
-  }
-
-  private getJavascript(fileName: FilePath) {
     const outputFiles = this.service
-      .getEmitOutput(fileName)
+      .getEmitOutput(asset.distPath)
       .outputFiles;
+
+    if (!disableSyntacticCheck) {
+      this.failOnFirstSyntacticError(asset);
+    }
+
+    this.free();
 
     return {
       contents: outputFiles.find(
         file => path.extname(file.name) === '.js'
-      ),
+      )!,
       sourceMap: outputFiles.find(
         file => path.extname(file.name) === '.map'
-      )
+      )!
     }
   }
 
-  private getDTS(fileName: FilePath) {
+  public emitDTS(asset: FileAsset) {
+    this.setAsset(asset);
+
     const outputFiles = this.service
-      .getEmitOutput(fileName, true, true)
+      .getEmitOutput(asset.distPath, true, true)
       .outputFiles;
+
+    this.free();
 
     return {
       contents: outputFiles.find(
         file => path.extname(file.name) === '.ts'
-      ),
-      sourceMap: undefined
+      )!
     }
-  }
-
-  public emitOutput(asset: FileAsset, type: OutputType, checkSyntax: boolean): Emit {
-    const fileName = asset.distPath;
-    this.storeAsset(asset);
-
-    if (checkSyntax) {
-      const error = this.getFirstSyntacticError(asset);
-
-      if (error) {
-        throw error;
-      }
-    }
-
-    const output = type === OutputType.JS
-      ? this.getJavascript(fileName)
-      : this.getDTS(fileName);
-
-    return output;
   }
 }

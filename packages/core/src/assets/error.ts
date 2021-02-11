@@ -35,7 +35,5 @@ export class ErrorAsset extends ImmutableAsset {
     return this.event.path;
   }
 
-  public async commit() {
-    return this;
-  }
+  public async commit() { }
 }

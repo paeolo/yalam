@@ -1,58 +1,55 @@
 import ts from 'typescript';
 import {
-  FilePath
+  DirectoryPath,
 } from '@yalam/core';
 
 import {
-  getTSConfigOrFail
-} from '../utils';
+  TSTranspiler
+} from './transpiler';
 import {
   AssetTranspiler
 } from './asset-transpiler';
-import {
-  EventChecker
-} from './event-checker';
 
 export class TranspilerRegistry {
   private documentRegistry: ts.DocumentRegistry;
-  private assetTranspilers: Map<FilePath, AssetTranspiler>;
-  private eventCheckers: Map<FilePath, EventChecker>;
+  private transpilers: Map<DirectoryPath, TSTranspiler>;
+  private assetTranspilers: Map<DirectoryPath, AssetTranspiler>;
 
   constructor() {
     this.documentRegistry = ts.createDocumentRegistry();
+    this.transpilers = new Map();
     this.assetTranspilers = new Map();
-    this.eventCheckers = new Map();
   }
 
-  public getAssetTranspiler(entry: FilePath) {
+  public getTSTranspiler(entry: DirectoryPath) {
+    let transpiler = this.transpilers.get(entry);
+
+    if (transpiler) {
+      return transpiler;
+    }
+
+    transpiler = new TSTranspiler({
+      entry,
+      registry: this.documentRegistry,
+    });
+
+    this.transpilers.set(entry, transpiler);
+    return transpiler;
+  }
+
+  public getAssetTranspiler(entry: DirectoryPath) {
     let transpiler = this.assetTranspilers.get(entry);
 
-    if (transpiler)
+    if (transpiler) {
       return transpiler;
+    }
 
     transpiler = new AssetTranspiler({
-      config: getTSConfigOrFail(entry),
       entry,
       registry: this.documentRegistry,
     });
 
     this.assetTranspilers.set(entry, transpiler);
     return transpiler;
-  }
-
-  public getEventChecker(entry: FilePath) {
-    let checker = this.eventCheckers.get(entry);
-
-    if (checker)
-      return checker;
-
-    checker = new EventChecker({
-      config: getTSConfigOrFail(entry),
-      entry,
-      registry: this.documentRegistry,
-    });
-
-    this.eventCheckers.set(entry, checker);
-    return checker;
   }
 }
