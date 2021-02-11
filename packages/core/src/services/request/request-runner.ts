@@ -10,6 +10,7 @@ import {
 import {
   map,
   mergeAll,
+  tap
 } from 'rxjs/operators';
 
 import {
@@ -103,22 +104,23 @@ export class RequestRunner implements IRequestRunner {
 
     const input = connectable(from(events), new Subject());
 
-    const onAsset = (asset: Asset) => {
-      if (throwOnFail
-        && asset.status === AssetStatus.ERROR) {
+    const commitOrFail = (asset: Asset) => {
+      if (throwOnFail && asset.status === AssetStatus.ERROR) {
         throw asset.error;
       }
-      return from(asset.commit());
+      else {
+        return from(asset.commit());
+      }
     }
 
     await new Promise<void>((resolve, reject) => {
       this.fn(input)
         .pipe(
-          map(onAsset),
+          tap(asset => this.onBuilt(asset)),
+          map(asset => commitOrFail(asset)),
           mergeAll()
         )
         .subscribe({
-          next: asset => this.onBuilt(asset),
           error: reject,
           complete: resolve
         });
