@@ -8,7 +8,8 @@ import {
   RunnerMode
 } from './runner';
 import {
-  getConfig
+  getConfig,
+  getEntries
 } from './utils';
 import {
   YALAM_FILE
@@ -32,7 +33,7 @@ export const run = async (entries: string[], flags: FlagsType, reporters: Report
 
   const runner = new Runner({
     mode,
-    entries,
+    entries: getEntries(entries),
     options: {
       config,
       disableCache: flags.cache === false,
