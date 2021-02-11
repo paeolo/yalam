@@ -29,5 +29,5 @@ const tsc = pipe(
 );
 
 module.exports = {
-  default: tsc,
+  default: ts,
 };

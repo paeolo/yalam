@@ -19,13 +19,10 @@ export interface AssetTranspilerOptions {
   registry: ts.DocumentRegistry;
 }
 
-interface Asset {
-  file: FileAsset;
-  version: number;
-}
 export class AssetTranspiler {
   private service: ts.LanguageService;
-  private assets: Map<FilePath, Asset>;
+  private currentAsset: FileAsset | undefined;
+  private currentVersion: number = INITAL_VERSION;
 
   constructor(options: AssetTranspilerOptions) {
     const tsConfig = getTSConfigOrFail(options.entry);
@@ -39,8 +36,6 @@ export class AssetTranspiler {
       },
       options.entry
     );
-
-    this.assets = new Map();
 
     const serviceHost = this.getHost(
       options.entry,
@@ -65,36 +60,32 @@ export class AssetTranspiler {
   }
 
   private getScriptFileNames() {
-    return Array.from(this.assets.keys());
+    return this.currentAsset
+      ? [this.currentAsset.distPath]
+      : [];
   }
 
   private getScriptVersion(fileName: FilePath) {
-    const asset = this.assets.get(fileName);
-
-    return asset
-      ? asset.version.toString()
+    return this.currentAsset && fileName === this.currentAsset.distPath
+      ? this.currentVersion.toString()
       : INITAL_VERSION.toString();
   }
 
   private getScriptSnapshot(fileName: FilePath) {
-    const asset = this.assets.get(fileName);
-
-    return asset
+    return this.currentAsset && fileName === this.currentAsset.distPath
       ? ts.ScriptSnapshot
-        .fromString(asset.file.contents.toString())
+        .fromString(this.currentAsset.contents.toString())
       : ts.ScriptSnapshot
-        .fromString(fs.readFileSync(fileName).toString())
+        .fromString(fs.readFileSync(fileName).toString());
   }
 
-  private storeAsset(file: FileAsset) {
-    const fileName = file.distPath;
-    const asset = this.assets.get(fileName);
+  private setAsset(asset: FileAsset) {
+    this.currentAsset = asset;
+    this.currentVersion++;
+  }
 
-    const version = asset
-      ? asset.version + 1
-      : INITAL_VERSION;
-
-    this.assets.set(fileName, { file, version, });
+  private free() {
+    this.currentAsset = undefined;
   }
 
   private failOnFirstSyntacticError(asset: FileAsset) {
@@ -111,7 +102,7 @@ export class AssetTranspiler {
   }
 
   public emitJavascript(asset: FileAsset, disableSyntacticCheck?: boolean) {
-    this.storeAsset(asset);
+    this.setAsset(asset);
 
     const outputFiles = this.service
       .getEmitOutput(asset.distPath)
@@ -120,6 +111,8 @@ export class AssetTranspiler {
     if (!disableSyntacticCheck) {
       this.failOnFirstSyntacticError(asset);
     }
+
+    this.free();
 
     return {
       contents: outputFiles.find(
@@ -132,11 +125,13 @@ export class AssetTranspiler {
   }
 
   public emitDTS(asset: FileAsset) {
-    this.storeAsset(asset);
+    this.setAsset(asset);
 
     const outputFiles = this.service
       .getEmitOutput(asset.distPath, true, true)
       .outputFiles;
+
+    this.free();
 
     return {
       contents: outputFiles.find(
