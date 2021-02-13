@@ -22,6 +22,10 @@ interface TranspileModuleOptions {
   disableSyntacticCheck?: boolean;
 }
 
+interface TranspileTSOptions {
+  disableSemanticCheck?: boolean;
+}
+
 export class TSCompiler {
   private registry: TranspilerRegistry
 
@@ -33,7 +37,7 @@ export class TSCompiler {
 * @description
 * Emit a javascript file asset from your file events.
 */
-  public transpile() {
+  public transpile(options?: TranspileTSOptions) {
     const notify = (events: FileEvent[]) => {
       if (events.length === 0) {
         return;
@@ -46,7 +50,7 @@ export class TSCompiler {
     const getResult = async (event: FileEvent) => {
       const output = this.registry
         .getTSTranspiler(event.entry)
-        .emitJavascript(event);
+        .emitJavascript(event, options?.disableSemanticCheck);
 
       return {
         contents: Buffer.from(output.contents.text),
