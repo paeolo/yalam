@@ -40,7 +40,7 @@ export class TSTranspiler {
 
     const serviceHost = this.getHost(
       options.entry,
-      { ...commandLine.options, rootDir: undefined, sourceMap: true }
+      { ...commandLine.options, sourceMap: true }
     );
 
     this.service = ts.createLanguageService(
