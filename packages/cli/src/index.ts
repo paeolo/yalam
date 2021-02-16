@@ -33,14 +33,13 @@ export const run = async (entries: string[], flags: FlagsType, reporters: Report
 
   const runner = new Runner({
     mode,
+    config,
     entries: getEntries(entries),
     options: {
-      config,
       disableCache: flags.cache === false,
       cacheKey,
       reporters,
     }
   });
-
   await runner.run();
 }

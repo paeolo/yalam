@@ -11,5 +11,8 @@
       "build": "default",
       "watch": "default"
     }
+  },
+  "dependencies": {
+    "@yalam/example-2": "^1.0.0"
   }
 }
