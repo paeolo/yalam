@@ -86,7 +86,7 @@ export class ConsoleReporter implements Reporter {
   public onIdle(errors: ErrorAsset[]) {
     if (errors.length !== 0) {
       errors.forEach(
-        (asset) => this.logger.error(asset.error.toString())
+        (asset) => this.logger.error(asset.error.message)
       );
     } else if (this.count > 0 || !this.hasBuilt) {
       this.logger.success(

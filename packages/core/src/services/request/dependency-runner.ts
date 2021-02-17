@@ -1,3 +1,4 @@
+import PQueue from "p-queue";
 import path from "path";
 import {
   BindingScope,
@@ -26,16 +27,26 @@ import * as Services from '../../services';
 import {
   CACHE_NAME
 } from "../../constants";
+import {
+  runTopologically,
+  checkHasTaskOrFail
+} from '../../utils';
 
 export interface BuildOptions {
   entry: DirectoryPath;
   task: string;
 }
 
+export enum BuildMode {
+  BUILD = 'build',
+  WATCH = 'watch'
+}
+
 export class DependencyRunner implements IRequestRunner {
   constructor(
     @inject(CoreBindings.DEPENDENCIES) private dependencies: DependencyNode[],
-    @inject.context() private context: Context
+    @inject(CoreBindings.QUEUE) private queue: PQueue,
+    @inject.context() private context: Context,
   ) { }
 
   private async getRequestRunner(options: BuildOptions) {
@@ -103,12 +114,44 @@ export class DependencyRunner implements IRequestRunner {
   }
 
   public async build() {
+    const buildDependency = async (dependency: DependencyNode) => {
+      checkHasTaskOrFail(dependency, BuildMode.BUILD);
+
+      const requestRunner = await this.getRequestRunner({
+        entry: dependency.entry,
+        task: dependency.config[BuildMode.BUILD]
+      });
+
+      return requestRunner.build();
+    }
+
+    await this.queue.add(() => runTopologically(this.dependencies, buildDependency));
   }
 
   public async watch(): Promise<AsyncSubscription> {
-    console.log(this.dependencies)
+    const getSubscription = async (dependency: DependencyNode) => {
+      checkHasTaskOrFail(dependency, BuildMode.WATCH);
+
+      const requestRunner = await this.getRequestRunner({
+        entry: dependency.entry,
+        task: dependency.config[BuildMode.WATCH]
+      });
+
+      return requestRunner.watch();
+    }
+
+    const subscriptions = await this.queue.add(
+      () => runTopologically(this.dependencies, getSubscription)
+    );
+
     return {
-      unsubscribe: async () => { }
+      unsubscribe: async () => {
+        await Promise.all(
+          subscriptions.map(
+            subscription => subscription.unsubscribe()
+          )
+        )
+      }
     }
   }
 }
