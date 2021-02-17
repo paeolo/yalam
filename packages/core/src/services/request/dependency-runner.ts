@@ -43,6 +43,8 @@ export enum BuildMode {
 }
 
 export class DependencyRunner implements IRequestRunner {
+  private subscription: AsyncSubscription | undefined;
+
   constructor(
     @inject(CoreBindings.DEPENDENCIES) private dependencies: DependencyNode[],
     @inject(CoreBindings.QUEUE) private queue: PQueue,
@@ -124,11 +126,14 @@ export class DependencyRunner implements IRequestRunner {
 
       return requestRunner.build();
     }
-
     await this.queue.add(() => runTopologically(this.dependencies, buildDependency));
   }
 
   public async watch(): Promise<AsyncSubscription> {
+    if (this.subscription) {
+      return this.subscription;
+    }
+
     const getSubscription = async (dependency: DependencyNode) => {
       checkHasTaskOrFail(dependency, BuildMode.WATCH);
 
@@ -144,14 +149,17 @@ export class DependencyRunner implements IRequestRunner {
       () => runTopologically(this.dependencies, getSubscription)
     );
 
-    return {
+    this.subscription = {
       unsubscribe: async () => {
+        this.subscription = undefined;
         await Promise.all(
           subscriptions.map(
             subscription => subscription.unsubscribe()
           )
-        )
+        );
       }
     }
+
+    return this.subscription;
   }
 }
