@@ -7,9 +7,11 @@ export type GraphRunner<T> = (dependency: DependencyNode) => Promise<T>;
 
 export class QueryGraph {
   private nodes: Map<string, DependencyNode>;
+  private pendingCount: number;
 
   constructor(dependencies: DependencyNode[]) {
     this.nodes = new Map();
+    this.pendingCount = 0;
 
     for (const dependency of dependencies) {
       this.nodes.set(dependency.name, dependency)
@@ -25,7 +27,7 @@ export class QueryGraph {
       }
     });
 
-    if (nodes.length === 0 && this.nodes.size !== 0) {
+    if (this.pendingCount === 0 && nodes.length === 0 && this.nodes.size !== 0) {
       let node: DependencyNode = this.nodes.values().next().value;
       const stack: string[] = [];
 
@@ -45,6 +47,7 @@ export class QueryGraph {
   }
 
   public markAsTaken(name: string) {
+    this.pendingCount += 1;
     this.nodes.delete(name);
   }
 
@@ -54,6 +57,7 @@ export class QueryGraph {
         item => item !== name
       )
     );
+    this.pendingCount -= 1;
   }
 }
 
