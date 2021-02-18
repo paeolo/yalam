@@ -8,6 +8,7 @@ import {
   checkEvent,
   oneToOne,
   transformEvent,
+  IEventTransformer
 } from '@yalam/operators';
 
 import {
@@ -24,6 +25,7 @@ interface TranspileModuleOptions {
 
 interface TranspileTSOptions {
   disableSemanticCheck?: boolean;
+  disableDtsEmit?: boolean;
 }
 
 export class TSCompiler {
@@ -60,14 +62,37 @@ export class TSCompiler {
       }
     }
 
+    const getDtsResult = async (event: FileEvent) => {
+      const output = this.registry
+        .getTSTranspiler(event.entry)
+        .emitDTS(event);
+
+      return {
+        contents: Buffer.from(output.contents.text),
+      }
+    }
+
+    const transformers: IEventTransformer[] = [
+      {
+        getPath: replaceExt('.js'),
+        getResult
+      }
+    ];
+
+    if (!options?.disableDtsEmit) {
+      transformers.push({
+        getPath: replaceExt('.d.ts'),
+        getResult: getDtsResult
+      })
+    }
+
     return pipe(
       toArray<FileEvent>(),
       tap(notify),
       mergeAll(),
       transformEvent({
         filter: isTypescript,
-        getPath: replaceExt('.js'),
-        getResult
+        transformers
       })
     );
   }

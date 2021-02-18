@@ -25,18 +25,22 @@ import {
 export interface TransformEventResult {
   contents?: Buffer;
   sourceMap?: SourceMap
-}
+};
 
-interface TransformOptions {
+export interface IEventTransformer {
   getResult: (event: FileEvent) => Promise<TransformEventResult>;
   getPath: (path: FilePath) => string;
+};
+
+interface TransformOptions {
   filter?: (event: FileEvent) => boolean;
+  transformers: IEventTransformer[];
 }
 
 const alwaysTrue = (event: FileEvent) => true;
 const filterNullish = <T>() => filter(x => x != null) as OperatorFunction<T | null | undefined, T>;
 
-const transformAsset = async (event: FileEvent, options: TransformOptions): Promise<Asset | undefined> => {
+const transformAsset = async (event: FileEvent, options: TransformOptions): Promise<Asset[]> => {
   const base = event.sourceBase
     ? path.join(event.entry, event.sourceBase)
     : event.entry;
@@ -46,33 +50,37 @@ const transformAsset = async (event: FileEvent, options: TransformOptions): Prom
     event.path
   );
 
-  const outputPath = options.getPath(relativePath);
-
   if (event.type === EventType.DELETED) {
-    return new DeletedAsset({
+    return options.transformers.map(transformer => new DeletedAsset({
       event,
-      path: outputPath
-    })
+      path: transformer.getPath(relativePath)
+    }))
   }
 
-  try {
-    await setImmediatePromise();
-    const result = await options.getResult(event);
-    if (result.contents) {
-      return new FileAsset({
-        status: AssetStatus.SOURCE,
-        contents: result.contents,
-        sourceMap: result.sourceMap,
-        path: outputPath,
+  const assets: Asset[] = [];
+  await setImmediatePromise();
+
+  for (const transformer of options.transformers) {
+    try {
+      const result = await transformer.getResult(event);
+      if (result.contents) {
+        assets.push(new FileAsset({
+          status: AssetStatus.SOURCE,
+          contents: result.contents,
+          sourceMap: result.sourceMap,
+          path: transformer.getPath(relativePath),
+          event,
+        }))
+      }
+    } catch (error) {
+      assets.push(new ErrorAsset({
         event,
-      })
+        error,
+      }));
     }
-  } catch (error) {
-    return new ErrorAsset({
-      event,
-      error,
-    });
   }
+
+  return assets;
 }
 
 /**
@@ -82,6 +90,7 @@ const transformAsset = async (event: FileEvent, options: TransformOptions): Prom
 export const transformEvent = (options: TransformOptions): OperatorFunction<FileEvent, Asset> => pipe(
   filter(options.filter || alwaysTrue),
   map((asset) => from(transformAsset(asset, options))),
+  mergeAll(),
   mergeAll(),
   filterNullish()
 );
