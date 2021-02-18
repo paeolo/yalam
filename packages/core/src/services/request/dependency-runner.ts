@@ -9,7 +9,6 @@ import {
 
 import {
   AsyncSubscription,
-  DirectoryPath
 } from "../../types";
 import {
   IRequestRunner
@@ -29,13 +28,9 @@ import {
 } from "../../constants";
 import {
   runTopologically,
-  checkHasTaskOrFail
+  getTaskOrFail,
+  unsubscribeAll
 } from '../../utils';
-
-export interface BuildOptions {
-  entry: DirectoryPath;
-  task: string;
-}
 
 export enum BuildMode {
   BUILD = 'build',
@@ -51,21 +46,21 @@ export class DependencyRunner implements IRequestRunner {
     @inject.context() private context: Context,
   ) { }
 
-  private async getRequestRunner(options: BuildOptions) {
+  private async getRequestRunner(dependency: DependencyNode, mode: BuildMode) {
     const context = new Context(this.context);
-    const entry = path.resolve(options.entry);
+    const task = getTaskOrFail(dependency, mode);
 
     const registry = await this
       .context
       .get(RegistryBindings.TASK_REGISTRY);
 
     const registryResult = await registry.getResult({
-      task: options.task,
-      entry,
+      task,
+      entry: dependency.entry,
     });
 
     context.bind(RequestBindings.TASK_NAME)
-      .to(options.task)
+      .to(task)
       .lock();
 
     context.bind(RequestBindings.TASK_FN)
@@ -73,7 +68,7 @@ export class DependencyRunner implements IRequestRunner {
       .lock();
 
     context.bind(RequestBindings.ENTRY)
-      .to(entry)
+      .to(dependency.entry)
       .lock();
 
     context.bind(RequestBindings.CACHE_KEY)
@@ -116,17 +111,12 @@ export class DependencyRunner implements IRequestRunner {
   }
 
   public async build() {
-    const buildDependency = async (dependency: DependencyNode) => {
-      checkHasTaskOrFail(dependency, BuildMode.BUILD);
-
-      const requestRunner = await this.getRequestRunner({
-        entry: dependency.entry,
-        task: dependency.config[BuildMode.BUILD]
-      });
-
-      return requestRunner.build();
+    const runner = async (dependency: DependencyNode) => {
+      return (await this.getRequestRunner(dependency, BuildMode.BUILD)).build();
     }
-    await this.queue.add(() => runTopologically(this.dependencies, buildDependency));
+    await this.queue.add(
+      () => runTopologically(this.dependencies, runner)
+    );
   }
 
   public async watch(): Promise<AsyncSubscription> {
@@ -135,14 +125,7 @@ export class DependencyRunner implements IRequestRunner {
     }
 
     const getSubscription = async (dependency: DependencyNode) => {
-      checkHasTaskOrFail(dependency, BuildMode.WATCH);
-
-      const requestRunner = await this.getRequestRunner({
-        entry: dependency.entry,
-        task: dependency.config[BuildMode.WATCH]
-      });
-
-      return requestRunner.watch();
+      return (await this.getRequestRunner(dependency, BuildMode.WATCH)).watch();
     }
 
     const subscriptions = await this.queue.add(
@@ -152,11 +135,7 @@ export class DependencyRunner implements IRequestRunner {
     this.subscription = {
       unsubscribe: async () => {
         this.subscription = undefined;
-        await Promise.all(
-          subscriptions.map(
-            subscription => subscription.unsubscribe()
-          )
-        );
+        await unsubscribeAll(subscriptions);
       }
     }
 

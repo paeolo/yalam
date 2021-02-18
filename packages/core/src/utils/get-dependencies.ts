@@ -1,3 +1,4 @@
+import path from 'path';
 import {
   DirectoryPath
 } from '../types';
@@ -45,7 +46,7 @@ export const getDependencies = async (entries: DirectoryPath[]) => {
 
     result.push({
       name: pkg.name,
-      entry,
+      entry: path.resolve(entry),
       config: pkg.config.yalam,
       dependencies,
     })
