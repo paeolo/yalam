@@ -3,14 +3,13 @@ import {
   add,
 } from 'exits';
 import {
+  DirectoryPath,
   Yalam,
   YalamOptions
 } from '@yalam/core';
 
 import {
   initTTY,
-  getTask,
-  isSkipped
 } from './utils';
 
 export const enum RunnerMode {
@@ -20,7 +19,8 @@ export const enum RunnerMode {
 
 export interface RunnerOptions {
   mode: RunnerMode;
-  entries: string[];
+  entries: DirectoryPath[],
+  config: any,
   options: YalamOptions;
 };
 
@@ -30,7 +30,11 @@ export class Runner {
 
   constructor(options: RunnerOptions) {
     this.options = options;
-    this.yalam = new Yalam(options.options);
+    this.yalam = new Yalam(
+      options.entries,
+      options.config,
+      options.options
+    );
   }
 
   public async run() {
@@ -45,16 +49,7 @@ export class Runner {
   }
 
   private async build() {
-    const promises = this.options.entries
-      .filter(entry => !isSkipped(entry))
-      .map(
-        entry => this.yalam.build({
-          task: getTask(entry, RunnerMode.BUILD),
-          entry,
-        })
-      );
-
-    await Promise.all(promises);
+    await this.yalam.build();
   }
 
   private async watch() {
@@ -64,19 +59,7 @@ export class Runner {
       initTTY();
     }
 
-    const promises = this.options.entries
-      .filter(entry => !isSkipped(entry))
-      .map(
-        entry => this.yalam.watch({
-          task: getTask(entry, RunnerMode.WATCH),
-          entry,
-        })
-      );
-
-    const subscriptions = await Promise.all(promises);
-
-    subscriptions.forEach(
-      (subscription) => add(subscription.unsubscribe)
-    );
+    const subscription = await this.yalam.watch();
+    add(subscription.unsubscribe)
   }
 }

@@ -40,7 +40,7 @@ export class TSTranspiler {
 
     const serviceHost = this.getHost(
       options.entry,
-      { ...commandLine.options, rootDir: undefined, sourceMap: true }
+      { ...commandLine.options, sourceMap: true }
     );
 
     this.service = ts.createLanguageService(
@@ -119,7 +119,7 @@ export class TSTranspiler {
 
   public emitJavascript(event: FileEvent, disableSemanticCheck?: boolean) {
     const outputFiles = this.service
-      .getEmitOutput(event.path)
+      .getEmitOutput(event.path, false, false)
       .outputFiles;
 
     this.failOnFirstError(event.path, disableSemanticCheck);
@@ -134,9 +134,9 @@ export class TSTranspiler {
     }
   }
 
-  public emitDTS(fileName: FilePath) {
+  public emitDTS(event: FileEvent) {
     const outputFiles = this.service
-      .getEmitOutput(fileName, true, true)
+      .getEmitOutput(event.path, true, true)
       .outputFiles;
 
     return {

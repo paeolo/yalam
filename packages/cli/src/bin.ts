@@ -45,6 +45,6 @@ run(
     reporter
   ])
   .catch((err: Error) => {
-    reporter.getLogger().error(err.toString())
+    reporter.getLogger().error(err.message)
     process.exit(1);
   });

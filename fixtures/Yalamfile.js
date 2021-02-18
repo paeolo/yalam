@@ -1,6 +1,5 @@
 const {
   apply,
-  parallel,
   pipe
 } = require('@yalam/core');
 const {
@@ -11,12 +10,15 @@ const {
 const {
   tsCompiler
 } = require('@yalam/typescript');
+const {
+  babel
+} = require('@yalam/babel')
 
 const ts = pipe(
   source({ glob: 'src/**/*.ts' }),
   createAsset(),
   apply(['.ts'])(
-    tsCompiler.transpileModule(),
+    babel(),
     tsCompiler.generateTypes(),
   ),
   destination({ path: 'dist' })
@@ -29,5 +31,5 @@ const tsc = pipe(
 );
 
 module.exports = {
-  default: ts,
+  default: tsc,
 };

@@ -6,7 +6,8 @@
       "type": "shell",
       "command": "yarn build",
       "presentation": {
-        "clear": true
+        "clear": true,
+        "reveal": "silent"
       },
       "group": {
         "kind": "build",
@@ -19,7 +20,8 @@
       "type": "shell",
       "command": "yarn build:clean",
       "presentation": {
-        "clear": true
+        "clear": true,
+        "reveal": "silent"
       },
       "problemMatcher": []
     },
@@ -28,7 +30,8 @@
       "type": "shell",
       "command": "yarn fixtures:clean",
       "presentation": {
-        "clear": true
+        "clear": true,
+        "reveal": "silent"
       },
       "problemMatcher": []
     },
@@ -37,7 +40,8 @@
       "type": "shell",
       "command": "yarn update-ts-project-refs",
       "presentation": {
-        "clear": true
+        "clear": true,
+        "reveal": "silent"
       },
       "problemMatcher": []
     }

@@ -1,7 +1,8 @@
 export {
   checkEvent,
   transformEvent,
-  TransformEventResult
+  TransformEventResult,
+  IEventTransformer
 } from './events';
 export {
   destination
