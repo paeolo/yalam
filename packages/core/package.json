@@ -1,6 +1,6 @@
 {
   "name": "@yalam/core",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "A Gulp-inspired incremental build system",
   "author": "Paul Le Couteur",
   "license": "MIT",
