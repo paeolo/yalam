@@ -11,10 +11,10 @@ interface WithPath {
 
 /**
  * @description
- * A meta-operator that publishes the stream, with provided file extensions, to each provided task.
+ * A meta-operator that publishes the stream, with provided file extensions, to each provided pipeline.
  */
 export const apply = (extensions: string[]) =>
-  <S extends WithPath, T>(...tasks: OperatorFunction<S, T>[]): OperatorFunction<S, S | T> => (input) => {
+  <S extends WithPath, T>(...pipelines: OperatorFunction<S, T>[]): OperatorFunction<S, S | T> => (input) => {
     const [
       observable,
       rest
@@ -25,6 +25,6 @@ export const apply = (extensions: string[]) =>
 
     return merge(
       rest,
-      ...tasks.map(task => task(observable))
+      ...pipelines.map(pipeline => pipeline(observable))
     );
   }

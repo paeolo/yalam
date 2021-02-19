@@ -28,7 +28,7 @@ import {
 } from "../../constants";
 import {
   runTopologically,
-  getTaskOrFail,
+  getPipelineOrFail,
   unsubscribeAll
 } from '../../utils';
 
@@ -48,22 +48,22 @@ export class DependencyRunner implements IRequestRunner {
 
   private async getRequestRunner(dependency: DependencyNode, mode: BuildMode) {
     const context = new Context(this.context);
-    const task = getTaskOrFail(dependency, mode);
+    const pipeline = getPipelineOrFail(dependency, mode);
 
     const registry = await this
       .context
-      .get(RegistryBindings.TASK_REGISTRY);
+      .get(RegistryBindings.PIPELINE_REGISTRY);
 
     const registryResult = await registry.getResult({
-      task,
+      pipeline,
       entry: dependency.entry,
     });
 
-    context.bind(RequestBindings.TASK_NAME)
-      .to(task)
+    context.bind(RequestBindings.PIPELINE_NAME)
+      .to(pipeline)
       .lock();
 
-    context.bind(RequestBindings.TASK_FN)
+    context.bind(RequestBindings.PIPELINE_FN)
       .to(registryResult.fn)
       .lock();
 

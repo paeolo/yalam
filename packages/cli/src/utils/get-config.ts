@@ -34,10 +34,10 @@ export const getConfig = async (filePath: string) => {
     throw new Error(error.stack);
   }
 
-  Object.entries(result).forEach(([task, fn]) => {
+  Object.entries(result).forEach(([pipeline, fn]) => {
     if (typeof fn !== 'function') {
       throw new Error(
-        `${task} is not a function.`
+        `${pipeline} is not a function.`
       );
     }
   });

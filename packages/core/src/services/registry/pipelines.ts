@@ -8,30 +8,30 @@ import {
 } from "../../keys";
 import {
   IHashRegistry,
-  ITaskRegistry,
-  TaskDictionary,
-  GetTaskOptions,
+  IPipelineRegistry,
+  PipelineDictionary,
+  GetPipelineOptions,
   RegistryResult
 } from "../../interfaces";
 
-export class TaskRegistry implements ITaskRegistry {
+export class PipelineRegistry implements IPipelineRegistry {
   constructor(
-    @config() private dictionary: TaskDictionary,
+    @config() private dictionary: PipelineDictionary,
     @inject(RegistryBindings.HASH_REGISTRY) private hashRegistry: IHashRegistry,
   ) { }
 
-  public async getResult(options: GetTaskOptions): Promise<RegistryResult> {
-    if (!this.dictionary[options.task]) {
+  public async getResult(options: GetPipelineOptions): Promise<RegistryResult> {
+    if (!this.dictionary[options.pipeline]) {
       throw new Error(
-        `Task "${options.task}" is not defined`
+        `Pipeline "${options.pipeline}" is not defined`
       );
     }
 
     return {
-      fn: this.dictionary[options.task],
+      fn: this.dictionary[options.pipeline],
       cacheKey: await this.hashRegistry
         .getResult({
-          task: options.task,
+          pipeline: options.pipeline,
           entry: options.entry,
           useCacheKey: true
         }),

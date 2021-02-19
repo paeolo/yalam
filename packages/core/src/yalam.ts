@@ -10,7 +10,7 @@ import {
   RegistryBindings,
 } from './keys';
 import {
-  TaskDictionary,
+  PipelineDictionary,
 } from './interfaces';
 import {
   DirectoryPath,
@@ -35,7 +35,7 @@ export interface YalamOptions {
 
 export interface BuildOptions {
   entry: DirectoryPath;
-  task: string;
+  pipeline: string;
 }
 
 export class Yalam {
@@ -43,7 +43,7 @@ export class Yalam {
 
   constructor(
     entries: DirectoryPath[],
-    config: TaskDictionary,
+    config: PipelineDictionary,
     options: YalamOptions
   ) {
     this.context = new Context();
@@ -88,12 +88,12 @@ export class Yalam {
       .inScope(BindingScope.SINGLETON)
       .lock();
 
-    this.context.configure(RegistryBindings.TASK_REGISTRY)
+    this.context.configure(RegistryBindings.PIPELINE_REGISTRY)
       .to(config)
       .lock();
 
-    this.context.bind(RegistryBindings.TASK_REGISTRY)
-      .toClass(Services.TaskRegistry)
+    this.context.bind(RegistryBindings.PIPELINE_REGISTRY)
+      .toClass(Services.PipelineRegistry)
       .inScope(BindingScope.SINGLETON)
       .lock();
 

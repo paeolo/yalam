@@ -8,14 +8,14 @@ import {
 } from '../../types';
 
 export interface EventTypes {
-  input: (task: string, events: InputEvent[]) => void;
-  built: (task: string, asset: FileAsset) => void;
-  deleted: (task: string, asset: DeletedAsset) => void;
+  input: (pipeline: string, events: InputEvent[]) => void;
+  built: (pipeline: string, asset: FileAsset) => void;
+  deleted: (pipeline: string, asset: DeletedAsset) => void;
   idle: (errors: ErrorAsset[]) => void;
 }
 
 export interface IReporterRegistry {
-  onInput: (task: string, events: InputEvent[]) => void;
-  onBuilt: (task: string, asset: FileAsset) => void;
-  onDeleted: (task: string, asset: DeletedAsset) => void;
+  onInput: (pipeline: string, events: InputEvent[]) => void;
+  onBuilt: (pipeline: string, asset: FileAsset) => void;
+  onDeleted: (pipeline: string, asset: DeletedAsset) => void;
 }

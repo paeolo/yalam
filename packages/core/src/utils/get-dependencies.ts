@@ -27,6 +27,10 @@ export const getDependencies = async (entries: DirectoryPath[]) => {
       pkg
     } = value;
 
+    if (isSkipped(pkg)) {
+      continue;
+    }
+
     const addDependencies = (value: object) => {
       if (value && typeof value === 'object') {
         for (const dependency in value) {
@@ -35,10 +39,6 @@ export const getDependencies = async (entries: DirectoryPath[]) => {
           }
         }
       }
-    }
-
-    if (isSkipped(pkg)) {
-      continue;
     }
 
     addDependencies(pkg.dependencies);

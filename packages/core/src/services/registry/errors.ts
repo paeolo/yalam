@@ -9,15 +9,15 @@ import {
   IErrorRegistry
 } from "../../interfaces";
 
-interface TaskError {
-  task: string;
+interface PipelineError {
+  pipeline: string;
   asset: ErrorAsset;
 }
 
 export class ErrorRegistry implements IErrorRegistry {
   private eventsMap: Map<string, InputEvent[]>;
   private errorsMap: Map<string, ErrorAsset[]>;
-  private errors: TaskError[];
+  private errors: PipelineError[];
 
   constructor() {
     this.eventsMap = new Map();
@@ -29,30 +29,30 @@ export class ErrorRegistry implements IErrorRegistry {
     return this.errors.map((error) => error.asset);
   }
 
-  public onInput(task: string, events: InputEvent[]) {
+  public onInput(pipeline: string, events: InputEvent[]) {
     this.eventsMap.set(
-      task,
-      (this.eventsMap.get(task) || []).concat(events)
+      pipeline,
+      (this.eventsMap.get(pipeline) || []).concat(events)
     );
   }
 
-  public onError(task: string, error: ErrorAsset) {
+  public onError(pipeline: string, error: ErrorAsset) {
     this.errorsMap.set(
-      task,
-      (this.errorsMap.get(task) || []).concat([error])
+      pipeline,
+      (this.errorsMap.get(pipeline) || []).concat([error])
     );
   }
 
-  private batchUpdateEvent(task: string, event: InputEvent) {
+  private batchUpdateEvent(pipeline: string, event: InputEvent) {
     let filter;
 
     switch (event.type) {
       case EventType.INITIAL:
-        filter = (error: TaskError) => error.task !== task
+        filter = (error: PipelineError) => error.pipeline !== pipeline
           || error.asset.entry !== event.entry;
         break;
       default:
-        filter = (error: TaskError) => error.task !== task
+        filter = (error: PipelineError) => error.pipeline !== pipeline
           || error.asset.sourcePath !== event.path;
         break;
     }
@@ -60,13 +60,13 @@ export class ErrorRegistry implements IErrorRegistry {
     this.errors = this.errors.filter(filter);
   }
 
-  private batchUpdateError(task: string, error: ErrorAsset) {
-    const hasError = (value: TaskError) => value.asset.sourcePath === error.sourcePath
-      && value.task === task;
+  private batchUpdateError(pipeline: string, error: ErrorAsset) {
+    const hasError = (value: PipelineError) => value.asset.sourcePath === error.sourcePath
+      && value.pipeline === pipeline;
 
     if (!this.errors.some(hasError)) {
       this.errors.push({
-        task,
+        pipeline,
         asset: error
       });
     }
@@ -74,14 +74,14 @@ export class ErrorRegistry implements IErrorRegistry {
 
   public batchUpdate() {
     this.eventsMap
-      .forEach((events, task) => events
-        .forEach((event) => this.batchUpdateEvent(task, event))
+      .forEach((events, pipeline) => events
+        .forEach((event) => this.batchUpdateEvent(pipeline, event))
       );
     this.eventsMap.clear();
 
     this.errorsMap
-      .forEach((errors, task) => errors
-        .forEach((error) => this.batchUpdateError(task, error))
+      .forEach((errors, pipeline) => errors
+        .forEach((error) => this.batchUpdateError(pipeline, error))
       );
     this.errorsMap.clear();
   }
