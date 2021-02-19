@@ -55,7 +55,7 @@ export class DependencyRunner implements IRequestRunner {
       .get(RegistryBindings.PIPELINE_REGISTRY);
 
     const registryResult = await registry.getResult({
-      pipeline,
+      pipeline: pipeline,
       entry: dependency.entry,
     });
 

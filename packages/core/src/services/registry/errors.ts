@@ -9,7 +9,7 @@ import {
   IErrorRegistry
 } from "../../interfaces";
 
-interface PipelineError {
+interface OperatorError {
   pipeline: string;
   asset: ErrorAsset;
 }
@@ -17,7 +17,7 @@ interface PipelineError {
 export class ErrorRegistry implements IErrorRegistry {
   private eventsMap: Map<string, InputEvent[]>;
   private errorsMap: Map<string, ErrorAsset[]>;
-  private errors: PipelineError[];
+  private errors: OperatorError[];
 
   constructor() {
     this.eventsMap = new Map();
@@ -48,11 +48,11 @@ export class ErrorRegistry implements IErrorRegistry {
 
     switch (event.type) {
       case EventType.INITIAL:
-        filter = (error: PipelineError) => error.pipeline !== pipeline
+        filter = (error: OperatorError) => error.pipeline !== pipeline
           || error.asset.entry !== event.entry;
         break;
       default:
-        filter = (error: PipelineError) => error.pipeline !== pipeline
+        filter = (error: OperatorError) => error.pipeline !== pipeline
           || error.asset.sourcePath !== event.path;
         break;
     }
@@ -61,7 +61,7 @@ export class ErrorRegistry implements IErrorRegistry {
   }
 
   private batchUpdateError(pipeline: string, error: ErrorAsset) {
-    const hasError = (value: PipelineError) => value.asset.sourcePath === error.sourcePath
+    const hasError = (value: OperatorError) => value.asset.sourcePath === error.sourcePath
       && value.pipeline === pipeline;
 
     if (!this.errors.some(hasError)) {

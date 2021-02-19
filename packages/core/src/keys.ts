@@ -16,7 +16,7 @@ import {
 } from './interfaces';
 import {
   DirectoryPath,
-  Pipeline
+  Operator
 } from './types';
 
 export namespace CoreBindings {
@@ -39,7 +39,7 @@ export namespace RegistryBindings {
 
 export namespace RequestBindings {
   export const PIPELINE_NAME = BindingKey.create<string>('request.pipeline.name');
-  export const PIPELINE_FN = BindingKey.create<Pipeline>('request.pipeline.fn');
+  export const PIPELINE_FN = BindingKey.create<Operator[]>('request.pipeline.fn');
   export const ENTRY = BindingKey.create<DirectoryPath>('request.entry');
   export const CACHE_KEY = BindingKey.create<string>('request.cache.key');
 }

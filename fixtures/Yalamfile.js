@@ -2,7 +2,6 @@ const path = require('path');
 const {
   apply,
   pipe,
-  series
 } = require('@yalam/core');
 const {
   createAsset,
@@ -38,5 +37,5 @@ const printHello = task(
 )
 
 module.exports = {
-  default: series(tsc, printHello),
+  default: [tsc, printHello],
 };

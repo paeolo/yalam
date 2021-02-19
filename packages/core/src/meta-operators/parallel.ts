@@ -5,10 +5,10 @@ import {
 
 /**
  * @description
- * A meta-operator that publishes the stream to each provided pipeline.
+ * A meta-operator that publishes the stream to each provided operator.
  */
-export const parallel = <S, T>(...pipelines: OperatorFunction<S, T>[]): OperatorFunction<S, T> => (input) => {
+export const parallel = <S, T>(...operators: OperatorFunction<S, T>[]): OperatorFunction<S, T> => (input) => {
   return merge(
-    ...pipelines.map(pipeline => pipeline(input))
+    ...operators.map(operator => operator(input))
   );
 }

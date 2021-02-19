@@ -1,15 +1,15 @@
 import {
   DirectoryPath,
-  Pipeline
+  Operator
 } from '../../types';
 
 export interface PipelineDictionary {
-  [key: string]: Pipeline;
+  [key: string]: Operator[];
 };
 
 export interface RegistryResult {
   cacheKey: string;
-  fn: Pipeline;
+  fn: Operator[];
 }
 
 export interface GetPipelineOptions {

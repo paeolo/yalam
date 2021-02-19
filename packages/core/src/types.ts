@@ -18,7 +18,7 @@ export type InputEvent = InitialEvent
 export type Asset = DeletedAsset
   | ErrorAsset
   | FileAsset;
-export type Pipeline = (input: Observable<InputEvent>) => Observable<Asset>;
+export type Operator = (input: Observable<InputEvent>) => Observable<Asset>;
 
 export interface AsyncSubscription {
   unsubscribe(): Promise<void>;

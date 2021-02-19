@@ -1,7 +1,7 @@
 import isPromise from 'is-promise';
 import {
   DirectoryPath,
-  Pipeline
+  Operator
 } from '@yalam/core';
 import {
   EMPTY,
@@ -19,9 +19,9 @@ import {
 
 /**
  * @description
- * A meta-operator that trigger a single task on event.
+ * An operator that trigger a single task on event.
  */
-export const task = (task: (entry: DirectoryPath) => Promise<void> | void): Pipeline => {
+export const task = (task: (entry: DirectoryPath) => Promise<void> | void): Operator => {
   return pipe(
     take(1),
     map(event => {
