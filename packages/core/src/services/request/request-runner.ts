@@ -19,7 +19,7 @@ import {
   AsyncSubscription,
   DirectoryPath,
   InputEvent,
-  Pipeline
+  Operator
 } from '../../types';
 import {
   IErrorRegistry,
@@ -41,7 +41,7 @@ export class RequestRunner implements IRequestRunner {
     @inject(CoreBindings.QUEUE) private queue: PQueue,
     @inject(CoreBindings.CACHE_DIR) private cacheDir: DirectoryPath,
     @inject(RequestBindings.PIPELINE_NAME) private pipeline: string,
-    @inject(RequestBindings.PIPELINE_FN) private fn: Pipeline,
+    @inject(RequestBindings.PIPELINE_FN) private fn: Operator[],
     @inject(RequestBindings.ENTRY) private entry: DirectoryPath,
     @inject(CacheBindings.REQUEST_CACHE) private requestCache: IRequestCache,
     @inject(RegistryBindings.ERROR_REGISTRY) private errors: IErrorRegistry,
@@ -102,8 +102,6 @@ export class RequestRunner implements IRequestRunner {
   private async buildEvents(events: InputEvent[], throwOnFail: boolean) {
     this.onInput(events);
 
-    const input = connectable(from(events), new Subject());
-
     const commitOrFail = (asset: Asset) => {
       if (throwOnFail && asset.status === AssetStatus.ERROR) {
         throw asset.error;
@@ -113,20 +111,24 @@ export class RequestRunner implements IRequestRunner {
       }
     }
 
-    await new Promise<void>((resolve, reject) => {
-      this.fn(input)
-        .pipe(
-          tap(asset => this.onBuilt(asset)),
-          map(asset => commitOrFail(asset)),
-          mergeAll()
-        )
-        .subscribe({
-          error: reject,
-          complete: resolve
-        });
+    for (const operator of this.fn) {
+      const input = connectable(from(events), new Subject());
 
-      input.connect();
-    });
+      await new Promise<void>((resolve, reject) => {
+        operator(input)
+          .pipe(
+            tap(asset => this.onBuilt(asset)),
+            map(asset => commitOrFail(asset)),
+            mergeAll()
+          )
+          .subscribe({
+            error: reject,
+            complete: resolve
+          });
+
+        input.connect();
+      });
+    }
 
     await setImmediatePromise();
     this.requestCache.batchUpdate();

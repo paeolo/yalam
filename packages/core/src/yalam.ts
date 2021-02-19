@@ -33,11 +33,6 @@ export interface YalamOptions {
   reporters?: Reporter[];
 }
 
-export interface BuildOptions {
-  entry: DirectoryPath;
-  pipeline: string;
-}
-
 export class Yalam {
   private context: Context;
 

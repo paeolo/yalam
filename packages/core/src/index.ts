@@ -10,8 +10,7 @@ export {
 } from './events';
 export {
   apply,
-  parallel,
-  series,
+  parallel
 } from './meta-operators';
 export {
   Yalam,

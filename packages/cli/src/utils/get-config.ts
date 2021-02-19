@@ -26,7 +26,7 @@ export const getConfig = async (filePath: string) => {
     );
   }
 
-  let result;
+  let result: any;
 
   try {
     result = require(configPath);
@@ -34,12 +34,14 @@ export const getConfig = async (filePath: string) => {
     throw new Error(error.stack);
   }
 
-  Object.entries(result).forEach(([pipeline, fn]) => {
-    if (typeof fn !== 'function') {
+  Object.entries(result).forEach(([key, fn]) => {
+    const pipeline = Array.isArray(fn) ? fn : [fn];
+    if (pipeline.some(value => typeof value !== 'function')) {
       throw new Error(
-        `${pipeline} is not a function.`
+        `${key} is not a function or an array of function.`
       );
     }
+    result[key] = pipeline;
   });
 
   return result;

@@ -23,7 +23,7 @@ export class PipelineRegistry implements IPipelineRegistry {
   public async getResult(options: GetPipelineOptions): Promise<RegistryResult> {
     if (!this.dictionary[options.pipeline]) {
       throw new Error(
-        `Pipeline "${options.pipeline}" is not defined`
+        `Operator "${options.pipeline}" is not defined`
       );
     }
 
