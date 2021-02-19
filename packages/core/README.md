@@ -1,5 +1,5 @@
 # Welcome to yalam 👋
-![Version](https://img.shields.io/badge/version-0.2.0-blue.svg?cacheSeconds=2592000)
+![Version](https://img.shields.io/badge/version-0.2.2-blue.svg?cacheSeconds=2592000)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](#)
 
 > A Gulp-inspired incremental build system
@@ -25,22 +25,31 @@ Yalam is configured with a `Yalamfile.js`.
 This file describes the list of pipelines that can be used to build your packages.
 
 ```javascript
-const { pipe, apply } = require('@yalam/core');
-const { source, destination , createAsset } = require('@yalam/operators');
-const { tsCompiler } = require('@yalam/typescript');
+const {
+  pipe,
+  apply
+} = require('@yalam/core');
+const {
+  source,
+  destination,
+  createAsset
+} = require('@yalam/operators');
+const {
+  tsCompiler
+} = require('@yalam/typescript');
 
 const ts = pipe(
-    source({ glob: 'src/**/*' }),
-    createAsset(),
-    apply(['.ts'])(
-        tsCompiler.transpileModule(),
-        tsCompiler.generateTypes()
-    ),
-    destination({ path: 'dist' })
+  source({ glob: 'src/**/*' }),
+  createAsset(),
+  apply(['.ts'])(
+    tsCompiler.transpileModule(),
+    tsCompiler.generateTypes()
+  ),
+  destination({ path: 'dist' })
 );
 
 module.exports = {
-    default: ts,
+  default: ts,
 };
 ```
 

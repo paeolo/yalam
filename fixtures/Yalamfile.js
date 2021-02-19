@@ -1,11 +1,14 @@
+const path = require('path');
 const {
   apply,
-  pipe
+  pipe,
+  series
 } = require('@yalam/core');
 const {
   createAsset,
   destination,
   source,
+  task
 } = require('@yalam/operators');
 const {
   tsCompiler
@@ -30,6 +33,10 @@ const tsc = pipe(
   destination({ path: 'dist' })
 );
 
+const printHello = task(
+  (entry) => console.log('Hello', path.basename(entry))
+)
+
 module.exports = {
-  default: tsc,
+  default: series(tsc, printHello),
 };

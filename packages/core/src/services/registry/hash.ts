@@ -26,8 +26,8 @@ export class HashRegistry implements IHashRegistry {
   private getKey(options: GetHashOptions) {
     let key = options.entry;
 
-    if (options.task) {
-      key = key.concat(options.task)
+    if (options.pipeline) {
+      key = key.concat(options.pipeline)
     }
 
     if (options.useCacheKey) {

@@ -7,7 +7,7 @@ import {
 
 export interface IErrorRegistry {
   getErrors(): ErrorAsset[];
-  onInput: (task: string, events: InputEvent[]) => void;
-  onError: (task: string, error: ErrorAsset) => void;
+  onInput: (pipeline: string, events: InputEvent[]) => void;
+  onError: (pipeline: string, error: ErrorAsset) => void;
   batchUpdate(): void;
 };

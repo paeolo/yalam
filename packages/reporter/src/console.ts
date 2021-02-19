@@ -64,23 +64,23 @@ export class ConsoleReporter implements Reporter {
     return this.logger;
   }
 
-  public onInput(task: string, events: InputEvent[]) {
+  public onInput(pipeline: string, events: InputEvent[]) {
     if (!this.processing) {
       this.startTime = new Date().getTime();
       this.processing = true;
     }
   }
 
-  public onBuilt(task: string, asset: FileAsset) {
+  public onBuilt(pipeline: string, asset: FileAsset) {
     this.count += 1;
     const fileName = path.basename(asset.path);
-    this.logger.info(`${chalk.magentaBright(`<${task}>`)} Built ${fileName}`);
+    this.logger.info(`${chalk.magentaBright(`<${pipeline}>`)} Built ${fileName}`);
   }
 
-  public onDeleted(task: string, asset: DeletedAsset) {
+  public onDeleted(pipeline: string, asset: DeletedAsset) {
     this.count += 1;
     const fileName = path.basename(asset.path);
-    this.logger.info(`${chalk.magentaBright(`<${task}>`)} Deleted ${fileName}`);
+    this.logger.info(`${chalk.magentaBright(`<${pipeline}>`)} Deleted ${fileName}`);
   }
 
   public onIdle(errors: ErrorAsset[]) {

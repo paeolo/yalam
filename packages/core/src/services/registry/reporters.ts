@@ -71,15 +71,15 @@ export class ReporterRegistry extends EventEmitter<EventTypes> implements IRepor
     }
   }
 
-  public onInput(task: string, events: InputEvent[]) {
-    this.emit('input', task, events);
+  public onInput(pipeline: string, events: InputEvent[]) {
+    this.emit('input', pipeline, events);
   }
 
-  public onBuilt(task: string, asset: FileAsset) {
-    this.emit('built', task, asset);
+  public onBuilt(pipeline: string, asset: FileAsset) {
+    this.emit('built', pipeline, asset);
   }
 
-  public onDeleted(task: string, asset: DeletedAsset) {
-    this.emit('deleted', task, asset);
+  public onDeleted(pipeline: string, asset: DeletedAsset) {
+    this.emit('deleted', pipeline, asset);
   }
 }

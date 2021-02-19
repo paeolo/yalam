@@ -1,6 +1,6 @@
 export interface GetHashOptions {
   entry: string;
-  task?: string;
+  pipeline?: string;
   useCacheKey?: boolean
 }
 

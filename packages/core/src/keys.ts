@@ -12,11 +12,11 @@ import {
   IReporterRegistry,
   IRequestCache,
   IRequestRunner,
-  ITaskRegistry
+  IPipelineRegistry
 } from './interfaces';
 import {
   DirectoryPath,
-  Task
+  Pipeline
 } from './types';
 
 export namespace CoreBindings {
@@ -32,14 +32,14 @@ export namespace CoreBindings {
 
 export namespace RegistryBindings {
   export const REPORTER_REGISTRY = BindingKey.create<IReporterRegistry>('registry.reporter');
-  export const TASK_REGISTRY = BindingKey.create<ITaskRegistry>('registry.task');
+  export const PIPELINE_REGISTRY = BindingKey.create<IPipelineRegistry>('registry.pipeline');
   export const HASH_REGISTRY = BindingKey.create<IHashRegistry>('registry.hash');
   export const ERROR_REGISTRY = BindingKey.create<IErrorRegistry>('registry.error');
 }
 
 export namespace RequestBindings {
-  export const TASK_NAME = BindingKey.create<string>('request.task.name');
-  export const TASK_FN = BindingKey.create<Task>('request.task.fn');
+  export const PIPELINE_NAME = BindingKey.create<string>('request.pipeline.name');
+  export const PIPELINE_FN = BindingKey.create<Pipeline>('request.pipeline.fn');
   export const ENTRY = BindingKey.create<DirectoryPath>('request.entry');
   export const CACHE_KEY = BindingKey.create<string>('request.cache.key');
 }

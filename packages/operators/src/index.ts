@@ -14,6 +14,9 @@ export {
   source
 } from './source';
 export {
+  task
+} from './task';
+export {
   createAsset,
   oneToOne,
   OneToOneResult

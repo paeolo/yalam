@@ -18,16 +18,16 @@ export type InputEvent = InitialEvent
 export type Asset = DeletedAsset
   | ErrorAsset
   | FileAsset;
-export type Task = (input: Observable<InputEvent>) => Observable<Asset>;
+export type Pipeline = (input: Observable<InputEvent>) => Observable<Asset>;
 
 export interface AsyncSubscription {
   unsubscribe(): Promise<void>;
 };
 
 export interface Reporter {
-  onInput?: (task: string, events: InputEvent[]) => void;
-  onBuilt?: (task: string, asset: FileAsset) => void;
-  onDeleted?: (task: string, asset: DeletedAsset) => void;
+  onInput?: (pipeline: string, events: InputEvent[]) => void;
+  onBuilt?: (pipeline: string, asset: FileAsset) => void;
+  onDeleted?: (pipeline: string, asset: DeletedAsset) => void;
   onIdle?: (errors: ErrorAsset[]) => void;
 };
 

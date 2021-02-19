@@ -19,7 +19,7 @@ import {
   AsyncSubscription,
   DirectoryPath,
   InputEvent,
-  Task
+  Pipeline
 } from '../../types';
 import {
   IErrorRegistry,
@@ -40,8 +40,8 @@ export class RequestRunner implements IRequestRunner {
   constructor(
     @inject(CoreBindings.QUEUE) private queue: PQueue,
     @inject(CoreBindings.CACHE_DIR) private cacheDir: DirectoryPath,
-    @inject(RequestBindings.TASK_NAME) private task: string,
-    @inject(RequestBindings.TASK_FN) private fn: Task,
+    @inject(RequestBindings.PIPELINE_NAME) private pipeline: string,
+    @inject(RequestBindings.PIPELINE_FN) private fn: Pipeline,
     @inject(RequestBindings.ENTRY) private entry: DirectoryPath,
     @inject(CacheBindings.REQUEST_CACHE) private requestCache: IRequestCache,
     @inject(RegistryBindings.ERROR_REGISTRY) private errors: IErrorRegistry,
@@ -55,27 +55,27 @@ export class RequestRunner implements IRequestRunner {
 
     this
       .reporters
-      .onInput(this.task, events);
+      .onInput(this.pipeline, events);
     this
       .errors
-      .onInput(this.task, events);
+      .onInput(this.pipeline, events);
   }
 
   private onBuilt(asset: Asset) {
     switch (asset.status) {
       case AssetStatus.ERROR:
-        this.errors.onError(this.task, asset);
+        this.errors.onError(this.pipeline, asset);
         this.requestCache.onError(asset);
         break;
       case AssetStatus.ARTIFACT:
-        this.reporters.onBuilt(this.task, asset);
+        this.reporters.onBuilt(this.pipeline, asset);
         this.requestCache.onBuilt(asset);
         this.ignoreSet.add(asset.distPath);
         this.ignoreSet.add(asset.distPath.concat('.map'));
         break;
       case AssetStatus.DELETED:
         this.requestCache.onDeleted(asset);
-        this.reporters.onDeleted(this.task, asset);
+        this.reporters.onDeleted(this.pipeline, asset);
         this.ignoreSet.add(asset.distPath);
         this.ignoreSet.add(asset.distPath.concat('.map'));
         break;
