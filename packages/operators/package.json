@@ -1,6 +1,6 @@
 {
   "name": "@yalam/operators",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "A basic set of operators for Yalam",
   "author": "Paul Le Couteur",
   "license": "MIT",
@@ -10,7 +10,7 @@
   },
   "main": "dist/index.js",
   "dependencies": {
-    "@yalam/core": "^0.2.4",
+    "@yalam/core": "^0.2.5",
     "glob-parent": "^5.1.1",
     "globrex": "^0.1.2",
     "is-promise": "^4.0.0",
