@@ -36,6 +36,7 @@ export const run = async (entries: string[], flags: FlagsType, reporters: Report
     config,
     entries: getEntries(entries),
     options: {
+      pipeline: flags.pipeline,
       disableCache: flags.cache === false,
       cacheKey,
       reporters,
