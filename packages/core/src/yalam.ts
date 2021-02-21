@@ -27,6 +27,7 @@ import {
 } from './constants';
 
 export interface YalamOptions {
+  pipeline?: string;
   disableCache?: boolean;
   cacheDir?: string;
   cacheKey?: string;
@@ -44,8 +45,14 @@ export class Yalam {
     this.context = new Context();
 
     this.context.bind(CoreBindings.DEPENDENCIES)
-      .toDynamicValue(() => getDependencies(entries))
+      .toDynamicValue(
+        () => getDependencies(entries, options.pipeline !== undefined)
+      )
       .inScope(BindingScope.SINGLETON)
+      .lock();
+
+    this.context.bind(CoreBindings.PIPELINE)
+      .to(options.pipeline)
       .lock();
 
     this.context.bind(CoreBindings.VERSION)

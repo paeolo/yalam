@@ -28,6 +28,10 @@ const cli = meow(`
       type: 'boolean',
       default: true
     },
+    pipeline: {
+      type: 'string',
+      alias: 'p'
+    },
   },
 });
 

@@ -21,6 +21,7 @@ import {
 
 export namespace CoreBindings {
   export const DEPENDENCIES = BindingKey.create<DependencyNode[]>('core.dependencies');
+  export const PIPELINE = BindingKey.create<string | undefined>('core.pipeline');
   export const VERSION = BindingKey.create<string>('core.version');
   export const QUEUE = BindingKey.create<PQueue>('core.queue');
   export const DISABLE_CACHE = BindingKey.create<boolean>('core.cache.disable');

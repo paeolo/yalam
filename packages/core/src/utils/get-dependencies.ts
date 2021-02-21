@@ -10,7 +10,7 @@ import {
   getPKG,
 } from './get-pkg';
 
-export const getDependencies = async (entries: DirectoryPath[]) => {
+export const getDependencies = async (entries: DirectoryPath[], disableSkip: boolean) => {
   const result: DependencyNode[] = [];
 
   const packages = await Promise.all(entries.map(async (entry) => ({
@@ -27,7 +27,7 @@ export const getDependencies = async (entries: DirectoryPath[]) => {
       pkg
     } = value;
 
-    if (isSkipped(pkg)) {
+    if (!disableSkip && isSkipped(pkg)) {
       continue;
     }
 

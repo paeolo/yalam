@@ -42,13 +42,14 @@ export class DependencyRunner implements IRequestRunner {
 
   constructor(
     @inject(CoreBindings.DEPENDENCIES) private dependencies: DependencyNode[],
+    @inject(CoreBindings.PIPELINE) private pipeline: string | undefined,
     @inject(CoreBindings.QUEUE) private queue: PQueue,
     @inject.context() private context: Context,
   ) { }
 
   private async getRequestRunner(dependency: DependencyNode, mode: BuildMode) {
     const context = new Context(this.context);
-    const pipeline = getPipelineOrFail(dependency, mode);
+    const pipeline = this.pipeline || getPipelineOrFail(dependency, mode);
 
     const registry = await this
       .context
