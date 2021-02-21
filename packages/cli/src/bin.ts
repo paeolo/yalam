@@ -14,6 +14,7 @@ const cli = meow(`
     - config |> Specify a custom path to config file
     - watch |> Build your changes while your are coding
     - no-cache |> Disable any caching features
+    - pipeline |> Force a specific pipeline use
 `, {
   flags: {
     config: {
