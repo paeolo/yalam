@@ -32,9 +32,10 @@ const tsc = pipe(
   destination({ path: 'dist' })
 );
 
-const printHello = task(
-  (entry) => console.log('Hello', path.basename(entry))
-)
+const printHello = task({
+  glob: 'src/**/*.ts',
+  fn: (entry) => console.log('Hello', path.basename(entry))
+})
 
 module.exports = {
   default: [tsc, printHello],
