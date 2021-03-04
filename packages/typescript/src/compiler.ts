@@ -40,15 +40,6 @@ export class TSCompiler {
 * Emit a javascript file asset from your file events.
 */
   public transpile(options?: TranspileTSOptions) {
-    const notify = (events: FileEvent[]) => {
-      if (events.length === 0) {
-        return;
-      }
-      this.registry
-        .getTSTranspiler(events[0].entry)
-        .notify(events);
-    }
-
     const getResult = async (event: FileEvent) => {
       const output = this.registry
         .getTSTranspiler(event.entry)
@@ -88,7 +79,7 @@ export class TSCompiler {
 
     return pipe(
       toArray<FileEvent>(),
-      tap(notify),
+      tap(events => this.registry.notify(events)),
       mergeAll(),
       transformEvent({
         filter: isTypescript,
@@ -102,15 +93,6 @@ export class TSCompiler {
   * Perform type-checking on your file events.
   */
   public checkTypes() {
-    const notify = (events: FileEvent[]) => {
-      if (events.length === 0) {
-        return;
-      }
-      this.registry
-        .getTSTranspiler(events[0].entry)
-        .notify(events);
-    }
-
     const respondToEvent = async (event: FileEvent) => {
       this.registry
         .getTSTranspiler(event.entry)
@@ -119,7 +101,7 @@ export class TSCompiler {
 
     return pipe(
       toArray<FileEvent>(),
-      tap(notify),
+      tap(events => this.registry.notify(events)),
       mergeAll(),
       checkEvent({
         checkEvent: respondToEvent,

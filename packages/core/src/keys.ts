@@ -42,6 +42,7 @@ export namespace RequestBindings {
   export const PIPELINE_NAME = BindingKey.create<string>('request.pipeline.name');
   export const PIPELINE_FN = BindingKey.create<Operator[]>('request.pipeline.fn');
   export const ENTRY = BindingKey.create<DirectoryPath>('request.entry');
+  export const PKG_NAME = BindingKey.create<string>('request.pkg_name');
   export const CACHE_KEY = BindingKey.create<string>('request.cache.key');
 }
 

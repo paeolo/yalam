@@ -46,6 +46,7 @@ export class RequestCache implements IRequestCache {
     @inject(CacheBindings.ASSET_CACHE) private assets: IAssetCache,
     @inject(CacheBindings.ERROR_CACHE) private errors: IErrorCache,
     @inject(RequestBindings.ENTRY) private entry: DirectoryPath,
+    @inject(RequestBindings.PKG_NAME) private pkg_name: string,
     @inject(RequestBindings.CACHE_KEY) private cacheKey: string,
   ) {
     this.lockFilePath = path.join(
@@ -60,6 +61,7 @@ export class RequestCache implements IRequestCache {
       type: event.type === 'delete'
         ? EventType.DELETED
         : EventType.UPDATED,
+      pkg_name: this.pkg_name,
       entry: this.entry,
       path: event.path,
       cache: {
@@ -75,6 +77,7 @@ export class RequestCache implements IRequestCache {
     if (!hasSync || this.disableCache) {
       return [
         new InitialEvent({
+          pkg_name: this.pkg_name,
           entry: this.entry,
           cache: {
             directory: this.cacheDir,

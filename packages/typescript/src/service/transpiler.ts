@@ -12,17 +12,22 @@ import {
   formatDiagnostic,
   getTSConfigOrFail
 } from '../utils';
+import {
+  VersionRegistry
+} from './version-registry';
 
 const INITAL_VERSION = 0;
 
 export interface TSTranspilerOptions {
   entry: DirectoryPath;
   registry: ts.DocumentRegistry;
+  versionRegistry: VersionRegistry
 }
 
 export class TSTranspiler {
   private service: ts.LanguageService;
   private versions: Map<FilePath, number>;
+  private versionRegistry: VersionRegistry;
 
   constructor(options: TSTranspilerOptions) {
     const tsConfig = getTSConfigOrFail(options.entry);
@@ -33,6 +38,7 @@ export class TSTranspiler {
     );
 
     this.versions = new Map();
+    this.versionRegistry = options.versionRegistry;
 
     for (const filePath of commandLine.fileNames) {
       this.versions.set(filePath, INITAL_VERSION);
@@ -70,7 +76,9 @@ export class TSTranspiler {
   }
 
   private getScriptVersion(filePath: FilePath) {
-    return (this.versions.get(filePath) || INITAL_VERSION).toString();
+    return (this.versions.get(filePath)
+      || this.versionRegistry.getVersion(filePath)
+    ).toString();
   }
 
   private getScriptSnapshot(filePath: FilePath) {

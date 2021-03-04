@@ -1,4 +1,4 @@
-export interface MyInterface {
-  myNumber: number;
-  myString: string;
+export interface IPeople {
+  foo: number;
+  bar: string;
 }
