@@ -7,7 +7,7 @@ const {
   createAsset,
   destination,
   source,
-  task
+  task,
 } = require('@yalam/operators');
 const {
   tsCompiler

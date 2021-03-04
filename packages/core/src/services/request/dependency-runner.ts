@@ -72,6 +72,10 @@ export class DependencyRunner implements IRequestRunner {
       .to(dependency.entry)
       .lock();
 
+    context.bind(RequestBindings.PKG_NAME)
+      .to(dependency.name)
+      .lock();
+
     context.bind(RequestBindings.CACHE_KEY)
       .to(registryResult.cacheKey)
       .lock();

@@ -30,6 +30,7 @@ export class FileEvent extends ImmutableEvent {
   public getWithSourceBase(sourceBase: string) {
     return new FileEvent({
       cache: this.cache,
+      pkg_name: this.pkg_name,
       entry: this.entry,
       path: this.path,
       type: this.type,
@@ -40,6 +41,7 @@ export class FileEvent extends ImmutableEvent {
   public getInitialEvent() {
     return new InitialEvent({
       cache: this.cache,
+      pkg_name: this.pkg_name,
       entry: this.entry
     })
   }
