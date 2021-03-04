@@ -1,6 +1,6 @@
 {
   "name": "@yalam/reporter",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "A console reporter for Yalam",
   "author": "Paul Le Couteur",
   "license": "MIT",
@@ -10,7 +10,7 @@
   },
   "main": "dist/index.js",
   "dependencies": {
-    "@yalam/core": "^0.2.5",
+    "@yalam/core": "^0.2.6",
     "chalk": "^4.1.0",
     "dateformat": "^4.4.1"
   },

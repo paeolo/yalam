@@ -1,6 +1,6 @@
 {
   "name": "@yalam/example-1",
-  "version": "1.0.0",
+  "version": "0.2.6",
   "private": true,
   "author": "Paul Le Couteur",
   "license": "MIT",
@@ -13,6 +13,6 @@
     }
   },
   "dependencies": {
-    "@yalam/example-2": "^1.0.0"
+    "@yalam/example-2": "^0.2.6"
   }
 }
